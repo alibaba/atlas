@@ -263,7 +263,7 @@ public class LocalSignHelper {
     public static boolean sign(File inputFile,
                                File outputFile,
                                DefaultSigningConfig signingConfig,
-                               String signName) throws IOException, SigningException {
+                               String signName,int minisdk) throws IOException, SigningException {
 
 
             if (outputFile.exists()) {
@@ -297,7 +297,7 @@ public class LocalSignHelper {
                                             .setCertificates(certificateInfo.getCertificate())
                                             .setV1SigningEnabled(signingConfig.isV1SigningEnabled())
                                             .setV2SigningEnabled(signingConfig.isV2SigningEnabled())
-                                            .setMinSdkVersion(14)
+                                            .setMinSdkVersion(minisdk)
                                             .build());
 //                    SigningOptions signingOptions = new SigningOptions() {
 //                        @Override

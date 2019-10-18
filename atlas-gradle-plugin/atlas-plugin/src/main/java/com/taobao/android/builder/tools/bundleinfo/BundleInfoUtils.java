@@ -292,7 +292,9 @@ public class BundleInfoUtils {
 
         bundleInfo.setVersion(baseVersion + "@" + awbBundle.getResolvedCoordinates().getVersion());
         bundleInfo.setPkgName(awbBundle.getPackageName());
-        bundleInfo.setFeatureName(awbBundle.getFeatureName());
+        if (awbBundle.dynamicFeature) {
+            bundleInfo.setFeatureName(awbBundle.getFeatureName());
+        }
 
         String applicationName = ManifestFileUtils.getApplicationName(awbBundle.getManifest());
         if (StringUtils.isNotEmpty(applicationName)) {

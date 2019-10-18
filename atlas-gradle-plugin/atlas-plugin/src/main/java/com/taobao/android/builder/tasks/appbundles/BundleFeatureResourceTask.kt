@@ -114,6 +114,9 @@ constructor(workers: WorkerExecutor) : AndroidBuilderTask() {
                 logger = builder.logger
         )
         workers!!.submit(Aapt2ProcessResourcesRunnable::class.java, Aapt2ProcessResourcesRunnable.Params(aapt2ServiceKey, aaptPackageConfig))
+
+
+         workers.await()
     }
 
     class CreationAction(private val awbBundle: AwbBundle, variantContext: VariantContext<*, *, *>, baseVariantOutput: BaseVariantOutput) : MtlBaseTaskAction<BundleFeatureResourceTask>(variantContext, baseVariantOutput) {
@@ -175,6 +178,10 @@ constructor(workers: WorkerExecutor) : AndroidBuilderTask() {
 
         override fun preConfigure(s: String) {
             super.preConfigure(s)
+//            featureBundledResFile = variantScope.artifacts
+//                    .appendArtifact(InternalArtifactType.LINKED_RES_FOR_BUNDLE,
+//                            name,
+//                            "bundled-res.ap_")
             featureBundledResFile = appVariantOutputContext!!.geteBundledResFile(scope.variantConfiguration, awbBundle)
         }
     }

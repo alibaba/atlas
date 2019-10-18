@@ -222,6 +222,7 @@ import com.android.build.gradle.internal.pipeline.TransformStream;
 import com.android.build.gradle.internal.pipeline.TransformTask;
 import com.android.build.gradle.internal.res.LinkAndroidResForBundleTask;
 import com.android.build.gradle.internal.scope.ApkData;
+import com.android.build.gradle.internal.scope.CodeShrinker;
 import com.android.build.gradle.internal.scope.GlobalScope;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.*;
@@ -405,7 +406,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                                                               VariantScope variantScope = appVariantContext.getVariantData().getScope();
 
-                                                              if (atlasExtension.isAppBundlesEnabled() && atlasExtension.getTBuildConfig().getDynamicFeatures().size() > 0) {
+                                                              if (atlasExtension.isAppBundlesEnabled()) {
 
 
                                                                   mtlTaskContextList.add(new MtlTaskContext(com.android.build.gradle.internal.tasks.PerModuleBundleTask.class));
@@ -452,12 +453,17 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                                                               if (atlasExtension.isAppBundlesEnabled() && atlasExtension.getTBuildConfig().getDynamicFeatures().size() > 0 && variantScope.getVariantConfiguration().getBuildType().isMinifyEnabled()) {
 
-                                                                  mtlTransformContextList.add(
-                                                                          new MtlTransformContext(DelegateMergeClassesTransform.class, R8Transform.class));
+                                                                  if (variantScope.getCodeShrinker() == CodeShrinker.R8) {
+                                                                      mtlTransformContextList.add(
+                                                                              new MtlTransformContext(DelegateMergeClassesTransform.class, R8Transform.class));
+
+                                                                      mtlTransformContextList.add(
+                                                                              new MtlTransformContext(true,DelegateDexSplitterTransform.class, MergeJavaResourcesTransform.class));
+                                                                  }else {
+
+                                                                  }
 
 
-                                                                  mtlTransformContextList.add(
-                                                                          new MtlTransformContext(true,DelegateDexSplitterTransform.class, MergeJavaResourcesTransform.class));
                                                               }
 
 
@@ -510,7 +516,11 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                                                                   transformReplacer.repalaceSomeInstantTransform(vod);
                                                                   if (atlasExtension.isAppBundlesEnabled() && variantScope.getVariantConfiguration().getBuildType().isMinifyEnabled()) {
-                                                                      transformReplacer.replaceR8Transform(vod);
+                                                                      if (variantScope.getCodeShrinker() == CodeShrinker.R8) {
+                                                                          transformReplacer.replaceR8Transform(vod);
+                                                                      }else {
+                                                                          transformReplacer.replaceProguardTransform(vod);
+                                                                      }
 
                                                                   }
 

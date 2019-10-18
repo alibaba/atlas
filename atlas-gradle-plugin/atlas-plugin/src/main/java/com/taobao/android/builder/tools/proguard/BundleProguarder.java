@@ -524,7 +524,7 @@ public class BundleProguarder {
 
             for (File inputLibrary : awbTransform.getInputLibraries()) {
 
-                configs.add(INJARS_OPTION + " " + inputLibrary.getAbsolutePath());
+                configs.add(INJARS_OPTION + " " + inputLibrary.getAbsolutePath()+"(**.class)");
 
                 String name = FileNameUtils.getUniqueJarName(inputLibrary);
                 File obsJar = new File(proguardDir, name + ".jar");
@@ -551,7 +551,7 @@ public class BundleProguarder {
                     if (!dir.exists()){
                         continue;
                     }
-                    configs.add(INJARS_OPTION + " " + dir.getAbsolutePath());
+                    configs.add(INJARS_OPTION + " " + dir.getAbsolutePath()+"(**.class)");
 
                     String name = input.getFileMd5s().get(dir);
                     if (null == name) {

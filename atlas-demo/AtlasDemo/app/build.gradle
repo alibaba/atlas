@@ -87,6 +87,7 @@ atlas {
     tBuildConfig {
 //        preLaunch = 'com.taobao.demo.DemoPreLaunch'
         aaptConstantId true
+	title 'app_name'
         allBundlesToMdex  true
         dynamicFeatures=['remotebundle']
     }

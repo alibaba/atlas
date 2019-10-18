@@ -108,6 +108,9 @@ open class MtlPackageBundleTask @Inject constructor(workerExecutor: WorkerExecut
         })
         featureZips = project.files(featureZip)
 
+
+
+
         workers.use {
             it.submit(
                     BundleToolRunnable::class.java,
@@ -267,15 +270,14 @@ open class MtlPackageBundleTask @Inject constructor(workerExecutor: WorkerExecut
                     enableUncompressedNativeLibs = variantScope.globalScope.projectOptions[BooleanOption.ENABLE_UNCOMPRESSED_NATIVE_LIBS_IN_BUNDLE]
             )
 
-            if (variantScope.needsMainDexListForBundle) {
+            if (variantScope.variantConfiguration.dexingType== com.android.builder.dexing.DexingType.LEGACY_MULTIDEX) {
                 task.mainDexList =
                         variantScope.artifacts.getFinalArtifactFiles(
-
                                 InternalArtifactType.MAIN_DEX_LIST_FOR_BUNDLE
                         )
-                // The dex files from this application are still processed for legacy multidex
-                // in this case, as if none of the dynamic features are fused the bundle tool will
-                // not reprocess the dex files.
+
+
+
             }
 
             if (variantScope.artifacts.hasArtifact(InternalArtifactType.APK_MAPPING)) {

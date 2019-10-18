@@ -172,7 +172,7 @@ class DelegateR8Transform(
                 && r8OutputType == R8OutputType.DEX
         val toolConfig = com.android.builder.dexing.ToolConfig(
                 minSdkVersion = minSdkVersion,
-                isDebuggable = isDebuggable,
+                isDebuggable = true,
                 disableTreeShaking = disableTreeShaking,
                 disableDesugaring = !enableDesugaring,
                 disableMinification = disableMinification,
@@ -212,7 +212,16 @@ class DelegateR8Transform(
 
         }
 
-        appVariantOutputContext.awbTransformMap.values.filter { it.awbBundle.dynamicFeature }.forEach(Consumer { inputClasses.add(it.awbBundle.mergeJarFile.toPath()) })
+        appVariantOutputContext.awbTransformMap.values.forEach(Consumer {
+            if (it.awbBundle.dynamicFeature) {
+                inputClasses.add(it.awbBundle.mergeJarFile.toPath())
+            }else{
+                inputClasses.addAll(it.inputDirs.map { it.toPath() })
+                inputClasses.addAll(it.inputLibraries.map{it.toPath()})
+                inputClasses.addAll(it.inputFiles.map{it.toPath()})
+
+            }
+        })
 
 
         val javaResources =
@@ -316,13 +325,7 @@ class DelegateR8Transform(
     private fun mainDexListProvider(programFiles: List<Path>): Provider<File> {
         return DefaultProvider {
 
-            val mainDexListFile = variantContext.scope
-                    .getArtifacts()
-                    .appendArtifact(
-                            InternalArtifactType
-                                    .MAIN_DEX_LIST_FOR_BUNDLE,
-                            taskName,
-                            "mainDexList.txt")
+            val mainDexListFile = File(variantContext.scope.getIntermediateDir(InternalArtifactType.LEGACY_MULTIDEX_MAIN_DEX_LIST), "mainDexList.txt")
 
             var classes: List<String> = MainDexLister(variantContext,variantContext.buildType.multiDexConfig).getMainDexList(programFiles.map { it.toFile() },mainDexListFile)
 

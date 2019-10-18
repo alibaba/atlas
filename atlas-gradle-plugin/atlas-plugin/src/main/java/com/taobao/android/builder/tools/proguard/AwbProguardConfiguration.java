@@ -271,7 +271,9 @@ public class AwbProguardConfiguration {
         List<String> configs = Lists.newArrayList();
         //awbProguard for no lib, convenient for predex
         for (AwbTransform awbTransform : awbTransforms) {
-
+            if (!awbTransform.getAwbBundle().dynamicFeature && appVariantOutputContext.getVariantContext().getAtlasExtension().isAppBundlesEnabled()){
+                continue;
+            }
             List<File> inputLibraries = Lists.newArrayList();
 
             String name = awbTransform.getAwbBundle().getName();
@@ -282,7 +284,7 @@ public class AwbProguardConfiguration {
             if (null != awbTransform.getInputDirs() && awbTransform.getInputDirs().size() > 0) {
                 for (File dir : awbTransform.getInputDirs()) {
                     if (dir.exists()) {
-                        configs.add(INJARS_OPTION + " " + dir.getAbsolutePath());
+                        configs.add(INJARS_OPTION + " " + dir.getAbsolutePath()+"(**.class)");
 
                         File obsJar = new File(obuscateDir, "inputdir_" + OBUSCATED_JAR);
                         inputLibraries.add(obsJar);
@@ -295,7 +297,7 @@ public class AwbProguardConfiguration {
 
             Set<String> classNames = new HashSet<>();
             for (File inputLibrary : awbTransform.getInputLibraries()) {
-                configs.add(INJARS_OPTION + " " + inputLibrary.getAbsolutePath());
+                configs.add(INJARS_OPTION + " " + inputLibrary.getAbsolutePath()+"(**.class)");
 
                 String fileName = inputLibrary.getName();
 

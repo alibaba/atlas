@@ -349,10 +349,6 @@ public class BuildAtlasEnvTask extends AndroidBuilderTask {
                     try {
                         awbTransform.getAwbBundle().isMBundle = true;
                         awbTransform.getAwbBundle().bundleInfo.setIsMBundle(true);
-                        if (appVariantContext.getAtlasExtension().isAppBundlesEnabled()){
-                            awbTransform.getAwbBundle().getLibraryJars().forEach(file -> AtlasBuildContext.atlasMainDexHelperMap.get(getVariantName()).addMainDex(new FileIdentity(file.getName(),file,false,false)));
-                        }
-
 
 
                         field.set(mergeResources, new AppendMainArtifactsCollection(appVariantContext.getProject(), (ArtifactCollection) field.get(mergeResources), awbTransform.getAwbBundle(), ANDROID_RES));

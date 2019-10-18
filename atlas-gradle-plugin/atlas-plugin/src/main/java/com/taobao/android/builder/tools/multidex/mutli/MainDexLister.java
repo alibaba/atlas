@@ -413,6 +413,11 @@ public class MainDexLister {
 
     private void addRefClazz(ClassPool classPool, String clazz, Collection<String> classList, String root) {
 
+        if ((multiDexConfig.getMainDexListCount()!=0) && classList.size() > multiDexConfig.getMainDexListCount()){
+
+            return;
+        }
+
         if (classList.contains(clazz)) {
             return;
         }

@@ -189,7 +189,6 @@ open class PerModuleBundlesTask : AndroidVariantTask() {
         override fun configure(task: PerModuleBundlesTask) {
             super.configure(task)
 
-            val artifacts = variantScope.artifacts
 
             val featureName: Supplier<String> = Supplier { awbBundle.featureName }
 

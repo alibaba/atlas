@@ -221,15 +221,15 @@ import com.android.builder.signing.SigningException;
  */
 public class AndroidSigner {
 
-    public boolean signFile(File inFile, File outFile, DefaultSigningConfig signingConfig) throws IOException,
+    public boolean signFile(File inFile, File outFile, DefaultSigningConfig signingConfig,int minisdk) throws IOException,
             SigningException {
-        return LocalSignHelper.sign(inFile, outFile, signingConfig, "");
+        return LocalSignHelper.sign(inFile, outFile, signingConfig, "",minisdk);
     }
 
 
-    public boolean signFile(File inFile, File outFile, DefaultSigningConfig signingConfig, Map params) throws IOException,
+    public boolean signFile(File inFile, File outFile, DefaultSigningConfig signingConfig, int minisdk,Map params) throws IOException,
                                                                                                        SigningException {
-        return signFile(inFile,outFile,signingConfig);
+        return signFile(inFile,outFile,signingConfig,minisdk);
     }
 
 }

@@ -102,18 +102,14 @@ public class TransformReplacer {
                                 .setInBufferSize(projectOptions.get(IntegerOption.DEXING_READ_BUFFER_SIZE))
                                 .setOutBufferSize(
                                         projectOptions.get(IntegerOption.DEXING_WRITE_BUFFER_SIZE))
-                                .setIsDebuggable(
-                                        variantContext.getScope()
-                                                .getVariantConfiguration()
-                                                .getBuildType()
-                                                .isDebuggable())
+                                .setIsDebuggable(false)
                                 .setJava8LangSupportType(variantContext.getScope().getJava8LangSupportType())
                                 .setProjectVariant(getProjectVariantId(variantContext.getScope()))
                                 .setNumberOfBuckets(
                                         projectOptions.get(IntegerOption.DEXING_NUMBER_OF_BUCKETS))
                                 .setIncludeFeaturesInScope(variantContext.getScope().consumesFeatureJars())
                                 .setIsInstantRun(
-                                        variantContext.getScope().getInstantRunBuildContext().isInInstantRunMode())
+                                        false)
                                 .setEnableDexingArtifactTransform(false)
                                 .setIntermediateStreamHelper(new AtlasIntermediateStreamHelper(transformTask))
                                 .setAppVariantOutputContext(variantContext.getAppVariantOutputContext(ApkDataUtils.get(vod)))
@@ -134,22 +130,26 @@ public class TransformReplacer {
                 boolean instantRunMode = false;
                 DexingType dexingType = null;
                 FileCollection multidexFiles = null;
+                boolean isDebuggable = variantContext.getScope().getVariantConfiguration().getBuildType().isDebuggable();
                 if (variantContext.getScope().getInstantRunBuildContext().isInInstantRunMode() && !variantContext.getProject().hasProperty("devMode")) {
                     dexingType = DexingType.LEGACY_MULTIDEX;
                     instantRunMode = true;
+                    isDebuggable = variantContext.getBuildType().isDebuggable();
                     multidexFiles = variantContext.getProject().files(mainDexListProvider());
                 } else {
                     dexingType = variantContext.getScope().getDexingType();
 
                 }
-                boolean isDebuggable = variantContext.getScope().getVariantConfiguration().getBuildType().isDebuggable();
                 MtlDexMergeTransform dexTransform =
                         new MtlDexMergeTransform(
                                 variantContext.getAppVariantOutputContext(ApkDataUtils.get(vod)),
                                 dexingType,
                                 instantRunMode ?
                                         new BuildableArtifactImpl(multidexFiles) :
-                                        dexingType == DexingType.LEGACY_MULTIDEX ?
+                                        dexingType == DexingType.LEGACY_MULTIDEX ? variantContext.getAtlasExtension().isAppBundlesEnabled()? variantContext.getScope()
+                                                .getArtifacts()
+                                                .getFinalArtifactFiles(
+                                                        InternalArtifactType.MAIN_DEX_LIST_FOR_BUNDLE):
                                                 variantContext.getScope()
                                                         .getArtifacts()
                                                         .getFinalArtifactFiles(
@@ -164,7 +164,7 @@ public class TransformReplacer {
                                 variantContext.getScope().getMinSdkVersion().getFeatureLevel(),
                                 isDebuggable,
                                 variantContext.getScope().consumesFeatureJars(),
-                                variantContext.getScope().getInstantRunBuildContext().isInInstantRunMode());
+                                instantRunMode);
                 ReflectUtils.updateField(transformTask, "transform", dexTransform);
 
 
@@ -274,7 +274,7 @@ public class TransformReplacer {
         if (transforms1 != null && transforms1.size() > 0) {
             for (TransformTask transformTask : transforms1) {
                 TaobaoExtractJarsTransform taobaoExtractJarsTransform = new TaobaoExtractJarsTransform(variantContext, variantContext.getAppVariantOutputContext(ApkDataUtils.get(vod)), ImmutableSet.of(QualifiedContent.DefaultContentType.CLASSES),
-                        ImmutableSet.of(QualifiedContent.Scope.SUB_PROJECTS));
+                        ImmutableSet.of(QualifiedContent.Scope.SUB_PROJECTS,QualifiedContent.Scope.PROJECT));
                 ReflectUtils.updateField(transformTask, "transform", taobaoExtractJarsTransform);
             }
         }
@@ -332,12 +332,23 @@ public class TransformReplacer {
                     .getFeatureLevel()
                     < 21 && variantContext.getScope().getVariantConfiguration().isMultiDexEnabled())) {
 
-                mainDexListFile[0] = variantContext.getScope()
-                        .getArtifacts()
-                        .appendArtifact(
-                                InternalArtifactType.LEGACY_MULTIDEX_MAIN_DEX_LIST,
-                                transformTask.getName(),
-                                "mainDexList.txt");
+                if (variantContext.getAtlasExtension().isAppBundlesEnabled()){
+                    mainDexListFile[0] =
+                            variantContext.getScope()
+                                    .getArtifacts()
+                                    .appendArtifact(
+                                            InternalArtifactType
+                                                    .MAIN_DEX_LIST_FOR_BUNDLE,
+                                            transformTask.getName(),
+                                            "mainDexList.txt");
+                }else {
+                    mainDexListFile[0] = variantContext.getScope()
+                            .getArtifacts()
+                            .appendArtifact(
+                                    InternalArtifactType.LEGACY_MULTIDEX_MAIN_DEX_LIST,
+                                    transformTask.getName(),
+                                    "mainDexList.txt");
+                }
 
             }
 
@@ -421,11 +432,32 @@ public class TransformReplacer {
                 inputMapping = variantContext.getProject().files();
             }
 
+            File mainDexListFile =
+                    variantContext.getScope()
+                            .getArtifacts()
+                            .appendArtifact(
+                                    InternalArtifactType
+                                            .MAIN_DEX_LIST_FOR_BUNDLE,
+                                    transformTask.getName(),
+                                    "mainDexList.txt");
+
             R8Transform r8Transform = (R8Transform) transformTask.getTransform();
             DelegateR8Transform delegateR8Transform = new DelegateR8Transform(variantContext,variantContext.getAppVariantOutputContext(ApkDataUtils.get(vod)),variantContext.getScope(),userMainDexListFiles,userMainDexListProguardRules,inputMapping,variantContext.getScope().getOutputProguardMappingFile());
             delegateR8Transform.setR8Transform(r8Transform);
+            if (variantContext.getVariantConfiguration().getDexingType() == DexingType.LEGACY_MULTIDEX) {
+                delegateR8Transform.setMainDexListOutput(mainDexListFile);
+            }
             delegateR8Transform.setTaskName(transformTask.getName());
             ReflectUtils.updateField(transformTask,"transform",delegateR8Transform);
         });
     }
+
+    public void replaceProguardTransform(BaseVariantOutput vod) {
+        List<TransformTask> transforms = TransformManagerDelegate.findTransformTaskByTransformType(
+                variantContext, ProGuardTransform.class);
+        transforms.forEach(transformTask -> {
+            ReflectUtils.updateField(transformTask,"transform",new DelegateProguardTransform(variantContext,ApkDataUtils.get(vod)));
+        });
+    }
+
 }

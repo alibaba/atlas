@@ -220,6 +220,9 @@ public class TaobaoInstantRunTransform extends Transform {
         for (TransformInput input : invocation.getInputs()) {
             for (DirectoryInput directoryInput : input.getDirectoryInputs()) {
                 File inputDir = directoryInput.getFile();
+                if (inputDir.getPath().contains("intermediates/javac")){
+                    continue;
+                }
                 LOGGER.info("inputDir:"+inputDir.getAbsolutePath());
                 // non incremental mode, we need to traverse the TransformInput#getFiles()
                 // folder
@@ -418,6 +421,16 @@ public class TaobaoInstantRunTransform extends Transform {
 
         JarMerger jarMerger = new JarMerger(classesTwoOutputJar.toPath(),null);
         jarMerger.addDirectory(classesTwoOutput.toPath());
+//        awbBundleFileMap.values().forEach(new Consumer<File>() {
+//            @Override
+//            public void accept(File file) {
+//                try {
+//                    jarMerger.addJar(file.toPath());
+//                } catch (IOException e) {
+//                    e.printStackTrace();
+//                }
+//            }
+//        });
         jarMerger.close();
         org.apache.commons.io.FileUtils.deleteDirectory(classesTwoOutput);
 
@@ -464,6 +477,9 @@ public class TaobaoInstantRunTransform extends Transform {
 
             }
         });
+
+        awbBundleFileMap.values().forEach(file -> AtlasBuildContext.atlasMainDexHelperMap.get(variantContext.getVariantName()).addMainDex(new BuildAtlasEnvTask.FileIdentity(file.getName(),file,false,false)));
+
 
 //        TransformManagerDelegate.findTransformTaskByTransformType(variantContext, MtlDexArchiveBuilderTransform.class).forEach(new Consumer<TransformTask>() {
 //            @Override

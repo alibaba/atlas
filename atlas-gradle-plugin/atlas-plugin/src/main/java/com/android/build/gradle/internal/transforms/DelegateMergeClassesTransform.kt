@@ -67,25 +67,32 @@ class DelegateMergeClassesTransform(
 
         var fromDirectories = AtlasBuildContext.atlasMainDexHelperMap.get(appVariantContext.variantName)!!.inputDirs
 
-        context.getAppVariantOutputContext(apkData).awbTransformMap.values.filter { it.awbBundle.dynamicFeature }.forEach(Consumer {
-
+        context.getAppVariantOutputContext(apkData).awbTransformMap.values.forEach(Consumer {
             var files: List<File> = it.inputFiles
             val libraries: List<File> = it.inputLibraries
             val dirs: Collection<File> = ArrayList(it.inputDirs)
-            val featureOutputJarFile = context.getAppVariantOutputContext(apkData).getFeatureMergeClassesFile(it.awbBundle)
-            it.awbBundle.mergeJarFile = featureOutputJarFile
-            featureOutputJarFile.parentFile.mkdirs()
-            files = files + libraries
-            workers.use {
-                it.submit(
-                        JarWorkerRunnable::class.java,
-                        JarRequest(
-                                toFile = featureOutputJarFile,
-                                fromJars = files,
-                                fromDirectories = dirs as List<File>,
-                                filter = classFilter
-                        )
-                )
+
+            if (it.awbBundle.dynamicFeature) {
+
+                val featureOutputJarFile = context.getAppVariantOutputContext(apkData).getFeatureMergeClassesFile(it.awbBundle)
+                it.awbBundle.mergeJarFile = featureOutputJarFile
+                featureOutputJarFile.parentFile.mkdirs()
+                files = files + libraries
+                workers.use {
+                    it.submit(
+                            JarWorkerRunnable::class.java,
+                            JarRequest(
+                                    toFile = featureOutputJarFile,
+                                    fromJars = files,
+                                    fromDirectories = dirs as List<File>,
+                                    filter = classFilter
+                            )
+                    )
+
+                }
+            }else{
+                fromJars.addAll(files+libraries)
+                fromDirectories.addAll(dirs)
 
             }
 

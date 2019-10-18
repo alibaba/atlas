@@ -7,6 +7,7 @@ import com.android.build.gradle.internal.ApkDataUtils;
 import com.android.build.gradle.internal.PostprocessingFeatures;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
+import com.android.build.gradle.internal.api.AwbTransform;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.pipeline.InjectTransform;
 import com.android.build.gradle.internal.pipeline.IntermediateFolderUtils;
@@ -98,7 +99,7 @@ public class DelegateProguardTransform extends MtlInjectTransform {
 
     @Override
     public Set<QualifiedContent.ContentType> getInputTypes() {
-        return TransformManager.CONTENT_JARS;
+        return TransformManager.CONTENT_CLASS;
     }
 
     @Override
@@ -249,6 +250,38 @@ public class DelegateProguardTransform extends MtlInjectTransform {
             }
         });
 
+        if (appVariantContext.getAtlasExtension().isAppBundlesEnabled()){
+
+            getAppVariantOutputContext().getAwbTransformMap().values().forEach(new Consumer<AwbTransform>() {
+                @Override
+                public void accept(AwbTransform awbTransform) {
+                    if (!awbTransform.getAwbBundle().dynamicFeature){
+                        awbTransform.getInputDirs().forEach(new Consumer<File>() {
+                            @Override
+                            public void accept(File file) {
+                                directoryInputs.add(TransformInputUtils.makeDirectoryInput(file));
+                            }
+                        });
+                        awbTransform.getInputLibraries().forEach(new Consumer<File>() {
+                            @Override
+                            public void accept(File file) {
+                                jarInputs.add(TransformInputUtils.makeJarInput(file, appVariantContext));
+
+                            }
+                        });
+                        awbTransform.getInputFiles().forEach(new Consumer<File>() {
+                            @Override
+                            public void accept(File file) {
+                                jarInputs.add(TransformInputUtils.makeJarInput(file, appVariantContext));
+
+                            }
+                        });
+                    }
+                }
+            });
+
+        }
+
         return Sets.newHashSet(new TransformInput() {
             @Override
             public Collection<JarInput> getJarInputs() {
@@ -260,6 +293,7 @@ public class DelegateProguardTransform extends MtlInjectTransform {
                 return directoryInputs;
             }
         });
+
 
 
     }

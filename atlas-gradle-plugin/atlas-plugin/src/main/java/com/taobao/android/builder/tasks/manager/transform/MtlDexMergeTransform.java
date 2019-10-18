@@ -11,13 +11,15 @@ import com.android.build.gradle.internal.api.AppVariantOutputContext;
 import com.android.build.gradle.internal.api.AwbTransform;
 import com.android.build.gradle.internal.api.artifact.BuildableArtifactUtil;
 import com.android.build.gradle.internal.crash.PluginCrashReporter;
+import com.android.build.gradle.internal.errors.MessageReceiverImpl;
 import com.android.build.gradle.internal.pipeline.ExtendedContentType;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.transforms.DexMergerTransform;
 import com.android.build.gradle.internal.transforms.DexMergerTransformCallable;
 import com.android.build.gradle.internal.transforms.TransformInputUtil;
-import com.android.builder.dexing.DexMergerTool;
-import com.android.builder.dexing.DexingType;
+import com.android.build.gradle.options.SyncOptions;
+import com.android.builder.dexing.*;
+import com.android.dx.command.dexer.DxContext;
 import com.android.ide.common.blame.Message;
 import com.android.ide.common.blame.MessageReceiver;
 import com.android.ide.common.blame.ParsingProcessOutputHandler;
@@ -26,6 +28,7 @@ import com.android.ide.common.blame.parser.ToolOutputParser;
 import com.android.ide.common.process.ProcessException;
 import com.android.ide.common.process.ProcessOutput;
 import com.android.ide.common.process.ProcessOutputHandler;
+import com.android.tools.r8.*;
 import com.android.utils.FileUtils;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
@@ -101,7 +104,7 @@ public class MtlDexMergeTransform extends Transform {
         this.duplicateClassesCheck = duplicateClassesCheck;
         this.dexMerger = dexMerger;
         this.minSdkVersion = minSdkVersion;
-        this.isDebuggable = isDebuggable;
+        this.isDebuggable = false;
         Preconditions.checkState(
                 (dexingType == DexingType.LEGACY_MULTIDEX) == (mainDexListFile != null),
                 "Main dex list must only be set when in legacy multidex");
@@ -209,7 +212,6 @@ public class MtlDexMergeTransform extends Transform {
             } else {
                 mergeTasks = mergeDex(transformInvocation.getInputs(), output, outputProvider);
             }
-
             if (variantOutputContext.getVariantContext().getAtlasExtension().isAppBundlesEnabled() && variantOutputContext.getVariantContext().getAtlasExtension().getTBuildConfig().getDynamicFeatures().size() > 0) {
 
                 ProcessOutput finalOutput = output;
@@ -234,7 +236,7 @@ public class MtlDexMergeTransform extends Transform {
                                 return;
                             }
 
-                            mergeTasks.add(submitForMerging(finalOutput, outputDir, dexArchives, null));
+                            mergeTasks.add(submitForFeatureMerging(finalOutput, outputDir, dexArchives, null));
                         }
                     }
                 });
@@ -243,22 +245,25 @@ public class MtlDexMergeTransform extends Transform {
 
             // now wait for all merge tasks completion
             mergeTasks.forEach(ForkJoinTask::join);
-        } catch (Exception e) {
-            PluginCrashReporter.maybeReportException(e);
-            // Print the error always, even without --stacktrace
-            logger.error(null, Throwables.getStackTraceAsString(e));
-            throw new TransformException(e);
-        } finally {
-            if (output != null) {
-                try {
-                    outputHandler.handleOutput(output);
-                } catch (ProcessException e) {
-                    // ignore this one
-                }
-            }
-            forkJoinPool.shutdown();
-            forkJoinPool.awaitTermination(100, TimeUnit.SECONDS);
+
         }
+    }
+
+    private ForkJoinTask<Void> submitForFeatureMerging(ProcessOutput output, File dexOutputDir, Iterator<Path> dexArchives, Path mainDexList) {
+        DexMergerTransformCallable callable =
+                new DexMergerTransformCallable(
+                        messageReceiver,
+                        DexingType.MONO_DEX,
+                        output,
+                        dexOutputDir,
+                        dexArchives,
+                        mainDexList,
+                        forkJoinPool,
+                        dexMerger,
+                        14,
+                        isDebuggable);
+        return forkJoinPool.submit(callable);
+
     }
 
     /**
@@ -591,7 +596,7 @@ public class MtlDexMergeTransform extends Transform {
         DexMergerTransformCallable callable =
                 new DexMergerTransformCallable(
                         messageReceiver,
-                        DexingType.MONO_DEX,
+                        dexingType,
                         output,
                         dexOutputDir,
                         dexArchives,
@@ -623,4 +628,7 @@ public class MtlDexMergeTransform extends Transform {
             @NonNull Set<? super QualifiedContent.Scope> scopes) {
         return outputProvider.getContentLocation(name, getOutputTypes(), scopes, Format.DIRECTORY);
     }
+
+
+
 }

@@ -276,10 +276,13 @@ public class ApkInjectInfoCreator {
 
             BasicBundleInfo basicBundleInfo = new BasicBundleInfo();
             basicBundleInfo.setDynamicFeature(awbBundle.dynamicFeature);
-            basicBundleInfo.setFeatureName(awbBundle.getFeatureName());
+            if (awbBundle.dynamicFeature) {
+                basicBundleInfo.setFeatureName(awbBundle.getFeatureName());
+            }
             basicBundleInfo.setApplicationName(bundleInfo.getApplicationName());
             basicBundleInfo.setVersion(bundleInfo.getVersion());
             basicBundleInfo.setPkgName(bundleInfo.getPkgName());
+            basicBundleInfo.setActivities(bundleInfo.getActivities());
 
 
 

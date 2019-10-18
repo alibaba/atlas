@@ -230,7 +230,7 @@ import static com.android.sdklib.BuildToolInfo.PathId.ZIP_ALIGN;
  */
 public class BuildHelper {
 
-    public static File doSign(File apkFile, DefaultSigningConfig signConfig) throws IOException, SigningException {
+    public static File doSign(File apkFile, DefaultSigningConfig signConfig,int minisdk) throws IOException, SigningException {
 
         if (null == signConfig) {
             return apkFile;
@@ -238,13 +238,13 @@ public class BuildHelper {
 
         File signFile = new File(apkFile.getParent(), apkFile.getName().replace(".apk", "-signed.apk"));
 
-        AtlasBuildContext.sBuilderAdapter.androidSigner.signFile(apkFile, signFile, signConfig);
+        AtlasBuildContext.sBuilderAdapter.androidSigner.signFile(apkFile, signFile, signConfig,minisdk);
 
         return signFile;
     }
 
 
-    public static File reSign(File apkFile, DefaultSigningConfig signConfig) throws IOException, SigningException {
+    public static File reSign(File apkFile, DefaultSigningConfig signConfig,int minisdk) throws IOException, SigningException {
 
         String filePath = apkFile.getAbsolutePath();
         File workDir = new File(apkFile.getParentFile(), "_tmpsign");
@@ -254,7 +254,7 @@ public class BuildHelper {
         Pattern pattern = Pattern.compile("META-INF");
         ZipUtils.removeZipEntry(apkFile, pattern, unsignedApk);
 
-        AtlasBuildContext.sBuilderAdapter.androidSigner.signFile(unsignedApk, apkFile, signConfig);
+        AtlasBuildContext.sBuilderAdapter.androidSigner.signFile(unsignedApk, apkFile, signConfig, minisdk);
 
         apkFile.renameTo(new File(filePath));
         FileUtils.deleteDirectory(workDir);

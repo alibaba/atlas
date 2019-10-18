@@ -288,7 +288,7 @@ public class MtlDexArchiveBuilderTransform extends Transform {
 
     @Override
     public boolean isIncremental() {
-        return true;
+        return false;
     }
 
     @Override
@@ -354,13 +354,12 @@ public class MtlDexArchiveBuilderTransform extends Transform {
                     classpathServiceKey, () -> new MtlDexArchiveBuilderTransform.ClasspathService(libraryClasspathProvider));
 
             for (TransformInput input : transformInvocation.getInputs()) {
-
                 for (DirectoryInput dirInput : input.getDirectoryInputs()) {
-                    logger.warning("Dir input %s", dirInput.getFile().toString());
-                    if (variantOutputContext.getVariantContext().getAtlasExtension().isAppBundlesEnabled()
-                            && !AtlasBuildContext.atlasMainDexHelperMap.get(variantOutputContext.getVariantContext().getVariantName()).getInputDirs().contains(dirInput.getFile())) {
+                    if (!AtlasBuildContext.atlasMainDexHelperMap.get(variantOutputContext.getVariantContext().getVariantName()).getInputDirs().contains(dirInput.getFile())) {
                         continue;
                     }
+                    logger.warning("Dir input %s", dirInput.getFile().toString());
+
                     convertToDexArchive(
                             transformInvocation.getContext(),
                             dirInput,
@@ -372,14 +371,13 @@ public class MtlDexArchiveBuilderTransform extends Transform {
                 }
 
                 for (JarInput jarInput : input.getJarInputs()) {
-                    logger.warning("Jar input %s", jarInput.getFile().toString());
-                    if (variantOutputContext.getVariantContext().getAtlasExtension().isAppBundlesEnabled() && !AtlasBuildContext.atlasMainDexHelperMap.get(variantOutputContext.getVariantContext().getVariantName()).getAllMainDexJars().contains(jarInput.getFile())) {
+                    if ( !AtlasBuildContext.atlasMainDexHelperMap.get(variantOutputContext.getVariantContext().getVariantName()).getAllMainDexJars().contains(jarInput.getFile())) {
                         continue;
                     }
                     if (jarInput.getFile().getName().equals("instant-run-bootstrap.jar")){
                         continue;
                     }
-
+                    logger.warning("Jar input %s", jarInput.getFile().toString());
                     MtlDexArchiveBuilderTransform.D8DesugaringCacheInfo cacheInfo =
                             getD8DesugaringCacheInfo(
                                     desugarIncrementalTransformHelper,
@@ -897,7 +895,7 @@ public class MtlDexArchiveBuilderTransform extends Transform {
                             outBufferSize,
                             dexer,
                             isDebuggable,
-                            isIncremental,
+                            false,
                             java8LangSupportType,
                             additionalPaths,
                             new SerializableMessageReceiver(messageReceiver),
@@ -984,6 +982,9 @@ public class MtlDexArchiveBuilderTransform extends Transform {
                 FileUtils.mkdirs(preDexOutputFile);
             }else {
                 preDexOutputFile = getFeatureOutputJar(awbBundle, atomicInteger.getAndIncrement());
+                if (!preDexOutputFile.getParentFile().exists()){
+                    preDexOutputFile.getParentFile().mkdirs();
+                }
 
             }
 

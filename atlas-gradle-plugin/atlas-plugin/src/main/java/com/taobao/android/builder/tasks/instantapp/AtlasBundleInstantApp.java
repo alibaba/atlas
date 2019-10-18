@@ -98,7 +98,7 @@ public class AtlasBundleInstantApp extends AndroidBuilderTask {
         zipOutputStream.close();
         AndroidSigner androidSigner = new AndroidSigner();
         File signedApk = new File(baseFeatureApk.getParentFile(), "baseFeature-signed.apk");
-        androidSigner.signFile(baseFeatureApk, signedApk, (DefaultSigningConfig) signingConfig);
+        androidSigner.signFile(baseFeatureApk, signedApk, (DefaultSigningConfig) signingConfig,14);
         BetterZip.addFile(bundleFile,"baseFeature.apk",signedApk);
         FileUtils.deleteIfExists(signedApk);
         FileUtils.deleteIfExists(baseFeatureApk);
