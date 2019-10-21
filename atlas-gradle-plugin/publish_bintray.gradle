@@ -19,7 +19,16 @@ project.afterEvaluate {
                 from components.java
                 artifact sourcesJar
 
+                pom.withXml {
+                    asNode().dependencies.'*'.each {
+                        if (it.scope.text() == 'runtime') {
+                            it.scope*.value = 'compile'
+                        }
+                    }
+                }
+
             }
+
         }
     }  
     
