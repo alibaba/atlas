@@ -11,15 +11,20 @@ task sourcesJar(type: Jar) {
     }
     classifier = 'sources'
 }
-publishing {
-    publications {
-        MyPublication(MavenPublication) {
-            from components.java
-            artifact sourcesJar
 
+project.afterEvaluate {
+    publishing {
+        publications {
+            MyPublication(MavenPublication) {
+                from components.java
+                artifact sourcesJar
+
+            }
         }
-    }
+    }  
+    
 }
+
 
 Properties properties = new Properties()
 def file = project.rootProject.file('local.properties')
