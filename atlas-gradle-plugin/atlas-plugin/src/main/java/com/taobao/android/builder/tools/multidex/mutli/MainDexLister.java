@@ -353,7 +353,7 @@ public class MainDexLister {
 
 
 
-        if (multiDexConfig.getMainDexListCount()!=0){
+        if (multiDexConfig.getMainDexListCount()!=0 && maindexListClazz.size() > multiDexConfig.getMainDexListCount()){
             maindexListClazz = maindexListClazz.subList(0,multiDexConfig.getMainDexListCount());
         }
 
