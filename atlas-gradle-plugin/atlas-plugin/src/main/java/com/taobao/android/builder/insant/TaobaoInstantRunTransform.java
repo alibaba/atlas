@@ -250,6 +250,7 @@ public class TaobaoInstantRunTransform extends Transform {
                     boolean isAdd = false;
                     switch (codeChange.py) {
                         case ADD:
+                            LOGGER.warning("ADD CLASS:" + className);
                             modifyClasses.put(className, PatchPolicy.ADD.name());
                             workItems.add(() -> transformToClasses2Format(
                                     inputDir,
@@ -263,6 +264,7 @@ public class TaobaoInstantRunTransform extends Transform {
                             if (errors.contains(path)) {
                                 exceptions.add(new TransformException(path + " is not support modify because inject error in base build!"));
                             }
+                            LOGGER.warning("MODIFY CLASS:" + className);
                             modifyClasses.put(className, PatchPolicy.MODIFY.name());
                             workItems.add(() -> transformToClasses3Format(
                                     codeChange, inputDir,
@@ -315,6 +317,7 @@ public class TaobaoInstantRunTransform extends Transform {
                     boolean isAdd = false;
                     switch (codeChange.py) {
                         case ADD:
+                            LOGGER.warning("ADD CLASS:" + className);
                             modifyClasses.put(className, PatchPolicy.ADD.name());
                             workItems.add(() -> transformToClasses2Format(
                                     dir,
@@ -328,6 +331,7 @@ public class TaobaoInstantRunTransform extends Transform {
                             if (errors.contains(path)) {
                                 exceptions.add(new TransformException(path + " is not support modify because inject error in base build!"));
                             }
+                            LOGGER.warning("MODIFY CLASS:" + className);
                             modifyClasses.put(className, PatchPolicy.MODIFY.name());
                             workItems.add(() -> transformToClasses3Format(codeChange,
                                     dir,
@@ -400,27 +404,27 @@ public class TaobaoInstantRunTransform extends Transform {
             }
         }
 
-        variantOutputContext.getAwbTransformMap().values().parallelStream().forEach(awbTransform -> {
-            try {
-                File outJar = new File(awbBundleFileMap.get(awbTransform.getAwbBundle()).getParentFile(),awbTransform.getAwbBundle().getName()+".jar");
-                JarMerger jarMerger = new JarMerger(outJar.toPath(),null);
-                jarMerger.addDirectory(awbBundleFileMap.get(awbTransform.getAwbBundle()).toPath());
-                jarMerger.close();
-                awbTransform.getInputLibraries().clear();
-                awbTransform.getInputFiles().clear();
-                awbTransform.getInputDirs().clear();
-                awbTransform.getInputFiles().add(outJar);
-                org.apache.commons.io.FileUtils.deleteDirectory(awbBundleFileMap.get(awbTransform.getAwbBundle()));
-                awbBundleFileMap.put(awbTransform.getAwbBundle(),outJar);
-            }catch (Exception e){
+        if (!variantContext.getBuildType().getPatchConfig().isCreateIPatch()) {
+            variantOutputContext.getAwbTransformMap().values().parallelStream().forEach(awbTransform -> {
+                try {
+                    File outJar = new File(awbBundleFileMap.get(awbTransform.getAwbBundle()).getParentFile(), awbTransform.getAwbBundle().getName() + ".jar");
+                    JarMerger jarMerger = new JarMerger(outJar.toPath(), null);
+                    jarMerger.addDirectory(awbBundleFileMap.get(awbTransform.getAwbBundle()).toPath());
+                    jarMerger.close();
+                    awbTransform.getInputLibraries().clear();
+                    awbTransform.getInputFiles().clear();
+                    awbTransform.getInputDirs().clear();
+                    awbTransform.getInputFiles().add(outJar);
+                    org.apache.commons.io.FileUtils.deleteDirectory(awbBundleFileMap.get(awbTransform.getAwbBundle()));
+                    awbBundleFileMap.put(awbTransform.getAwbBundle(), outJar);
+                } catch (Exception e) {
 
-            }
-        });
+                }
+            });
 
 
-
-        JarMerger jarMerger = new JarMerger(classesTwoOutputJar.toPath(),null);
-        jarMerger.addDirectory(classesTwoOutput.toPath());
+            JarMerger jarMerger = new JarMerger(classesTwoOutputJar.toPath(), null);
+            jarMerger.addDirectory(classesTwoOutput.toPath());
 //        awbBundleFileMap.values().forEach(new Consumer<File>() {
 //            @Override
 //            public void accept(File file) {
@@ -431,8 +435,9 @@ public class TaobaoInstantRunTransform extends Transform {
 //                }
 //            }
 //        });
-        jarMerger.close();
-        org.apache.commons.io.FileUtils.deleteDirectory(classesTwoOutput);
+            jarMerger.close();
+            org.apache.commons.io.FileUtils.deleteDirectory(classesTwoOutput);
+        }
 
 
         // If our classes.2 transformations indicated that a cold swap was necessary,
@@ -469,18 +474,19 @@ public class TaobaoInstantRunTransform extends Transform {
 //        });
 
 
+        if (!variantContext.getBuildType().getPatchConfig().isCreateIPatch()) {
 
-        TransformManagerDelegate.findTransformTaskByTransformType(variantContext, MtlDexArchiveBuilderTransform.class).forEach(new Consumer<TransformTask>() {
-            @Override
-            public void accept(TransformTask transformTask) {
-                (variantContext.getTransformManager()).addStreamsForTask(transformTask, InternalScope.MAIN_SPLIT,QualifiedContent.DefaultContentType.CLASSES,"awb-instantpatch-classess",variantContext.getProject().files(awbBundleFileMap.values()));
+            TransformManagerDelegate.findTransformTaskByTransformType(variantContext, MtlDexArchiveBuilderTransform.class).forEach(new Consumer<TransformTask>() {
+                @Override
+                public void accept(TransformTask transformTask) {
+                    (variantContext.getTransformManager()).addStreamsForTask(transformTask, InternalScope.MAIN_SPLIT, QualifiedContent.DefaultContentType.CLASSES, "awb-instantpatch-classess", variantContext.getProject().files(awbBundleFileMap.values()));
 
-            }
-        });
+                }
+            });
 
-        awbBundleFileMap.values().forEach(file -> AtlasBuildContext.atlasMainDexHelperMap.get(variantContext.getVariantName()).addMainDex(new BuildAtlasEnvTask.FileIdentity(file.getName(),file,false,false)));
+            awbBundleFileMap.values().forEach(file -> AtlasBuildContext.atlasMainDexHelperMap.get(variantContext.getVariantName()).addMainDex(new BuildAtlasEnvTask.FileIdentity(file.getName(), file, false, false)));
 
-
+        }
 //        TransformManagerDelegate.findTransformTaskByTransformType(variantContext, MtlDexArchiveBuilderTransform.class).forEach(new Consumer<TransformTask>() {
 //            @Override
 //            public void accept(TransformTask transformTask) {
@@ -672,6 +678,7 @@ public class TaobaoInstantRunTransform extends Transform {
     @Nullable
     protected Void transformToClasses3Format(CodeChange codeChange, File inputDir, File inputFile, File outputDir)
             throws IOException {
+        LOGGER.warning("transformToClasses3Format:" + inputFile.getPath());
 
 
         File outputFile =

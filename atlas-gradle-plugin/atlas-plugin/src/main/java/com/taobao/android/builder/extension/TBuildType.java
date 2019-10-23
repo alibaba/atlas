@@ -326,9 +326,9 @@ public class TBuildType {
     }
 
     public PatchConfig getPatchConfig() {
-        if (patchConfig == null){
-            patchConfig = new PatchConfig(name);
-        }
+//        if (patchConfig == null){
+//            patchConfig = new PatchConfig(name);
+//        }
         return patchConfig;
     }
 

@@ -43,8 +43,10 @@ public class ModifyClassVisitor extends ClassVisitor {
         @Override
         public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
             if (desc.equals(TBIncrementalVisitor.ADD_CLASS.getDescriptor()) && visible) {
+                System.err.println("add class:"+TBIncrementalVisitor.ADD_CLASS.getDescriptor());
                 codeChange.setPy(TaobaoInstantRunTransform.PatchPolicy.ADD);
             } else if (desc.equals(TBIncrementalVisitor.MODIFY_CLASS.getDescriptor()) && visible) {
+                System.err.println("modify class:"+TBIncrementalVisitor.MODIFY_CLASS.getDescriptor());
                 codeChange.setPy(TaobaoInstantRunTransform.PatchPolicy.MODIFY);
             }
             return super.visitAnnotation(desc, visible);

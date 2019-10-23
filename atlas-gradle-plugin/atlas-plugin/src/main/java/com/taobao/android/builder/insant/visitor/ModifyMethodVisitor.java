@@ -29,6 +29,7 @@ public class ModifyMethodVisitor extends MethodVisitor {
     public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
         if (desc.equals(TBIncrementalVisitor.MODIFY_METHOD.getDescriptor()) && visible && codeChange.getPy()!= TaobaoInstantRunTransform.PatchPolicy.ADD) {
             codeChange.setPy(TaobaoInstantRunTransform.PatchPolicy.MODIFY);
+            System.err.println("modify method:"+ methodDesc);
         }else if (desc.equals(TBIncrementalVisitor.ADD_METHOD.getDescriptor()) && visible){
             codeChange.setPy(TaobaoInstantRunTransform.PatchPolicy.MODIFY);
             TaobaoInstantRunTransform.CodeChange codeChange = new TaobaoInstantRunTransform.CodeChange();
