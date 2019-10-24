@@ -43,7 +43,7 @@ public class AtlasIntermediateStreamHelper{
         e.printStackTrace();
         }
 
-        task.getLogger().warn("replace replaceProvider success 111!");
+        task.getLogger().warn("replace replaceProvider success");
 
 
     }

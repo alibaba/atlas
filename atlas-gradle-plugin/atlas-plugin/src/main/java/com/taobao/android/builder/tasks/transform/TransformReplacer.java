@@ -102,7 +102,7 @@ public class TransformReplacer {
                                 .setInBufferSize(projectOptions.get(IntegerOption.DEXING_READ_BUFFER_SIZE))
                                 .setOutBufferSize(
                                         projectOptions.get(IntegerOption.DEXING_WRITE_BUFFER_SIZE))
-                                .setIsDebuggable(false)
+                                .setIsDebuggable(variantContext.getBuildType().isDebuggable())
                                 .setJava8LangSupportType(variantContext.getScope().getJava8LangSupportType())
                                 .setProjectVariant(getProjectVariantId(variantContext.getScope()))
                                 .setNumberOfBuckets(
