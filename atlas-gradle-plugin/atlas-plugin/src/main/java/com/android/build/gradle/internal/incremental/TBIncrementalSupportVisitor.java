@@ -120,12 +120,12 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
         if (isInterface && patchInterface) {
             super.visitField(
                     fieldAccess,
-                    "$change",
+                    "$ipChange",
                     getRuntimeTypeName(Type.getType(AtomicReference.class)),
                     null,
                     null);
         } else {
-            super.visitField(fieldAccess, "$change", getRuntimeTypeName(ALI_CHANGE_TYPE), null, null);
+            super.visitField(fieldAccess, "$ipChange", getRuntimeTypeName(ALI_CHANGE_TYPE), null, null);
         }
         access = transformClassAccessForInstantRun(access);
         super.visit(version, access, name, signature, superName, interfaces);
