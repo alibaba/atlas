@@ -407,7 +407,7 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
             visitFieldInsn(
                     Opcodes.GETSTATIC,
                     visitedClassName,
-                    "$change",
+                    "$ipChange",
                     getRuntimeTypeName(ALI_CHANGE_TYPE));
         }
     }
@@ -423,7 +423,7 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
             visitFieldInsn(
                     Opcodes.GETSTATIC,
                     visitedClassName,
-                    "$change",
+                    "$ipChange",
                     getRuntimeTypeName(Type.getType(AtomicReference.class)));
             mv.visitMethodInsn(
                     Opcodes.INVOKEVIRTUAL,
@@ -739,7 +739,7 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
         mv.visitFieldInsn(
                 Opcodes.PUTSTATIC,
                 visitedClassName,
-                "$change",
+                "$ipChange",
                 "Ljava/util/concurrent/atomic/AtomicReference;");
     }
 
