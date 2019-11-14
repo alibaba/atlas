@@ -272,8 +272,11 @@ public class AtlasDepTreeParser {
     public AtlasDependencyTree parseDependencyTree(@NonNull VariantDependencies variantDeps) {
 //
         String name = variantDeps.getName().toLowerCase();
-        if (!name.endsWith("debug") && !name.endsWith("release")) {
+        if (name.endsWith("test")){
             return new AtlasDependencyTree(new ArrayList<>());
+        }
+        if (!name.endsWith("debug") && !name.endsWith("release")) {
+//            return new AtlasDependencyTree(new ArrayList<>());
         }
         if (!name.equals("debug") && name.endsWith("debug")){
             flavorName = variantDeps.getName().substring(0,name.length()-5);
@@ -401,6 +404,8 @@ public class AtlasDepTreeParser {
     private String newName(String name) {
         if (!StringUtils.isEmpty(flavorName)) {
             name = name.replace(flavorName, "");
+        }else {
+            return "debug";
         }
         if (name.startsWith("Debug")) {
             name = name.replace("Debug", "debug");
