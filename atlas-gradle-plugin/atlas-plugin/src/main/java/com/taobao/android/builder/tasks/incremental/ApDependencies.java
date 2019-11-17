@@ -486,9 +486,9 @@ public class ApDependencies /*extends BaseTask*/ {
         //     return null;
         // }
         if (!(row.size() == 1)) {
-            throw new IllegalStateException(
-                    String.valueOf(
-                            "Unable to find AwbDependencies for '" + moduleIdentifier + "'"));
+            throw new IllegalStateException(String.valueOf(
+                    "Unable to find AwbDependencies for '" + moduleIdentifier + "'"
+                            + ": 请检查基线是否存在该模块"));
         }
         Entry<ParsedModuleStringNotation, ParsedModuleStringNotation> element = Iterables
                 .getOnlyElement(row.entrySet());
