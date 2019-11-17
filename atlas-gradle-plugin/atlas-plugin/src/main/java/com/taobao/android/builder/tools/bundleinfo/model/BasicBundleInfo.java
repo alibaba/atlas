@@ -209,10 +209,12 @@
 
 package com.taobao.android.builder.tools.bundleinfo.model;
 
-import java.util.HashMap;
-import java.util.Set;
+import static com.taobao.android.builder.tools.MD5Util.getMD5;
 
 import com.google.common.collect.Sets;
+
+import java.util.HashMap;
+import java.util.Set;
 
 /**
  * Created by wuzhong on 2016/11/24.
@@ -355,8 +357,17 @@ public class BasicBundleInfo {
   }
 
   public String getUnique_tag() {
+    if (unique_tag == null) {
+      unique_tag = onCreateUnique_tag();
+    }
+
     return unique_tag;
   }
+
+  protected String onCreateUnique_tag() {
+    return getMD5(pkgName + version);
+  }
+
 
   public void setUnique_tag(String unique_tag) {
     this.unique_tag = unique_tag;
