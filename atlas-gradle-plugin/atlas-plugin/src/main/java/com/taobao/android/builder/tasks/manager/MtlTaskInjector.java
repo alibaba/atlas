@@ -264,14 +264,21 @@ public class MtlTaskInjector {
                         }
                     }
                 } else {
-                    TaskProvider<? extends Task> task = mtlTaskFactory.register(variantContext, vod, mtlTaskContext.getTaskActionClazz());
-                    if (null != task) {
+
+                    if (mtlTaskFactory.createExistTask(variantContext, vod, mtlTaskContext.getTaskActionClazz()) != null) {
+                        tasks.add(mtlTaskFactory.createExistTask(variantContext, vod, mtlTaskContext.getTaskActionClazz()));
+
+                    } else {
+
+                        TaskProvider<? extends Task> task = mtlTaskFactory.register(variantContext, vod, mtlTaskContext.getTaskActionClazz());
+                        if (null != task) {
 
 //                        if (null != androidBuilder && task instanceof AndroidBuilderTask) {
 //                            ((AndroidBuilderTask)task).setAndroidBuilder(androidBuilder);
 //                        }
 
-                        tasks.add(task.get());
+                            tasks.add(task.get());
+                        }
                     }
                 }
 

@@ -217,9 +217,13 @@ import proguard.obfuscate.MappingProcessor;
 public class MappingReaderProcess implements MappingProcessor {
     public Map<String, String> classMapping = Maps.newHashMap();
 
+    public Map<String, String> reversedClassMapping = Maps.newHashMap();
+
+
     @Override
     public boolean processClassMapping(String className, String newClassName) {
         classMapping.put(newClassName, className);
+        reversedClassMapping.put(className,newClassName);
         return true;
     }
 

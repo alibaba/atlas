@@ -219,7 +219,7 @@ import org.gradle.api.tasks.TaskProvider;
  */
 public interface MtlTaskFactory {
 
-    Task createTask(VariantContext variantContext, BaseVariantOutput vod, Class<? extends MtlBaseTaskAction> baseTaskAction);
+    Task createExistTask(VariantContext variantContext, BaseVariantOutput vod, Class<? extends MtlBaseTaskAction> baseTaskAction);
 
 
     TaskProvider register(VariantContext variantContext, BaseVariantOutput vod, Class<? extends MtlBaseTaskAction> baseTaskAction);

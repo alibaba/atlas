@@ -155,7 +155,7 @@ open class MtlPackageBundleTask @Inject constructor(workerExecutor: WorkerExecut
             val noCompressGlobsForBundle =
                     com.android.builder.packaging.PackagingUtils.getNoCompressGlobsForBundle(params.aaptOptionsNoCompress)
 
-            val splitsConfig = Config.SplitsConfig.newBuilder()
+                val splitsConfig = Config.SplitsConfig.newBuilder()
                     .splitBy(Config.SplitDimension.Value.ABI, params.bundleOptions.enableAbi)
                     .splitBy(Config.SplitDimension.Value.SCREEN_DENSITY, params.bundleOptions.enableDensity)
                     .splitBy(Config.SplitDimension.Value.LANGUAGE, params.bundleOptions.enableLanguage)
@@ -258,13 +258,8 @@ open class MtlPackageBundleTask @Inject constructor(workerExecutor: WorkerExecut
             task.aaptOptionsNoCompress =
                     variantScope.globalScope.extension.aaptOptions.noCompress ?: listOf()
 
-            if (variantScope.type.isHybrid) {
-                task.bundleOptions =
-                        ((variantScope.globalScope.extension as FeatureExtension).bundle).convert()
-            } else {
                 task.bundleOptions =
                         ((variantScope.globalScope.extension as BaseAppModuleExtension).bundle).convert()
-            }
 
             task.bundleFlags = BundleFlags(
                     enableUncompressedNativeLibs = variantScope.globalScope.projectOptions[BooleanOption.ENABLE_UNCOMPRESSED_NATIVE_LIBS_IN_BUNDLE]

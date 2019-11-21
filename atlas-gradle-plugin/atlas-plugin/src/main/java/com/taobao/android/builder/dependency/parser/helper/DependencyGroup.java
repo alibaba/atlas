@@ -301,7 +301,6 @@ public class DependencyGroup {
 //        }
         for (Dependency dependency : compileClasspath.getAllDependencies()) {
             if (dependency instanceof DefaultExternalModuleDependency) {
-                DefaultExternalModuleDependency externalModuleDependency = (DefaultExternalModuleDependency)dependency;
                 if (!((DefaultExternalModuleDependency)dependency).getArtifacts().isEmpty()) {
                     if (StringUtils.equalsIgnoreCase("awb", ((DefaultExternalModuleDependency)dependency).getArtifacts()
                         .iterator().next().getType()) || awbs.contains(dependency.getGroup()+":"+dependency.getName())) {

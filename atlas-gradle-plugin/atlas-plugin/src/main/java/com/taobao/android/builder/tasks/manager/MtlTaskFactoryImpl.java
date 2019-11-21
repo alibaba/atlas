@@ -216,6 +216,7 @@ import com.android.build.gradle.internal.tasks.factory.TaskFactoryImpl;
 import org.gradle.api.GradleException;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
+import org.gradle.api.internal.tasks.DefaultTaskCollection;
 import org.gradle.api.tasks.TaskProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -237,7 +238,7 @@ public class MtlTaskFactoryImpl implements MtlTaskFactory {
     }
 
     @Override
-    public Task createTask(VariantContext variantContext, BaseVariantOutput vod,
+    public Task createExistTask(VariantContext variantContext, BaseVariantOutput vod,
                            Class<? extends MtlBaseTaskAction> baseTaskAction) {
 
         if (null == baseTaskAction) {
@@ -252,9 +253,10 @@ public class MtlTaskFactoryImpl implements MtlTaskFactory {
             Task task = variantContext.getProject().getTasks().findByName(mtlBaseTaskAction.getName());
 
             if (null == task) {
-                task = variantContext.getProject().getTasks().create(mtlBaseTaskAction.getName(),
-                                                                     mtlBaseTaskAction.getType());
-                mtlBaseTaskAction.configure(task);
+                return null;
+//                task = variantContext.getProject().getTasks().create(mtlBaseTaskAction.getName(),
+//                                                                     mtlBaseTaskAction.getType());
+//                mtlBaseTaskAction.configure(task);
             } else {
                 sLogger.info(mtlBaseTaskAction.getName() + " is already added");
             }
@@ -288,9 +290,10 @@ public class MtlTaskFactoryImpl implements MtlTaskFactory {
 
                 return taskProvider;
 
+            }else {
+                return null;
             }
 
-            return null;
         }catch (Throwable e){
             throw new GradleException(e.getMessage(),e);
 

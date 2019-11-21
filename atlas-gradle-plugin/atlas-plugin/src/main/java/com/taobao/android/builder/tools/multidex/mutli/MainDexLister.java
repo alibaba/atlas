@@ -224,6 +224,7 @@ import javassist.ClassPool;
 import javassist.CtClass;
 import javassist.NotFoundException;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.StringUtils;
 import org.gradle.api.GradleException;
 import org.gradle.api.file.Directory;
 import org.gradle.api.provider.Provider;
@@ -316,7 +317,7 @@ public class MainDexLister {
 
         for (String clazz:headClasses){
             clazz = clazz.replaceAll("\\.", "/") + ".class";
-            maindexListClazz.add(clazz);
+                maindexListClazz.add(clazz);
         }
 
         for (String headClass : headClasses) {
@@ -353,7 +354,7 @@ public class MainDexLister {
 
 
 
-        if (multiDexConfig.getMainDexListCount()!=0 && maindexListClazz.size() > multiDexConfig.getMainDexListCount()){
+            if (multiDexConfig.getMainDexListCount()!=0 && maindexListClazz.size() > multiDexConfig.getMainDexListCount()){
             maindexListClazz = maindexListClazz.subList(0,multiDexConfig.getMainDexListCount());
         }
 
@@ -394,7 +395,7 @@ public class MainDexLister {
             } catch (IOException e) {
                 throw new GradleException(e.getMessage(), e);
             }
-            classMap = process.classMapping;
+            classMap = process.reversedClassMapping;
         }
         return classMap;
     }
@@ -412,11 +413,6 @@ public class MainDexLister {
 
 
     private void addRefClazz(ClassPool classPool, String clazz, Collection<String> classList, String root) {
-//
-//        if ((multiDexConfig.getMainDexListCount()!=0) && classList.size() > multiDexConfig.getMainDexListCount()){
-//
-//            return;
-//        }
 
         if (classList.contains(clazz)) {
             return;
@@ -424,7 +420,7 @@ public class MainDexLister {
 
         //blacklisting
         if (!multiDexConfig.getMainDexBlackList().isEmpty()) {
-            for (String blackItem : multiDexConfig.getMainDexBlackList()) {
+                for (String blackItem : multiDexConfig.getMainDexBlackList()) {
                 if (clazz.startsWith(blackItem)) {
                     return;
                 }
@@ -445,7 +441,6 @@ public class MainDexLister {
                 if (null == references) {
                     return;
                 }
-
                 for (String clazz2 : references) {
                     addRefClazz(classPool, clazz2, classList , root + "->" + clazz);
                 }
