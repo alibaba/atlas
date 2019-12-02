@@ -411,6 +411,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                                                                   mtlTaskContextList.add(new MtlTaskContext(com.android.build.gradle.internal.tasks.PerModuleBundleTask.class));
 
+
                                                                   mtlTaskContextList.add(new MtlTaskContext(FeaturesParallelTask.CreationPreBundleAction.class, null));
 
                                                                   mtlTaskContextList.add(new MtlTaskContext(MtlPerModuleReportDependenciesTask.CreationAction.class,null));

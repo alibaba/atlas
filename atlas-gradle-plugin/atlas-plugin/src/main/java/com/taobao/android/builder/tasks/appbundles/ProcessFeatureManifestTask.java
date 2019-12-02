@@ -225,6 +225,9 @@ public class ProcessFeatureManifestTask extends ManifestProcessorTask {
             if (bundleManifestOutputFile.exists()) {
                 org.dom4j.Document document = XmlHelper.readXml(bundleManifestOutputFile);
                 Namespace namespace = new Namespace("dist", "http://schemas.android.com/apk/distribution");
+                Element appElement = document.getRootElement().element("application");
+                appElement.remove(appElement.attribute("label"));
+                appElement.remove(appElement.attribute("icon"));
                 Element element = document.getRootElement().addNamespace("dist", "http://schemas.android.com/apk/distribution");
                 DefaultElement defaultElement = new DefaultElement("module", namespace);
                 defaultElement.addAttribute(new QName("onDemand", namespace), String.valueOf(true));

@@ -332,6 +332,17 @@ public class BuildAtlasEnvTask extends AndroidBuilderTask {
                 }
             });
 
+            getProject().getTasks().withType(com.android.build.gradle.internal.tasks.PerModuleBundleTask.class).forEach(new Consumer<PerModuleBundleTask>() {
+                @Override
+                public void accept(PerModuleBundleTask perModuleBundleTask) {
+                    perModuleBundleTask.doFirst(new Action<Task>() {
+                        @Override
+                        public void execute(Task task) {
+                            ReflectUtils.updateField(task,"javaResFiles",getProject().files(AtlasBuildContext.atlasMainDexHelperMap.get(variantName).getMainJavaRes()));
+                        }
+                    });
+                }
+            });
 
         }
 
