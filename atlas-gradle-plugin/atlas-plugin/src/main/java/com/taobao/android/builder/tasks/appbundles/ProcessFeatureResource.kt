@@ -37,6 +37,7 @@ import com.android.builder.model.AndroidLibrary
 import com.android.ide.common.blame.MergingLog
 import com.android.ide.common.process.ProcessException
 import com.android.ide.common.symbols.SymbolIo
+import com.android.ide.common.symbols.SymbolTable
 import com.android.ide.common.workers.WorkerExecutorException
 import com.android.ide.common.workers.WorkerExecutorFacade
 import com.android.sdklib.IAndroidTarget
@@ -44,6 +45,7 @@ import com.android.utils.FileUtils
 import com.google.common.base.Preconditions
 import com.google.common.collect.ImmutableList
 import com.google.common.collect.ImmutableSet
+import com.google.common.collect.Lists
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
 import com.taobao.android.builder.dependency.model.AwbBundle
 import com.taobao.android.builder.extension.AtlasExtension
@@ -71,6 +73,7 @@ import java.util.function.Supplier
 import java.util.regex.Pattern
 import javax.inject.Inject
 import kotlin.Exception
+import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 
 /**
@@ -391,10 +394,16 @@ open class ProcessFeatureResource @Inject constructor(workerExecutor: WorkerExec
                 val out = appVariantOutputContext.getLibrarySymbolWithPackageName(packageName)
                 out.parentFile.mkdirs()
                 symbles.add(out)
-               SymbolIo.writeSymbolListWithPackageName(it.symbolFile.toPath(),packageName,out.toPath())}
+               SymbolIo.writeSymbolListWithPackageName(it.symbolFile.toPath(),packageName,out.toPath())
+            }
+
+            if (symbles.size == 0){
+                val  out = File(awbBundle.androidLibrary.symbolFile.parentFile,"1.txt")
+                SymbolIo.writeSymbolListWithPackageName(File("aaaa").toPath(),awbBundle.packageName+".fake",out.toPath())
+                symbles.add(out)
+            }
 
             task.dependenciesFileCollection = variantContext.project.files(symbles)
-
             task.inputResourcesDir = appVariantOutputContext.getFeatureMergedResourceDir(variantScope.variantConfiguration, awbBundle);
 
             @Suppress("UNCHECKED_CAST")
@@ -513,7 +522,7 @@ open class ProcessFeatureResource @Inject constructor(workerExecutor: WorkerExec
 
 
                     if (params.generateCode) {
-                        configBuilder.setLibrarySymbolTableFiles(null)
+                        configBuilder.setLibrarySymbolTableFiles(params.dependencies)
                     }
                     configBuilder.setResourceDir(checkNotNull(params.inputResourcesDir))
 
@@ -534,6 +543,30 @@ open class ProcessFeatureResource @Inject constructor(workerExecutor: WorkerExec
                                             )
                                     )
                             )
+                            params.symbolsWithPackageNameOutputFile?.parentFile?.mkdirs()
+                            SymbolIo.writeSymbolListWithPackageName(
+                                    File(
+                                            params.textSymbolOutputDir!!,
+                                            SdkConstants.R_CLASS + SdkConstants.DOT_TXT
+                                    )
+                                            .toPath(),
+                                    manifestFile.toPath(),
+                                    params.symbolsWithPackageNameOutputFile?.toPath())
+
+                            var symbolFile = params.task.variantScope.artifacts.getFinalArtifactFiles(InternalArtifactType.SYMBOL_LIST).get().singleFile
+
+                            var symbolTable = SymbolIo.readFromAapt(symbolFile,params.applicationId)
+
+                            var mergedSymbolTable = SymbolIo.readFromAapt(
+                                    File(params.textSymbolOutputDir!!,
+                                    SdkConstants.R_CLASS + SdkConstants.DOT_TXT
+                            ),params.applicationId).merge(symbolTable)
+
+                            params.applicationId?.let { mergedSymbolTable = mergedSymbolTable.rename(it) }
+
+                            FileUtils.cleanOutputDir(srcOut)
+
+                            SymbolIo.exportToJava(mergedSymbolTable,srcOut,true)
                         }
                     } catch (e: Exception) {
                         throw e
@@ -542,21 +575,15 @@ open class ProcessFeatureResource @Inject constructor(workerExecutor: WorkerExec
 
 
                 }
-                if (params.generateCode
-                        && (params.isLibrary || !params.dependencies.isEmpty())
-                        && params.symbolsWithPackageNameOutputFile != null
-                ) {
-                    params.symbolsWithPackageNameOutputFile.parentFile.mkdirs()
-                    SymbolIo.writeSymbolListWithPackageName(
-                            File(
-                                    params.textSymbolOutputDir!!,
-                                    SdkConstants.R_CLASS + SdkConstants.DOT_TXT
-                            )
-                                    .toPath(),
-                            manifestFile.toPath(),
-                            params.symbolsWithPackageNameOutputFile.toPath()
-                    )
-                }
+
+
+
+
+
+
+
+
+
 
             } catch (e: ProcessException) {
                 throw BuildException(
@@ -580,6 +607,7 @@ open class ProcessFeatureResource @Inject constructor(workerExecutor: WorkerExec
             val aapt2ServiceKey: Aapt2ServiceKey?,
             task: ProcessFeatureResource
     ) : Serializable {
+        val task:ProcessFeatureResource = task
         val resourceConfigs: Set<String> = splitList.resourceConfigs
         val multiOutputPolicySplitList: Set<String> = splitList.getSplits(task.multiOutputPolicy)
         val variantScopeMainSplit: ApkData = task.variantScope.outputScope.mainSplit
