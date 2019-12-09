@@ -109,9 +109,9 @@ public class TransformReplacer {
                                         projectOptions.get(IntegerOption.DEXING_NUMBER_OF_BUCKETS))
                                 .setIncludeFeaturesInScope(variantContext.getScope().consumesFeatureJars())
                                 .setIsInstantRun(
-                                        false)
+                                        variantContext.getScope().getInstantRunBuildContext().isInInstantRunMode())
                                 .setEnableDexingArtifactTransform(false)
-                                .setIntermediateStreamHelper(new AtlasIntermediateStreamHelper(transformTask))
+                                .setIntermediateStreamHelper(new AtlasIntermediateStreamHelper(transformTask, variantContext.getScope().getInstantRunBuildContext().isInInstantRunMode()))
                                 .setAppVariantOutputContext(variantContext.getAppVariantOutputContext(ApkDataUtils.get(vod)))
                                 .createDexArchiveBuilderTransform();
 
@@ -131,20 +131,23 @@ public class TransformReplacer {
                 DexingType dexingType = null;
                 FileCollection multidexFiles = null;
                 boolean isDebuggable = variantContext.getScope().getVariantConfiguration().getBuildType().isDebuggable();
-                if (variantContext.getScope().getInstantRunBuildContext().isInInstantRunMode() && !variantContext.getProject().hasProperty("devMode")) {
+                if (variantContext.getScope().getInstantRunBuildContext().isInInstantRunMode()
+                        && !variantContext.getProject().hasProperty("devMode")
+                        && variantContext.getScope().getMinSdkVersion().getFeatureLevel() < 21) {
                     dexingType = DexingType.LEGACY_MULTIDEX;
                     instantRunMode = true;
                     isDebuggable = variantContext.getBuildType().isDebuggable();
                     multidexFiles = variantContext.getProject().files(mainDexListProvider());
                 } else {
                     dexingType = variantContext.getScope().getDexingType();
+                    instantRunMode = variantContext.getScope().getInstantRunBuildContext().isInInstantRunMode();
 
                 }
                 MtlDexMergeTransform dexTransform =
                         new MtlDexMergeTransform(
                                 variantContext.getAppVariantOutputContext(ApkDataUtils.get(vod)),
                                 dexingType,
-                                instantRunMode ?
+                                instantRunMode&& variantContext.getScope().getMinSdkVersion().getFeatureLevel() < 21 ?
                                         new BuildableArtifactImpl(multidexFiles) :
                                         dexingType == DexingType.LEGACY_MULTIDEX ? variantContext.getAtlasExtension().isAppBundlesEnabled()? variantContext.getScope()
                                                 .getArtifacts()
@@ -320,6 +323,13 @@ public class TransformReplacer {
                 variantContext, D8MainDexListTransform.class);
 
 
+        if (variantContext.getScope()
+                .getVariantConfiguration()
+                .getMinSdkVersionWithTargetDeviceApi()
+                .getFeatureLevel()
+                > 20){
+            return;
+        }
 
         final File[] mainDexListFile = {null};
 

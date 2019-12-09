@@ -2,6 +2,7 @@ package com.android.build.gradle.internal.pipeline;
 
 import com.android.annotations.NonNull;
 import com.android.build.api.transform.*;
+import com.android.build.gradle.internal.InternalScope;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
@@ -37,10 +38,12 @@ public class AtlasIntermediateFolderUtils extends IntermediateFolderUtils {
     private List<SubStream> removedSubStreams;
     private List<SubStream> outOfScopeStreams;
     private int nextIndex = 0;
+    private boolean instantRunMode;
 
 
-    public AtlasIntermediateFolderUtils(File rootFolder, Set<QualifiedContent.ContentType> types, Set<? super QualifiedContent.Scope> scopes) {
+    public AtlasIntermediateFolderUtils(boolean instantRunMode,File rootFolder, Set<QualifiedContent.ContentType> types, Set<? super QualifiedContent.Scope> scopes) {
         super(rootFolder, types, scopes);
+        this.instantRunMode = instantRunMode;
         this.rootFolder = rootFolder;
         this.types = types;
         this.scopes = scopes;
@@ -350,6 +353,13 @@ public class AtlasIntermediateFolderUtils extends IntermediateFolderUtils {
             if (rootFolder.getName().endsWith("debug") && subStream.getScopes().contains(QualifiedContent.Scope.EXTERNAL_LIBRARIES)){
                 subStream = new SubStream(subStream.getName(),subStream.getIndex(),Sets.immutableEnumSet(
                         QualifiedContent.Scope.PROJECT),subStream.getTypes(),subStream.getFormat(),subStream.isPresent());
+            }else if (instantRunMode){
+                if (subStream.getScopes().contains(QualifiedContent.Scope.EXTERNAL_LIBRARIES)
+                        || subStream.getScopes().contains(QualifiedContent.Scope.PROJECT)
+                        || subStream.getScopes().contains(QualifiedContent.Scope.SUB_PROJECTS)){
+                    Set<QualifiedContent.ScopeType> set = Sets.newHashSet(InternalScope.MAIN_SPLIT);
+                    subStream = new SubStream(subStream.getName(),subStream.getIndex(),set,subStream.getTypes(),subStream.getFormat(),subStream.isPresent());
+                }
             }
             copyList.add(
                     subStream.duplicateWithPresent(

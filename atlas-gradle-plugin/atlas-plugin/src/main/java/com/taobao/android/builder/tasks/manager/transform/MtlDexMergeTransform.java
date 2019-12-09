@@ -12,6 +12,8 @@ import com.android.build.gradle.internal.api.AwbTransform;
 import com.android.build.gradle.internal.api.artifact.BuildableArtifactUtil;
 import com.android.build.gradle.internal.crash.PluginCrashReporter;
 import com.android.build.gradle.internal.errors.MessageReceiverImpl;
+import com.android.build.gradle.internal.pipeline.AtlasIntermediateFolderUtils;
+import com.android.build.gradle.internal.pipeline.AtlasIntermediateStreamHelper;
 import com.android.build.gradle.internal.pipeline.ExtendedContentType;
 import com.android.build.gradle.internal.pipeline.TransformManager;
 import com.android.build.gradle.internal.transforms.DexMergerTransform;
@@ -137,7 +139,6 @@ public class MtlDexMergeTransform extends Transform {
         if (includeFeaturesInScopes) {
             return TransformManager.SCOPE_FULL_WITH_IR_AND_FEATURES;
         } else if (isInInstantRunMode) {
-
             return new ImmutableSet.Builder<QualifiedContent.ScopeType>()
                     .add(InternalScope.MAIN_SPLIT)
                     .build();

@@ -64,6 +64,7 @@ bundle.abi.enableSplit=false
         buildTypes {
             release {
                 minifyEnabled true
+		debuggable true
                 proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
                 signingConfig signingConfigs.release
 
@@ -83,7 +84,7 @@ bundle.abi.enableSplit=false
 atlas {
     instantAppEnabled false
     atlasEnabled false
-    appBundlesEnabled true
+    appBundlesEnabled false
     tBuildConfig {
 //        preLaunch = 'com.taobao.demo.DemoPreLaunch'
         aaptConstantId true

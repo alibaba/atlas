@@ -21,9 +21,11 @@ public class AtlasIntermediateStreamHelper{
 
     private TransformTask task;
 
-    public AtlasIntermediateStreamHelper(TransformTask transformTask) {
-        this.task = transformTask;
+    private boolean instantRunMode;
 
+    public AtlasIntermediateStreamHelper(TransformTask transformTask,boolean instantRunMode) {
+        this.task = transformTask;
+        this.instantRunMode = instantRunMode;
         this.intermediateStream = (IntermediateStream) ReflectUtils.getField(transformTask,"outputStream");
     }
 
@@ -34,7 +36,7 @@ public class AtlasIntermediateStreamHelper{
             IntermediateFolderUtils intermediateFolderUtils = (IntermediateFolderUtils) field.get(intermediateStream);
             Set<QualifiedContent.ContentType> types = (Set<QualifiedContent.ContentType>) ReflectUtils.getField(intermediateFolderUtils,"types");
             Set<? super QualifiedContent.Scope> scopes = (Set<? super QualifiedContent.Scope>) ReflectUtils.getField(intermediateFolderUtils,"scopes");
-            AtlasIntermediateFolderUtils atlasIntermediateFolderUtils = new AtlasIntermediateFolderUtils(intermediateFolderUtils.getRootFolder(),types,scopes);
+            AtlasIntermediateFolderUtils atlasIntermediateFolderUtils = new AtlasIntermediateFolderUtils(instantRunMode,intermediateFolderUtils.getRootFolder(),types,scopes);
             field.set(intermediateStream,atlasIntermediateFolderUtils);
             TransformOutputProvider transformOutputProvider = transformInvocation.getOutputProvider();
             ReflectUtils.updateField(transformOutputProvider,"folderUtils",atlasIntermediateFolderUtils);
