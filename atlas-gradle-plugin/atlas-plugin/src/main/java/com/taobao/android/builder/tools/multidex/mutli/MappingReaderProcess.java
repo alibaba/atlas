@@ -209,6 +209,7 @@
 
 package com.taobao.android.builder.tools.multidex.mutli;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import com.google.common.collect.Maps;
@@ -217,9 +218,12 @@ import proguard.obfuscate.MappingProcessor;
 public class MappingReaderProcess implements MappingProcessor {
     public Map<String, String> classMapping = Maps.newHashMap();
 
+    public Map<String,String>mappingMap = new HashMap<>();
+
     @Override
     public boolean processClassMapping(String className, String newClassName) {
         classMapping.put(newClassName, className);
+        mappingMap.put(className,newClassName);
         return true;
     }
 

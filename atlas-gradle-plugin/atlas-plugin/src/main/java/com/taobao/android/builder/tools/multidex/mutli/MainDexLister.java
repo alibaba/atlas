@@ -380,7 +380,7 @@ public class MainDexLister {
             } catch (IOException e) {
                 throw new GradleException(e.getMessage(), e);
             }
-            classMap = process.classMapping;
+            classMap = process.mappingMap;
         }
         return classMap;
     }
