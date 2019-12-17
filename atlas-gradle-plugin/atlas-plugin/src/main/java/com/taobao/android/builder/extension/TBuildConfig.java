@@ -358,15 +358,15 @@ public class TBuildConfig {
     private File packageIdFile = new File("");
 
 
-    public File getAwbConfigFile() {
-        return awbConfigFile;
+    public File getFeatureConfigFile() {
+        return featureConfigFile;
     }
 
-    public void setAwbConfigFile(File awbConfigFile) {
-        this.awbConfigFile = awbConfigFile;
+    public void setFeatureConfigFile(File awbConfigFile) {
+        this.featureConfigFile = awbConfigFile;
     }
 
-    private File awbConfigFile = new File("");
+    private File featureConfigFile = new File("");
 
     @Config(message = "Automatically generate the bundle's packageId", order = 6, advance = false, group = "atlas")
     private boolean autoPackageId = true;

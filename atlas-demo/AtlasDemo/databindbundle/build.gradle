@@ -1,16 +1,5 @@
 apply plugin: 'com.android.library'
-apply plugin: 'com.taobao.atlas'
 
-atlas {
-    bundleConfig{
-        awbBundle true
-    }
-    buildTypes {
-        debug {
-            baseApFile project.rootProject.file('app/build/outputs/apk/app-debug.ap')
-        }
-    }
-}
 group = 'com.atlas.demo'
 version = '1.0.0'
 

@@ -1,7 +1,5 @@
 apply plugin: 'com.android.library'
-apply plugin: 'com.taobao.atlas'
 
-atlas.bundleConfig.awbBundle = true
 
 
 group = 'com.atlas.demo'

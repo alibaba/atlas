@@ -1,10 +1,6 @@
-apply plugin: 'com.taobao.atlas.library'
+apply plugin: 'com.android.library'
 
-atlas {
-    bundleConfig{
-        awbBundle true
-    }
-}
+
 
 group = 'com.atlas.demo'
 version = '1.0.0'

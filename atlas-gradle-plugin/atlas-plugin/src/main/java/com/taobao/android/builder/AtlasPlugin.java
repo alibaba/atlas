@@ -269,7 +269,7 @@ public class AtlasPlugin extends AtlasBasePlugin {
             atlasConfigurationHelper.registAtlasStreams();
 
 
-            atlasConfigurationHelper.configDependencies(atlasExtension.getTBuildConfig().getAwbConfigFile());
+            atlasConfigurationHelper.configDependencies(atlasExtension.getTBuildConfig().getFeatureConfigFile());
 
 
             //3. update extension

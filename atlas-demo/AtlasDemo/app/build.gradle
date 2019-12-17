@@ -84,13 +84,14 @@ bundle.abi.enableSplit=false
 atlas {
     instantAppEnabled false
     atlasEnabled false
-    appBundlesEnabled false
+    appBundlesEnabled true
     tBuildConfig {
 //        preLaunch = 'com.taobao.demo.DemoPreLaunch'
         aaptConstantId true
-	title 'app_name'
+	    title 'app_name'
+        featureConfigFile project.file('1.txt')
         allBundlesToMdex  true
-        dynamicFeatures=['remotebundle']
+        dynamicFeatures=['secondbundle']
     }
 
     multiDexConfigs{
