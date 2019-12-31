@@ -416,6 +416,8 @@ public class MtlDexArchiveBuilderTransform extends Transform {
                             awbTransform.getInputDirs().forEach(new Consumer<File>() {
                                 @Override
                                 public void accept(File file) {
+                                    logger.warning("dynamic feature dir input %s", file.getAbsolutePath());
+
                                     convertFeatureToDexArchive(awbTransform.getAwbBundle(),transformInvocation.getContext(),TransformInputUtils.makeDirectoryInput(file),false, finalBootclasspathServiceKey,
                                             finalClasspathServiceKey,
                                             additionalPaths,atomicInteger);
@@ -425,6 +427,8 @@ public class MtlDexArchiveBuilderTransform extends Transform {
                             awbTransform.getInputFiles().forEach(new Consumer<File>() {
                                 @Override
                                 public void accept(File file) {
+                                    logger.warning("dynamic feature JarInput input %s", file.getAbsolutePath());
+
                                     JarInput jarInput = TransformInputUtils.makeJarInput(file,variantOutputContext.getVariantContext());
                                             MtlDexArchiveBuilderTransform.D8DesugaringCacheInfo cacheInfo =
                                             getD8DesugaringCacheInfo(
@@ -452,6 +456,7 @@ public class MtlDexArchiveBuilderTransform extends Transform {
                             awbTransform.getInputLibraries().forEach(new Consumer<File>() {
                                 @Override
                                 public void accept(File file) {
+                                    logger.warning("dynamic feature Librarie input %s", file.getAbsolutePath());
                                     JarInput jarInput = TransformInputUtils.makeJarInput(file,variantOutputContext.getVariantContext());
                                     MtlDexArchiveBuilderTransform.D8DesugaringCacheInfo cacheInfo =
                                             getD8DesugaringCacheInfo(

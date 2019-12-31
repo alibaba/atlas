@@ -134,11 +134,13 @@ public class TransformReplacer {
                 if (variantContext.getScope().getInstantRunBuildContext().isInInstantRunMode()
                         && !variantContext.getProject().hasProperty("devMode")
                         && variantContext.getScope().getMinSdkVersion().getFeatureLevel() < 21) {
+                    variantContext.getProject().getLogger().warn("LEGACY_MULTIDEX need maindexlist");
                     dexingType = DexingType.LEGACY_MULTIDEX;
                     instantRunMode = true;
                     isDebuggable = variantContext.getBuildType().isDebuggable();
                     multidexFiles = variantContext.getProject().files(mainDexListProvider());
                 } else {
+                    variantContext.getProject().getLogger().warn("NATIVE_MULTIDEX no need maindexlist");
                     dexingType = variantContext.getScope().getDexingType();
                     instantRunMode = variantContext.getScope().getInstantRunBuildContext().isInInstantRunMode();
 
@@ -325,7 +327,7 @@ public class TransformReplacer {
 
         if (variantContext.getScope()
                 .getVariantConfiguration()
-                .getMinSdkVersionWithTargetDeviceApi()
+                .getMinSdkVersion()
                 .getFeatureLevel()
                 > 20){
             return;

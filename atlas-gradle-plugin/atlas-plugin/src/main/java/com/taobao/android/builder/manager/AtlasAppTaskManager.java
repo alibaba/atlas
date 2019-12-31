@@ -224,6 +224,7 @@ import com.android.build.gradle.internal.res.LinkAndroidResForBundleTask;
 import com.android.build.gradle.internal.scope.ApkData;
 import com.android.build.gradle.internal.scope.CodeShrinker;
 import com.android.build.gradle.internal.scope.GlobalScope;
+import com.android.build.gradle.internal.scope.InternalArtifactType;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.*;
 import com.android.build.gradle.internal.tasks.featuresplit.FeatureSetMetadataWriterTask;
@@ -253,6 +254,8 @@ import com.taobao.android.builder.tasks.manager.transform.MtlTransformContext;
 import com.taobao.android.builder.tasks.manager.transform.MtlTransformInjector;
 import com.taobao.android.builder.tasks.transform.TransformReplacer;
 import com.taobao.android.builder.tools.ReflectUtils;
+
+import org.apache.commons.io.FileUtils;
 import org.gradle.api.Action;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
@@ -265,6 +268,8 @@ import org.gradle.api.tasks.compile.JavaCompile;
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.*;
 import java.util.function.Consumer;
 /**
@@ -424,9 +429,9 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                                                                   mtlTaskContextList.add(new MtlTaskContext(FinalizeBundleTask.class));
 
-//                                                                  mtlTaskContextList.add(new MtlTaskContext(BundleToApkTask.class));
+                                                                  mtlTaskContextList.add(new MtlTaskContext(BundleToApkTask.class));
 
-//                                                                  mtlTaskContextList.add(new MtlTaskContext(BundleToStandaloneApkTask.class));
+                                                                  mtlTaskContextList.add(new MtlTaskContext(BundleToStandaloneApkTask.class));
 
 //                                                                  mtlTaskContextList.add(new MtlTaskContext(variantScope.getTaskContainer().getBundleTask().get().getClass()));
 
@@ -463,6 +468,29 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                                                                   }else {
 
                                                                   }
+
+                                                                  project.getTasks().withType(BundleToApkTask.class).forEach(new Consumer<BundleToApkTask>() {
+                                                                      @Override
+                                                                      public void accept(BundleToApkTask bundleToApkTask) {
+                                                                          bundleToApkTask.doLast(new Action<Task>() {
+                                                                              @Override
+                                                                              public void execute(Task task) {
+                                                                                  appVariantContext.getVariantOutputData().forEach(new Consumer<BaseVariantOutput>() {
+                                                                                      @Override
+                                                                                      public void accept(BaseVariantOutput o) {
+                                                                                          try {
+                                                                                              Files.copy(variantScope.getArtifacts().getFinalArtifactFiles(InternalArtifactType.APKS_FROM_BUNDLE).get().getSingleFile().toPath(),appVariantContext.getAppVariantOutputContext(ApkDataUtils.get(o)).getApksOutputFile().toPath());
+                                                                                          } catch (IOException e) {
+                                                                                              e.printStackTrace();
+                                                                                          }
+
+                                                                                      };
+                                                                                  });
+
+                                                                              }
+                                                                          });
+                                                                      }
+                                                                  });
 
 
                                                               }

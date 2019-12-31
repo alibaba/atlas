@@ -545,6 +545,21 @@ public class AppVariantOutputContext {
                         awbBundle.getName());
     }
 
+
+    public File getApksOutputFile(){
+        File file =  FileUtils.join(variantScope.getGlobalScope().getBuildDir(),
+                FD_OUTPUTS,
+                "apks",
+                variantScope.getDirName(),
+                variantScope.getGlobalScope().getProjectBaseName() +
+                        "-" +
+                        variantData.getVariantConfiguration().getBaseName() +
+                        ".apks");
+
+        file.getParentFile().mkdirs();
+        return file;
+    }
+
     public File getApkOutputFile(boolean checkExist) {
         File apkFile;
 
