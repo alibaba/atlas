@@ -36,6 +36,7 @@ import com.android.build.gradle.tasks.ProcessAndroidResources
 import com.android.builder.model.AndroidLibrary
 import com.android.ide.common.blame.MergingLog
 import com.android.ide.common.process.ProcessException
+import com.android.ide.common.symbols.RGeneration
 import com.android.ide.common.symbols.SymbolIo
 import com.android.ide.common.symbols.SymbolTable
 import com.android.ide.common.workers.WorkerExecutorException
@@ -567,6 +568,15 @@ open class ProcessFeatureResource @Inject constructor(workerExecutor: WorkerExec
                             FileUtils.cleanOutputDir(srcOut)
 
                             SymbolIo.exportToJava(mergedSymbolTable,srcOut,true)
+
+                             val depSymbolTables = com.android.ide.common.symbols.loadDependenciesSymbolTables(
+                                     params.dependencies)
+
+                            val finalIds = true
+
+                            RGeneration.generateRForLibraries(mergedSymbolTable, depSymbolTables, srcOut, finalIds);
+
+
                         }
                     } catch (e: Exception) {
                         throw e
