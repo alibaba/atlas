@@ -264,6 +264,26 @@ public class TBuildConfig {
 
     private Boolean allBundlesToMdex = false;
 
+    public boolean isAbortIfAddProvider() {
+        return abortIfAddProvider;
+    }
+
+    public void setAbortIfAddProvider(boolean abortIfAddProvider) {
+        this.abortIfAddProvider = abortIfAddProvider;
+    }
+
+    private boolean abortIfAddProvider = true;
+
+    public Set<String> getAgreeProviders() {
+        return agreedProviders;
+    }
+
+    public void setAgreedProviders(Set<String> agreeProviders) {
+        this.agreedProviders = agreedProviders;
+    }
+
+    private Set<String>agreedProviders = new HashSet<>();
+
     public Boolean getConsumerProguardEnabled() {
         return consumerProguardEnabled;
     }

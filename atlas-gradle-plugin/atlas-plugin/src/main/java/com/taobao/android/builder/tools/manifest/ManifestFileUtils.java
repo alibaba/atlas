@@ -273,16 +273,18 @@ public class ManifestFileUtils {
 
     /**
      * Follow up the manifest
-     *  @param mainManifest
+     * @param mainManifest
      * @param libManifestMap
      * @param baseBunfleInfoFile
      * @param manifestOptions
      * @param debuggable
+     * @param install
+     * @param agreeProviders
      */
     public static Result postProcessManifests(File mainManifest, Map<String, File> libManifestMap,
                                               Multimap<String, File> libDependenciesMaps, File baseBunfleInfoFile,
                                               ManifestOptions manifestOptions, boolean addMultiDex,
-                                              boolean isInstantRun, boolean debuggable, Set<String> remoteBundles, Set<String> insideBundles, boolean pushInstall)
+                                              boolean isInstantRun, boolean debuggable, Set<String> remoteBundles, Set<String> insideBundles, boolean pushInstall, boolean abortIfAddProvider, Set<String> agreeProviders)
         throws IOException, DocumentException {
 
         Result result = new Result();
@@ -313,6 +315,13 @@ public class ManifestFileUtils {
         if (null != manifestOptions && manifestOptions.isRemoveProvider()) {
             removeProvider(document);
         }
+
+
+        Set<String>providers = getProviders(document);
+        if (abortIfAddProvider && !agreeProviders.containsAll(providers)){
+            throw new IllegalArgumentException("add new providers :"+providers.toString());
+        }
+
         if (isInstantRun) {
             singleProcess(document,ManifestFileUtils.getApplicationId(inputFile));
         }
@@ -1124,6 +1133,20 @@ public class ManifestFileUtils {
             element.getParent().remove(element);
         }
     }
+
+    private static Set<String> getProviders(Document document) {
+        Set<String>providers = new HashSet<>();
+        Element root = document.getRootElement();// Get the root node
+        List<? extends Node> nodes = root.selectNodes("//provider");
+        for (Node node : nodes) {
+            Element element = (Element) node;
+            String name = element.attributeValue("name");
+            providers.add(name);
+        }
+        return providers;
+    }
+
+
 
     private static void removeProcess(Document document) throws IOException, DocumentException {
 
