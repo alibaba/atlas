@@ -282,9 +282,17 @@ public class ManifestFileUtils {
      * @param agreeProviders
      */
     public static Result postProcessManifests(File mainManifest, Map<String, File> libManifestMap,
-                                              Multimap<String, File> libDependenciesMaps, File baseBunfleInfoFile,
-                                              ManifestOptions manifestOptions, boolean addMultiDex,
-                                              boolean isInstantRun, boolean debuggable, Set<String> remoteBundles, Set<String> insideBundles, boolean pushInstall, boolean abortIfAddProvider, Set<String> agreeProviders)
+                                              Multimap<String, File> libDependenciesMaps,
+                                              File baseBunfleInfoFile,
+                                              ManifestOptions manifestOptions,
+                                              boolean addMultiDex,
+                                              boolean isInstantRun,
+                                              boolean debuggable,
+                                              Set<String> remoteBundles,
+                                              Set<String> insideBundles,
+                                              boolean pushInstall,
+                                              boolean abortIfAddProvider,
+                                              Set<String> agreeProviders)
         throws IOException, DocumentException {
 
         Result result = new Result();
@@ -319,7 +327,7 @@ public class ManifestFileUtils {
 
         Set<String>providers = getProviders(document);
         if (abortIfAddProvider && !agreeProviders.containsAll(providers)){
-            throw new IllegalArgumentException("add new providers :"+providers.toString());
+            throw new IllegalArgumentException("agreedProviders:"+agreeProviders.toString() + "\n"+"add new providers :"+providers.toString());
         }
 
         if (isInstantRun) {
