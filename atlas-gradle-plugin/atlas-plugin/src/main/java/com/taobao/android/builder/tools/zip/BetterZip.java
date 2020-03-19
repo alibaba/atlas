@@ -265,7 +265,43 @@ public class BetterZip {
         return true;
     }
 
-    public static boolean   zipDirectory(File folder, File dest) throws IOException {
+
+    public static boolean addFileAndDir(File zipFile, String path, File folder) throws IOException {
+
+        if (!folder.isDirectory()) {
+            return false;
+        }
+
+        File rootDir = new File(folder.getParentFile(), "_tmp");
+        rootDir.delete();
+
+        FileUtils.copyDirectory(folder, new File(rootDir, path));
+
+        boolean success = CmdExecutor.execute(rootDir.getAbsolutePath(), "zip", "-r",zipFile.getAbsolutePath(),path,"-x \"*/\"");
+
+         rootDir.delete();
+        if (success) {
+            return true;
+        }
+        return false;
+
+    }
+
+
+    public static boolean deleteFileFromZip(File zipFile, String path) throws IOException {
+
+        File rootDir = new File(zipFile.getParentFile(),"_temp");
+        rootDir.mkdirs();
+        boolean success = CmdExecutor.execute(rootDir.getAbsolutePath(), "zip", "-d",zipFile.getAbsolutePath(),path);
+        rootDir.delete();
+        if (success) {
+            return true;
+        }
+        return false;
+
+    }
+
+    public static boolean  zipDirectory(File folder, File dest) throws IOException {
 
         if (!folder.isDirectory()) {
             return false;

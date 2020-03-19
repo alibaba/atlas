@@ -361,6 +361,17 @@ public class DependencyResolver {
                     continue;
                 }
 
+                try {
+                    File file = resolvedArtifact.getFile();
+                }catch (Exception e){
+                    if (moduleArtifacts.size() > 1) {
+                        e.printStackTrace();
+                        continue;
+                    }else {
+                        throw  e;
+                    }
+                }
+
                 //
 
                 resolvedDependencies.add(key);
