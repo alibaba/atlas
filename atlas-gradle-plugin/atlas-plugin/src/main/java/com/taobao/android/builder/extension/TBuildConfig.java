@@ -274,7 +274,7 @@ public class TBuildConfig {
 
     private boolean abortIfAddProvider = true;
 
-    public Set<String> getAgreeProviders() {
+    public Set<String> getAgreedProviders() {
         return agreedProviders;
     }
 

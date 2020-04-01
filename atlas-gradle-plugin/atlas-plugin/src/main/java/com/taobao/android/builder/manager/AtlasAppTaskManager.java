@@ -413,7 +413,6 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                                                               if (atlasExtension.isAppBundlesEnabled()) {
 
-
                                                                   mtlTaskContextList.add(new MtlTaskContext(com.android.build.gradle.internal.tasks.PerModuleBundleTask.class));
 
 

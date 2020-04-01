@@ -241,21 +241,17 @@ public class ManifestOptions {
     private File  permissionJsonFile;
 
     @Config(order = 5, message = "Components add the coordinates of the bundle", advance = true, group = "atlas")
-    private boolean addBundleLocation = true;
+    private boolean addBundleLocation = false;
 
-    @Config(order = 6, message = "The ability to open new components", advance = true, group = "atlas")
-    private boolean addAtlasProxyComponents /*= true*/;
 
-    @Config(order = 6, message = "A channel list that does not perform atlas added components", advance = true, group = "atlas")
-    private Set<String> atlasProxySkipChannels = Sets.newHashSet(":dexmerge", ":dex2oat");
 
     @Config(order = 7, title = "Replace the application",message = "Use the atlas application, including atlasBasic initialization and multidex logic, Atlas must be opened", advance = true,
         group = "atlas")
-    private boolean replaceApplication = true;
+    private boolean replaceApplication = false;
 
     @Config(order = 8, title = "To enable the atlas multidex", message = "Using atlas's multiDex function, Atlas must be opened", advance = true, group = "atlas")
     @Deprecated //Don't use the multi-dex automatic control
-    private boolean addMultiDexMetaData = true;
+    private boolean addMultiDexMetaData = false;
 
     @Config(order = 9, message = "Remove all providers", advance = true, group = "atlas")
     private boolean removeProvider = false;
@@ -402,21 +398,7 @@ public class ManifestOptions {
         this.removeProvider = removeProvider;
     }
 
-    public boolean isAddAtlasProxyComponents() {
-        return addAtlasProxyComponents;
-    }
 
-    public void setAddAtlasProxyComponents(boolean addAtlasProxyComponents) {
-        this.addAtlasProxyComponents = addAtlasProxyComponents;
-    }
-
-    public Set<String> getAtlasProxySkipChannels() {
-        return atlasProxySkipChannels;
-    }
-
-    public void setAtlasProxySkipChannels(Set<String> atlasProxySkipChannels) {
-        this.atlasProxySkipChannels = atlasProxySkipChannels;
-    }
 
     public File getPermissionListFile() {
         return permissionListFile;

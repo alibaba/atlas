@@ -301,7 +301,7 @@ public class PostProcessManifestAction implements Action<Task> {
                     atlasExtension.getTBuildConfig().getInsideOfApkBundles(),
                     atlasExtension.getTBuildConfig().isPushInstall(),
                     atlasExtension.getTBuildConfig().isAbortIfAddProvider(),
-                    atlasExtension.getTBuildConfig().getAgreeProviders());
+                    atlasExtension.getTBuildConfig().getAgreedProviders());
 
             if (new File(baseVariantOutputData.getProcessManifestProvider().get().getBundleManifestOutputDirectory(),SdkConstants.ANDROID_MANIFEST_XML).exists()){
                 FileUtils.copyFile(androidManifest,new File(baseVariantOutputData.getProcessManifestProvider().get().getBundleManifestOutputDirectory(),SdkConstants.ANDROID_MANIFEST_XML));
