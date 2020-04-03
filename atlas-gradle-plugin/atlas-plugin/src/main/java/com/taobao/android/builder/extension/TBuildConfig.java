@@ -523,6 +523,8 @@ public class TBuildConfig {
     @Config(message = "put awb so in lib/armeabi , not assets dir", order = 19, advance = true, group = "atlas")
     private Set<String> keepInLibSoNames = new HashSet<>();
 
+    @Config(message = "List of disallowed duplicate resources", order = 4, advance = true, group = "atlas")
+    private List<String> uniqueResList = new ArrayList<>();
 
     public Set<String> getDynamicFeatures() {
         return dynamicFeatures;
@@ -824,4 +826,14 @@ public class TBuildConfig {
     public boolean isSupportAddCallSuper() {
         return supportAddCallSuper;
     }
+
+
+    public List<String> getUniqueResList() {
+        return uniqueResList;
+    }
+
+    public void setUniqueResList(List<String> uniqueResList) {
+        this.uniqueResList = uniqueResList;
+    }
+
 }

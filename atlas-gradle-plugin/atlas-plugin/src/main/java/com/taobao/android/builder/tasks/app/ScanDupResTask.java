@@ -16,6 +16,7 @@ import com.google.common.collect.Lists;
 import com.sun.org.apache.xerces.internal.dom.NamedNodeMapImpl;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
+import com.taobao.android.builder.extension.TBuildConfig;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import com.taobao.android.builder.tools.MD5Util;
 import javafx.util.Pair;
@@ -52,6 +53,9 @@ public class ScanDupResTask extends AndroidBuilderTask {
         if (null == atlasDependencyTree) {
             return;
         }
+        TBuildConfig tBuildConfig = appVariantContext.getAtlasExtension().getTBuildConfig();
+        List<String> uniqueResList = tBuildConfig.getUniqueResList();
+
         File dupResFile = new File(appVariantContext.getProject().getBuildDir(),"outputs/warning-dup-res.properties");
         File dupAssetsFile = new File(appVariantContext.getProject().getBuildDir(),"outputs/warning-dup-assets.properties");
 
@@ -67,6 +71,7 @@ public class ScanDupResTask extends AndroidBuilderTask {
                boolean e = false;
                for (Pair stringFilePair:map1.keySet()){
                    if (stringFilePair.getKey().equals(file1.getAbsolutePath().substring(file1.getAbsolutePath().indexOf("assets"))) && !isSameFile((File) stringFilePair.getValue(),file1)&&!map1.get(stringFilePair).equals(file.getAbsolutePath())){
+                       checkAssetNeedUnique(uniqueResList, file1, file1, (File) stringFilePair.getValue());
                        errors.add("dup assets:"+file1.getName() +" in "+map1.get(stringFilePair) + " and "+file.getAbsolutePath());
                        e = true;
                        break;
@@ -153,6 +158,7 @@ public class ScanDupResTask extends AndroidBuilderTask {
                                     if (!isSameBundle(map.get(tag),file,atlasDependencyTree)
                                             && allInMainBundle(getId(map.get(tag)),getId(file),atlasDependencyTree)
                                             && !isSameFile(map.get(tag),file))
+                                        checkResourceNeedUnique(uniqueResList, tag, map.get(tag), file);
                                         exceptions.add("dup File:"+tag+"|"+getId(map.get(tag))+"|"+getId(file));
                                 }
 //                                    try {
@@ -170,6 +176,7 @@ public class ScanDupResTask extends AndroidBuilderTask {
                                     if (!isSameBundle(map.get(tag),file,atlasDependencyTree)
                                             && allInMainBundle(getId(map.get(tag)),getId(file),atlasDependencyTree)
                                             && !isSameFile(map.get(tag),file))
+                                        checkResourceNeedUnique(uniqueResList, tag, map.get(tag), file);
                                         exceptions.add("dup File:"+tag+"|"+getId(map.get(tag))+"|"+getId(file));
                                 }
                             }
@@ -227,6 +234,7 @@ public class ScanDupResTask extends AndroidBuilderTask {
                                 }else if (!map.get(tag).equals(file)){
                                     if (!isSameBundle(map.get(tag),file,atlasDependencyTree)&&allInMainBundle(getId(map.get(tag)),getId(file),atlasDependencyTree)
                                             && !isSameFile(map.get(tag),file))
+                                        checkResourceNeedUnique(uniqueResList, tag, map.get(tag), file);
                                         exceptions.add("dup File:"+tag+"|"+getId(map.get(tag))+"|"+getId(file));
                                 }
 //                                    try {
@@ -243,6 +251,7 @@ public class ScanDupResTask extends AndroidBuilderTask {
                                 }else if (!isSameBundle(map.get(tag),file,atlasDependencyTree)
                                         && allInMainBundle(getId(map.get(tag)),getId(file),atlasDependencyTree)
                                         && !isSameFile(map.get(tag),file)){
+                                    checkResourceNeedUnique(uniqueResList, tag, map.get(tag), file);
                                     exceptions.add("dup File:"+tag+"|"+getId(map.get(tag))+"|"+getId(file));
                                 }
                             }
@@ -280,6 +289,7 @@ public class ScanDupResTask extends AndroidBuilderTask {
                         if (resourceItem.getFile()!= null && valuesMap.get(tag)!= null) {
                             if (!valuesMap.get(tag).equals(resourceItem.getFile()) && !isSameValue(resourceItem,valuesMap.get(tag).getKey()))
                                 if (!tag.equals(":string/app_name")) {
+                                    checkResourceNeedUnique(uniqueResList, tag, map.get(tag), resourceItem.getFile());
                                     exceptions.add("dup value " + tag + "|" + valuesMap.get(tag).getKey() + "|" + getOtherString(resourceItem) + "|" + getId(valuesMap.get(tag).getValue()) + "|" + getId(resourceItem.getFile()));
                                 }
                                 }
@@ -404,7 +414,30 @@ public class ScanDupResTask extends AndroidBuilderTask {
                 ||resourceItem.getType().getName().equals("public");
     }
 
+    private void checkAssetNeedUnique(List<String> uniqueResList,
+                                      File assetFile,
+                                      File bundle1,
+                                      File bundle2) {
+        if (uniqueResList == null || assetFile == null || bundle1 == null || bundle2 == null) {
+            return;
+        }
+        String assetAbsolutePath = assetFile.getAbsolutePath().substring(assetFile.getAbsolutePath().indexOf("assets"));
+        if (uniqueResList.contains(assetAbsolutePath)) {
+            throw new RuntimeException("Assets does not allow duplicates: " + assetAbsolutePath
+                    + "\n" + "bundles which have duplicate resource: "
+                    + bundle1.getAbsolutePath() + " and " + bundle2.getAbsolutePath());
+        }
+    }
 
-
+    private void checkResourceNeedUnique(List<String> uniqueResList, String resFilePath, File bundle1, File bundle2) {
+        if (uniqueResList == null || resFilePath == null) {
+            return;
+        }
+        if (uniqueResList.contains(resFilePath)) {
+            throw new RuntimeException("Resource does not allow duplicates: " + resFilePath
+                    + "\n" + "bundles which have duplicate resource: "
+                    + bundle1.getAbsolutePath() + " and " + bundle2.getAbsolutePath());
+        }
+    }
 
 }
