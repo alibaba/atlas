@@ -31,6 +31,7 @@ import org.apache.commons.lang3.StringUtils;
 import java.io.*;
 import java.util.*;
 import java.util.concurrent.Callable;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -286,6 +287,19 @@ public class AtlasMergeJavaResourcesTransform extends MergeJavaResourcesTransfor
                             IncrementalFileMergerOutputs.fromAlgorithmAndWriter(
                                     mergeTransformAlgorithm,
                                     MergeOutputWriters.toDirectory(outputLocation));
+                    appVariantOutputContext.getVariantContext().getVariantConfiguration().getDefaultSourceSet().getJniLibsDirectories().forEach(new Consumer<File>() {
+                        @Override
+                        public void accept(File file) {
+                            try {
+                                if (file.exists() && file.isDirectory()) {
+                                    FileUtils.copyDirectoryContentToDirectory(file, new File(outputLocation, "lib/"));
+                                }
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+
+                        }
+                    });
                 }
 
                 /*

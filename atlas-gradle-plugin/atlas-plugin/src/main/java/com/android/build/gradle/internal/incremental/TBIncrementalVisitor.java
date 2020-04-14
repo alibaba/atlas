@@ -210,7 +210,7 @@ public class TBIncrementalVisitor extends IncrementalVisitor {
             }
         }
 
-        Class<?> c, d;
+        Class<?> c = null, d;
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         try {
             c = Class.forName(classNode.name.replace('/', '.'), false, classLoader);
@@ -235,7 +235,8 @@ public class TBIncrementalVisitor extends IncrementalVisitor {
             }
 
         }catch (Throwable e){
-            e.printStackTrace();
+            logger.warning("class not found:%s",c);
+//            e.printStackTrace();
         }
 
 

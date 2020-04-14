@@ -274,11 +274,12 @@ public class TBuildConfig {
 
     private boolean abortIfAddProvider = true;
 
+
     public Set<String> getAgreedProviders() {
         return agreedProviders;
     }
 
-    public void setAgreedProviders(Set<String> agreeProviders) {
+    public void setAgreedProviders(Set<String> agreedProviders) {
         this.agreedProviders = agreedProviders;
     }
 

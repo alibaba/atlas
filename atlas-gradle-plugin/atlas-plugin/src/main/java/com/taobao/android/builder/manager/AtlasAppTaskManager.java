@@ -543,11 +543,12 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                                                                   transformReplacer.replaceMultidexTransform(vod);
 
                                                                   transformReplacer.repalaceSomeInstantTransform(vod);
-                                                                  if (atlasExtension.isAppBundlesEnabled() && variantScope.getVariantConfiguration().getBuildType().isMinifyEnabled()) {
+                                                                  if (!variantScope.getInstantRunBuildContext().isInInstantRunMode() && variantScope.getVariantConfiguration().getBuildType().isMinifyEnabled()) {
                                                                       if (variantScope.getCodeShrinker() == CodeShrinker.R8) {
                                                                           transformReplacer.replaceR8Transform(vod);
                                                                       }else {
                                                                           transformReplacer.replaceProguardTransform(vod);
+
                                                                       }
 
                                                                   }

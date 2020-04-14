@@ -3,6 +3,7 @@ package com.taobao.android.builder.insant.matcher;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 创建日期：2018/11/23 on 下午3:04
@@ -15,14 +16,15 @@ public class MatcherCreator {
 
     static Set<ImplementsMatcher> matchers = new HashSet<>();
 
-    static Map<String, Imatcher> sMatchers = new LinkedHashMap<>();
+    static Map<String, Imatcher> sMatchers = new ConcurrentHashMap<>();
 
     public static Imatcher create(String rule) {
-        if (sMatchers.containsKey(rule)) {
-            return sMatchers.get(rule);
-        }
         if (StringUtils.isEmpty(rule)) {
             return new NoMatcher();
+        }
+
+        if (sMatchers.containsKey(rule)) {
+            return sMatchers.get(rule);
         }
 
         if (rule.equals("**")) {
