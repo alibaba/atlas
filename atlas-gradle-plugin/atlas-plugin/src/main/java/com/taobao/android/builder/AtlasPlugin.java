@@ -281,7 +281,6 @@ public class AtlasPlugin extends AtlasBasePlugin {
             //5. Configuration tasks
            atlasConfigurationHelper.configTasksAfterEvaluate();
 
-            project1.getTasks().create("atlasList", AtlasListTask.class);
 
         });
 

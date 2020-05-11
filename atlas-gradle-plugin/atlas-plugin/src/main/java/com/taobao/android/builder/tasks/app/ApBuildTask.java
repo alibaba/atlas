@@ -312,6 +312,8 @@ public class ApBuildTask extends ConventionTask implements VariantAwareTask {
         addFile(appBuildInfo.getDependenciesFile());
         addFile(appBuildInfo.getBuildInfoFile());
         addFile(appBuildInfo.getVersionPropertiesFile());
+        addFile(new File(appVariantContext.getScope().getGlobalScope().getOutputsDir(),
+                "full-classlist.properties"));
         addFile(new File(this.getProject().getBuildDir(),"outputs/atlasFrameworkProperties.json"));
         addFile(new File(this.getProject().getBuildDir(), "outputs/public.txt"));
         //addFile( appBuildInfo.getBundleInfoFile());

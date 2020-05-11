@@ -40,6 +40,7 @@ import com.taobao.android.builder.insant.visitor.ModifyClassVisitor;
 import com.taobao.android.builder.tasks.app.BuildAtlasEnvTask;
 import com.taobao.android.builder.tasks.manager.transform.MtlDexArchiveBuilderTransform;
 import com.taobao.android.builder.tools.multidex.mutli.MappingReaderProcess;
+
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.logging.Logging;
 import org.objectweb.asm.*;
@@ -206,10 +207,10 @@ public class TaobaoInstantRunTransform extends Transform {
                         getScopes(),
                         Format.DIRECTORY);
 
-        File classesTwoOutput = new File(variantContext.getScope().getGlobalScope().getIntermediatesDir(),"instant-patch/"+variantContext.getVariantConfiguration().getDirName());
+        File classesTwoOutput = new File(variantContext.getScope().getGlobalScope().getIntermediatesDir(), "instant-patch/" + variantContext.getVariantConfiguration().getDirName());
         classesTwoOutput.mkdirs();
         AtlasBuildContext.atlasMainDexHelperMap.get(variantContext.getVariantName()).getInputDirs().clear();
-        AtlasBuildContext.atlasMainDexHelperMap.get(variantContext.getVariantName()).getMainDexFiles().add(new BuildAtlasEnvTask.FileIdentity("instant-patch",classesTwoOutputJar,false,false));
+        AtlasBuildContext.atlasMainDexHelperMap.get(variantContext.getVariantName()).getMainDexFiles().add(new BuildAtlasEnvTask.FileIdentity("instant-patch", classesTwoOutputJar, false, false));
         AtlasBuildContext.atlasMainDexHelperMap.get(variantContext.getVariantName()).getInputDirs().add(classesThreeOutput);
 
         FileCollection fileCollection = variantContext.getProject().files();
@@ -220,10 +221,10 @@ public class TaobaoInstantRunTransform extends Transform {
         for (TransformInput input : invocation.getInputs()) {
             for (DirectoryInput directoryInput : input.getDirectoryInputs()) {
                 File inputDir = directoryInput.getFile();
-                if (inputDir.getPath().contains("intermediates/javac")){
+                if (inputDir.getPath().contains("intermediates/javac")) {
                     continue;
                 }
-                LOGGER.info("inputDir:"+inputDir.getAbsolutePath());
+                LOGGER.info("inputDir:" + inputDir.getAbsolutePath());
                 // non incremental mode, we need to traverse the TransformInput#getFiles()
                 // folder
                 FileUtils.cleanOutputDir(classesTwoOutput);
@@ -235,7 +236,7 @@ public class TaobaoInstantRunTransform extends Transform {
                     String path = FileUtils.relativePath(file, inputDir);
                     String className = path.replace("/", ".").substring(0, path.length() - 6);
                     if (isMainRClass(className)) {
-                        LOGGER.info("mainRclass:"+className + path);
+                        LOGGER.info("mainRclass:" + className + path);
                         mainRFiles.add(file);
 //                        continue;
                     }
@@ -272,7 +273,7 @@ public class TaobaoInstantRunTransform extends Transform {
                                     classesThreeOutput));
                             break;
                     }
-                    if (isAdd) {
+                    if (isAdd || variantContext.getBuildType().getPatchConfig().isCreateIPatch()) {
                         continue;
                     }
 
@@ -340,7 +341,7 @@ public class TaobaoInstantRunTransform extends Transform {
                             break;
                     }
 
-                    if (isAdd) {
+                    if (isAdd || variantContext.getBuildType().getPatchConfig().isCreateIPatch()) {
                         continue;
                     }
 
@@ -356,7 +357,7 @@ public class TaobaoInstantRunTransform extends Transform {
 
             try {
                 awbBundleFileMap.put(awbTransform.getAwbBundle(), awbClassesTwoOutout);
-            }catch (Exception e){
+            } catch (Exception e) {
                 e.printStackTrace();
             }
 
@@ -425,16 +426,6 @@ public class TaobaoInstantRunTransform extends Transform {
 
             JarMerger jarMerger = new JarMerger(classesTwoOutputJar.toPath(), null);
             jarMerger.addDirectory(classesTwoOutput.toPath());
-//        awbBundleFileMap.values().forEach(new Consumer<File>() {
-//            @Override
-//            public void accept(File file) {
-//                try {
-//                    jarMerger.addJar(file.toPath());
-//                } catch (IOException e) {
-//                    e.printStackTrace();
-//                }
-//            }
-//        });
             jarMerger.close();
             org.apache.commons.io.FileUtils.deleteDirectory(classesTwoOutput);
         }
@@ -456,23 +447,6 @@ public class TaobaoInstantRunTransform extends Transform {
 
         //when we finish instantruntransform update
 
-//        TransformManagerDelegate.findTransformTaskByTransformType(variantContext,MtlDexArchiveBuilderTransform.class).forEach(new Consumer<TransformTask>() {
-//            @Override
-//            public void accept(TransformTask transformTask) {
-//                (variantContext.getTransformManager()).consumeStreamsForTask(transformTask,Sets.newHashSet(QualifiedContent.Scope.EXTERNAL_LIBRARIES),Sets.newHashSet(QualifiedContent.DefaultContentType.CLASSES));
-//
-//            }
-//        });
-//
-//
-//        TransformManagerDelegate.findTransformTaskByTransformType(variantContext,MtlDexArchiveBuilderTransform.class).forEach(new Consumer<TransformTask>() {
-//            @Override
-//            public void accept(TransformTask transformTask) {
-//                (variantContext.getTransformManager()).consumeStreamsForTask(transformTask,Sets.newHashSet(QualifiedContent.Scope.PROJECT),Sets.newHashSet(QualifiedContent.DefaultContentType.CLASSES));
-//
-//            }
-//        });
-
 
         if (!variantContext.getBuildType().getPatchConfig().isCreateIPatch()) {
 
@@ -487,16 +461,6 @@ public class TaobaoInstantRunTransform extends Transform {
             awbBundleFileMap.values().forEach(file -> AtlasBuildContext.atlasMainDexHelperMap.get(variantContext.getVariantName()).addMainDex(new BuildAtlasEnvTask.FileIdentity(file.getName(), file, false, false)));
 
         }
-//        TransformManagerDelegate.findTransformTaskByTransformType(variantContext, MtlDexArchiveBuilderTransform.class).forEach(new Consumer<TransformTask>() {
-//            @Override
-//            public void accept(TransformTask transformTask) {
-//                (variantContext.getTransformManager()).addStreamsForTask(transformTask, InternalScope.MAIN_SPLIT,QualifiedContent.DefaultContentType.CLASSES,"instantpatch-classess",variantContext.getProject().files(classesTwoOutputJar));
-//
-//            }
-//        });
-
-
-
 
 
     }
@@ -521,7 +485,7 @@ public class TaobaoInstantRunTransform extends Transform {
                     @Override
                     public FieldVisitor visitField(int access, String name, String desc, String signature, Object value) {
                         if (Modifier.isFinal(access) && Modifier.isStatic(access) && ConstPool.contains(desc) && value != null) {
-                            resFields.put(classReader.getClassName().replace("/",".") + ":" + name, value);
+                            resFields.put(classReader.getClassName().replace("/", ".") + ":" + name, value);
                         }
                         return super.visitField(access, name, desc, signature, value);
                     }
@@ -530,10 +494,10 @@ public class TaobaoInstantRunTransform extends Transform {
 
         }
 
-        variantContext.getProject().getLogger().warn("resFields size:"+resFields.size());
+        variantContext.getProject().getLogger().warn("resFields size:" + resFields.size());
         classFiles.forEach(file -> {
             byte[] classBytes = new byte[0];
-            variantContext.getProject().getLogger().warn("visit File :"+file.getAbsolutePath());
+            variantContext.getProject().getLogger().warn("visit File :" + file.getAbsolutePath());
             try {
                 classBytes = Files.toByteArray(file);
                 ClassReader classReader = new ClassReader(classBytes);
