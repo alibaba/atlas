@@ -94,7 +94,7 @@ public class DelegateProguardTransform extends MtlInjectTransform {
         proGuardTransform = new ProGuardTransform(appVariantContext.getScope());
         this.buildConfig = appVariantContext.getAtlasExtension().getTBuildConfig();
         sLogger = appVariantContext.getProject().getLogger();
-
+        configuration = (Configuration) ReflectUtils.getField(proGuardTransform,"configuration");
 
     }
 
@@ -131,14 +131,7 @@ public class DelegateProguardTransform extends MtlInjectTransform {
 //        if (buildConfig.getConsumerProguardEnabled()){
 //            defaultProguardFiles.addAll(appVariantContext.getScope().getArtifactFileCollection(AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH, AndroidArtifacts.ArtifactScope.ALL, AndroidArtifacts.ArtifactType.CONSUMER_PROGUARD_RULES).getFiles());
 //        }
-
-        if (appVariantContext.getBuildType().getPatchConfig().isCreateIPatch()){
-
-            Configuration configuration = (Configuration) ReflectUtils.getField(proGuardTransform,"configuration");
-
-            configuration.optimize = false;
-
-        }
+        
 
 
         System.getProperties().setProperty("class_not_found_note", new File(appVariantContext.getScope().getGlobalScope().getOutputsDir(),"class_not_found_note.txt").getPath());
