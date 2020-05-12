@@ -68,7 +68,7 @@ public class DexMergeTransformCallable implements Callable<Void>{
                         new DxContext(
                                 processOutput.getStandardOutput(), processOutput.getErrorOutput());
                 merger = DexArchiveMerger.createDxDexMerger(dxContext,forkJoinPool);
-                ReflectUtils.updateField(merger,"mergingStrategy",new AtlasDexArchiveMerger.AtlasDexRefMergingStrategy());
+//                ReflectUtils.updateField(merger,"mergingStrategy",new AtlasDexArchiveMerger.AtlasDexRefMergingStrategy());
 //                merger = new DexArchiveMergerHook(dxContext,new AtlasDexArchiveMerger.AtlasDexRefMergingStrategy(),forkJoinPool);
                 break;
             case D8:
