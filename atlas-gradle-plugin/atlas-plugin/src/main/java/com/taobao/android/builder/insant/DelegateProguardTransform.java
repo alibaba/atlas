@@ -134,8 +134,7 @@ public class DelegateProguardTransform extends MtlInjectTransform {
         
 
 
-        System.getProperties().setProperty("class_not_found_note", new File(appVariantContext.getScope().getGlobalScope().getOutputsDir(),"class_not_found_note.txt").getPath());
-
+        System.getProperties().setProperty("class_not_found_note", new File(appVariantContext.getScope().getGlobalScope().getOutputsDir(),"warning-classnotfound-note.properties").getPath());
 
         PostprocessingFeatures postprocessingFeatures = scope.getPostprocessingFeatures();
         if (postprocessingFeatures != null) {

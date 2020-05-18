@@ -290,6 +290,116 @@ public class TaobaoInstantRunTransform extends Transform {
 
 
         Map<AwbBundle, File> awbBundleFileMap = new HashMap<>();
+
+        instrumentAwbClass(variantOutputContext,awbBundleFileMap,workItems,classesThreeOutput,exceptions);
+
+
+        // first get all referenced input to construct a class loader capable of loading those
+        // classes. This is useful for ASM as it needs to load classes
+        List<URL> referencedInputUrls = getAllClassesLocations(
+                invocation.getInputs(), invocation.getReferencedInputs());
+
+        if (exceptions.size() > 0) {
+            throw exceptions.get(0);
+        }
+        // This class loader could be optimized a bit, first we could create a parent class loader
+        // with the android.jar only that could be stored in the GlobalScope for reuse. This
+        // class loader could also be store in the VariantScope for potential reuse if some
+        // other transform need to load project's classes.
+        try (URLClassLoader urlClassLoader = new NonDelegatingUrlClassloader(referencedInputUrls)) {
+            workItems.forEach(
+                    workItem ->
+                            executor.execute(
+                                    () -> {
+                                        ClassLoader currentThreadClassLoader =
+                                                Thread.currentThread().getContextClassLoader();
+                                        Thread.currentThread()
+                                                .setContextClassLoader(urlClassLoader);
+                                        try {
+                                            return workItem.doWork();
+                                        } finally {
+                                            Thread.currentThread()
+                                                    .setContextClassLoader(
+                                                            currentThreadClassLoader);
+                                        }
+                                    }));
+
+            try {
+                // wait for all work items completion.
+                executor.waitForTasksWithQuickFail(true);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new TransformException(e);
+            } catch (Exception e) {
+                throw new TransformException(e);
+            }
+        }
+
+
+        mergeInstrumentJars(awbBundleFileMap,classesTwoOutput,classesTwoOutputJar);
+
+
+        // If our classes.2 transformations indicated that a cold swap was necessary,
+        // clean up the classes.3 output folder as some new files may have been generated.
+        if (generatedClasses3Names.build().size() == 0) {
+            FileUtils.cleanOutputDir(classesThreeOutput);
+        }
+
+        wrapUpOutputs(classesTwoOutput, classesThreeOutput);
+
+        if (variantContext.getBuildType().getPatchConfig().isCreateIPatch() && variantContext.getBuildType().getPatchConfig().isPatchResourceEnabled()) {
+
+            inlineFinalResource(classesThreeOutput, mainRFiles);
+        }
+
+
+        //when we finish instantruntransform update
+
+
+        if (!variantContext.getBuildType().getPatchConfig().isCreateIPatch()) {
+
+            TransformManagerDelegate.findTransformTaskByTransformType(variantContext, MtlDexArchiveBuilderTransform.class).forEach(new Consumer<TransformTask>() {
+                @Override
+                public void accept(TransformTask transformTask) {
+                    (variantContext.getTransformManager()).addStreamsForTask(transformTask, InternalScope.MAIN_SPLIT, QualifiedContent.DefaultContentType.CLASSES, "awb-instantpatch-classess", variantContext.getProject().files(awbBundleFileMap.values()));
+
+                }
+            });
+
+            awbBundleFileMap.values().forEach(file -> AtlasBuildContext.atlasMainDexHelperMap.get(variantContext.getVariantName()).addMainDex(new BuildAtlasEnvTask.FileIdentity(file.getName(), file, false, false)));
+
+        }
+
+
+    }
+
+    private void mergeInstrumentJars(Map<AwbBundle, File> awbBundleFileMap,File classesTwoOutput,File classesTwoOutputJar) throws IOException {
+        if (!variantContext.getBuildType().getPatchConfig().isCreateIPatch()) {
+            variantOutputContext.getAwbTransformMap().values().parallelStream().forEach(awbTransform -> {
+                try {
+                    File outJar = new File(awbBundleFileMap.get(awbTransform.getAwbBundle()).getParentFile(), awbTransform.getAwbBundle().getName() + ".jar");
+                    JarMerger jarMerger = new JarMerger(outJar.toPath(), null);
+                    jarMerger.addDirectory(awbBundleFileMap.get(awbTransform.getAwbBundle()).toPath());
+                    jarMerger.close();
+                    awbTransform.getInputLibraries().clear();
+                    awbTransform.getInputFiles().clear();
+                    awbTransform.getInputDirs().clear();
+                    awbTransform.getInputFiles().add(outJar);
+                    org.apache.commons.io.FileUtils.deleteDirectory(awbBundleFileMap.get(awbTransform.getAwbBundle()));
+                    awbBundleFileMap.put(awbTransform.getAwbBundle(), outJar);
+                } catch (Exception e) {
+
+                }
+            });
+
+            JarMerger jarMerger = new JarMerger(classesTwoOutputJar.toPath(), null);
+            jarMerger.addDirectory(classesTwoOutput.toPath());
+            jarMerger.close();
+            org.apache.commons.io.FileUtils.deleteDirectory(classesTwoOutput);
+        }
+    }
+
+    private void instrumentAwbClass(AppVariantOutputContext variantOutputContext, Map<AwbBundle, File> awbBundleFileMap, List<WorkItem> workItems, File classesThreeOutput, List<TransformException> exceptions) {
         variantOutputContext.getAwbTransformMap().values().forEach(awbTransform -> {
             File awbClassesTwoOutout = variantOutputContext.getAwbClassesInstantOut(awbTransform.getAwbBundle());
             LOGGER.warning("InstantAwbclassOut[" + awbTransform.getAwbBundle().getPackageName() + "]---------------------" + awbClassesTwoOutout.getAbsolutePath());
@@ -363,106 +473,6 @@ public class TaobaoInstantRunTransform extends Transform {
 
 
         });
-
-        // first get all referenced input to construct a class loader capable of loading those
-        // classes. This is useful for ASM as it needs to load classes
-        List<URL> referencedInputUrls = getAllClassesLocations(
-                invocation.getInputs(), invocation.getReferencedInputs());
-
-        if (exceptions.size() > 0) {
-            throw exceptions.get(0);
-        }
-        // This class loader could be optimized a bit, first we could create a parent class loader
-        // with the android.jar only that could be stored in the GlobalScope for reuse. This
-        // class loader could also be store in the VariantScope for potential reuse if some
-        // other transform need to load project's classes.
-        try (URLClassLoader urlClassLoader = new NonDelegatingUrlClassloader(referencedInputUrls)) {
-            workItems.forEach(
-                    workItem ->
-                            executor.execute(
-                                    () -> {
-                                        ClassLoader currentThreadClassLoader =
-                                                Thread.currentThread().getContextClassLoader();
-                                        Thread.currentThread()
-                                                .setContextClassLoader(urlClassLoader);
-                                        try {
-                                            return workItem.doWork();
-                                        } finally {
-                                            Thread.currentThread()
-                                                    .setContextClassLoader(
-                                                            currentThreadClassLoader);
-                                        }
-                                    }));
-
-            try {
-                // wait for all work items completion.
-                executor.waitForTasksWithQuickFail(true);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new TransformException(e);
-            } catch (Exception e) {
-                throw new TransformException(e);
-            }
-        }
-
-        if (!variantContext.getBuildType().getPatchConfig().isCreateIPatch()) {
-            variantOutputContext.getAwbTransformMap().values().parallelStream().forEach(awbTransform -> {
-                try {
-                    File outJar = new File(awbBundleFileMap.get(awbTransform.getAwbBundle()).getParentFile(), awbTransform.getAwbBundle().getName() + ".jar");
-                    JarMerger jarMerger = new JarMerger(outJar.toPath(), null);
-                    jarMerger.addDirectory(awbBundleFileMap.get(awbTransform.getAwbBundle()).toPath());
-                    jarMerger.close();
-                    awbTransform.getInputLibraries().clear();
-                    awbTransform.getInputFiles().clear();
-                    awbTransform.getInputDirs().clear();
-                    awbTransform.getInputFiles().add(outJar);
-                    org.apache.commons.io.FileUtils.deleteDirectory(awbBundleFileMap.get(awbTransform.getAwbBundle()));
-                    awbBundleFileMap.put(awbTransform.getAwbBundle(), outJar);
-                } catch (Exception e) {
-
-                }
-            });
-
-
-            JarMerger jarMerger = new JarMerger(classesTwoOutputJar.toPath(), null);
-            jarMerger.addDirectory(classesTwoOutput.toPath());
-            jarMerger.close();
-            org.apache.commons.io.FileUtils.deleteDirectory(classesTwoOutput);
-        }
-
-
-        // If our classes.2 transformations indicated that a cold swap was necessary,
-        // clean up the classes.3 output folder as some new files may have been generated.
-        if (generatedClasses3Names.build().size() == 0) {
-            FileUtils.cleanOutputDir(classesThreeOutput);
-        }
-
-        wrapUpOutputs(classesTwoOutput, classesThreeOutput);
-
-        if (variantContext.getBuildType().getPatchConfig().isCreateIPatch() && variantContext.getBuildType().getPatchConfig().isPatchResourceEnabled()) {
-
-            inlineFinalResource(classesThreeOutput, mainRFiles);
-        }
-
-
-        //when we finish instantruntransform update
-
-
-        if (!variantContext.getBuildType().getPatchConfig().isCreateIPatch()) {
-
-            TransformManagerDelegate.findTransformTaskByTransformType(variantContext, MtlDexArchiveBuilderTransform.class).forEach(new Consumer<TransformTask>() {
-                @Override
-                public void accept(TransformTask transformTask) {
-                    (variantContext.getTransformManager()).addStreamsForTask(transformTask, InternalScope.MAIN_SPLIT, QualifiedContent.DefaultContentType.CLASSES, "awb-instantpatch-classess", variantContext.getProject().files(awbBundleFileMap.values()));
-
-                }
-            });
-
-            awbBundleFileMap.values().forEach(file -> AtlasBuildContext.atlasMainDexHelperMap.get(variantContext.getVariantName()).addMainDex(new BuildAtlasEnvTask.FileIdentity(file.getName(), file, false, false)));
-
-        }
-
-
     }
 
     private boolean isMainRClass(String className) {
