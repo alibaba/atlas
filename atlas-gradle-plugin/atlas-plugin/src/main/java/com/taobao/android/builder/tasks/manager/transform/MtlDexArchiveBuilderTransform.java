@@ -1149,6 +1149,10 @@ public class MtlDexArchiveBuilderTransform extends Transform {
         if (java8LangSupportType != VariantScope.Java8LangSupport.D8) {
             return Collections.emptyList();
         }
+
+        if (Boolean.TRUE.booleanValue()){
+            return Collections.emptyList();
+        }
         ImmutableList.Builder<String> classpathEntries = ImmutableList.builder();
 
         Iterable<TransformInput> dependencies =

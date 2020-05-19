@@ -1,5 +1,6 @@
 package com.taobao.android.builder.insant.visitor;
 
+import com.taobao.android.builder.insant.ModifyClassFinder;
 import com.taobao.android.builder.insant.TaobaoInstantRunTransform;
 import com.android.build.gradle.internal.incremental.TBIncrementalVisitor;
 import org.objectweb.asm.AnnotationVisitor;
@@ -12,13 +13,13 @@ import org.objectweb.asm.MethodVisitor;
  */
 public class ModifyMethodVisitor extends MethodVisitor {
 
-    private TaobaoInstantRunTransform.CodeChange codeChange;
+    private ModifyClassFinder.CodeChange codeChange;
 
     private String methodName;
 
     private String methodDesc;
 
-    public ModifyMethodVisitor(String name, String desc, int api, MethodVisitor mv, TaobaoInstantRunTransform.CodeChange codeChange) {
+    public ModifyMethodVisitor(String name, String desc, int api, MethodVisitor mv, ModifyClassFinder.CodeChange codeChange) {
         super(api,mv);
         this.codeChange = codeChange;
         this.methodName = name;
@@ -27,13 +28,13 @@ public class ModifyMethodVisitor extends MethodVisitor {
 
     @Override
     public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
-        if (desc.equals(TBIncrementalVisitor.MODIFY_METHOD.getDescriptor()) && visible && codeChange.getPy()!= TaobaoInstantRunTransform.PatchPolicy.ADD) {
-            codeChange.setPy(TaobaoInstantRunTransform.PatchPolicy.MODIFY);
+        if (desc.equals(TBIncrementalVisitor.MODIFY_METHOD.getDescriptor()) && visible && codeChange.getPy()!= ModifyClassFinder.PatchPolicy.ADD) {
+            codeChange.setPy(ModifyClassFinder.PatchPolicy.MODIFY);
             System.err.println("modify method:"+ methodDesc);
         }else if (desc.equals(TBIncrementalVisitor.ADD_METHOD.getDescriptor()) && visible){
-            codeChange.setPy(TaobaoInstantRunTransform.PatchPolicy.MODIFY);
-            TaobaoInstantRunTransform.CodeChange codeChange = new TaobaoInstantRunTransform.CodeChange();
-            codeChange.setPy(TaobaoInstantRunTransform.PatchPolicy.ADD);
+            codeChange.setPy(ModifyClassFinder.PatchPolicy.MODIFY);
+            ModifyClassFinder.CodeChange codeChange = new ModifyClassFinder.CodeChange();
+            codeChange.setPy(ModifyClassFinder.PatchPolicy.ADD);
             codeChange.setCode(methodName+"|"+methodDesc);
             this.codeChange.getCodeChanges().add(codeChange);
         }

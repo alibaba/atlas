@@ -80,6 +80,8 @@ public class TaobaoInstantRunTransform extends Transform {
 
     MappingReaderProcess mappingReaderProcess = new MappingReaderProcess();
 
+    private ModifyClassFinder modifyClassFinder = null;
+
     private Map<String, String> modifyClasses = new HashMap<>();
 
 
@@ -91,6 +93,8 @@ public class TaobaoInstantRunTransform extends Transform {
         this.targetPlatformApi =
                 DeploymentDevice.getDeploymentDeviceAndroidVersion(
                         transformScope.getGlobalScope().getProjectOptions());
+
+        modifyClassFinder = new ModifyClassFinder(variantContext);
 
         injectFailedFile = new File(variantContext.getProject().getBuildDir(), "outputs/warning-instrument-inject-error.properties");
         injectSuccessFile = new File(variantContext.getProject().getBuildDir(), "outputs/instrument.properties");
@@ -232,7 +236,7 @@ public class TaobaoInstantRunTransform extends Transform {
                     if (file.isDirectory()) {
                         continue;
                     }
-                    CodeChange codeChange = new CodeChange();
+                    ModifyClassFinder.CodeChange codeChange = new ModifyClassFinder.CodeChange();
                     String path = FileUtils.relativePath(file, inputDir);
                     String className = path.replace("/", ".").substring(0, path.length() - 6);
                     if (isMainRClass(className)) {
@@ -242,17 +246,18 @@ public class TaobaoInstantRunTransform extends Transform {
                     }
 
                     if (file.getName().endsWith(SdkConstants.DOT_CLASS)) {
-                        parseClassPolicy(file, codeChange);
+                        modifyClassFinder.parseClassPolicy(file,codeChange);
+//                        parseClassPolicy(file, codeChange);
                     }
                     if (codeChange.isAnnotation()) {
                         sAnnotations.add(className);
                     }
 
                     boolean isAdd = false;
-                    switch (codeChange.py) {
+                    switch (codeChange.getPy()) {
                         case ADD:
                             LOGGER.warning("ADD CLASS:" + className);
-                            modifyClasses.put(className, PatchPolicy.ADD.name());
+                            modifyClasses.put(className, ModifyClassFinder.PatchPolicy.ADD.name());
                             workItems.add(() -> transformToClasses2Format(
                                     inputDir,
                                     file,
@@ -266,7 +271,7 @@ public class TaobaoInstantRunTransform extends Transform {
                                 exceptions.add(new TransformException(path + " is not support modify because inject error in base build!"));
                             }
                             LOGGER.warning("MODIFY CLASS:" + className);
-                            modifyClasses.put(className, PatchPolicy.MODIFY.name());
+                            modifyClasses.put(className, ModifyClassFinder.PatchPolicy.MODIFY.name());
                             workItems.add(() -> transformToClasses3Format(
                                     codeChange, inputDir,
                                     file,
@@ -415,21 +420,23 @@ public class TaobaoInstantRunTransform extends Transform {
                     if (!file.exists() || file.isDirectory()) {
                         continue;
                     }
-                    CodeChange codeChange = new CodeChange();
+                    ModifyClassFinder.CodeChange codeChange = new ModifyClassFinder.CodeChange();
                     String path = FileUtils.relativePath(file, dir);
                     String className = path.replace("/", ".").substring(0, path.length() - 6);
                     if (file.getName().endsWith(SdkConstants.DOT_CLASS)) {
-                        parseClassPolicy(file, codeChange);
+//                        parseClassPolicy(file, codeChange);
+                        modifyClassFinder.parseClassPolicy(file,codeChange);
+
                     }
                     if (codeChange.isAnnotation()) {
                         sAnnotations.add(className);
                     }
 
                     boolean isAdd = false;
-                    switch (codeChange.py) {
+                    switch (codeChange.getPy()) {
                         case ADD:
                             LOGGER.warning("ADD CLASS:" + className);
-                            modifyClasses.put(className, PatchPolicy.ADD.name());
+                            modifyClasses.put(className, ModifyClassFinder.PatchPolicy.ADD.name());
                             workItems.add(() -> transformToClasses2Format(
                                     dir,
                                     file,
@@ -443,7 +450,7 @@ public class TaobaoInstantRunTransform extends Transform {
                                 exceptions.add(new TransformException(path + " is not support modify because inject error in base build!"));
                             }
                             LOGGER.warning("MODIFY CLASS:" + className);
-                            modifyClasses.put(className, PatchPolicy.MODIFY.name());
+                            modifyClasses.put(className, ModifyClassFinder.PatchPolicy.MODIFY.name());
                             workItems.add(() -> transformToClasses3Format(codeChange,
                                     dir,
                                     file,
@@ -528,29 +535,6 @@ public class TaobaoInstantRunTransform extends Transform {
 
     }
 
-    private void parseClassPolicy(File file, CodeChange codeChange) {
-
-        final PatchPolicy[] patchPolicy = {PatchPolicy.NONE};
-        BufferedInputStream inputStream = null;
-        try {
-            inputStream = new BufferedInputStream(new FileInputStream(file));
-            ClassReader classReader = new ClassReader(inputStream);
-            classReader.accept(new ModifyClassVisitor(Opcodes.ASM5, codeChange), ClassReader.SKIP_CODE);
-        } catch (Exception e) {
-            e.printStackTrace();
-//            throw new RuntimeException(e);
-        } finally {
-            try {
-                inputStream.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-        if (!variantContext.getBuildType().getPatchConfig().isCreateIPatch()) {
-            codeChange.py = PatchPolicy.NONE;
-            return;
-        }
-    }
 
     private interface WorkItem {
 
@@ -650,7 +634,7 @@ public class TaobaoInstantRunTransform extends Transform {
 
 
     @Nullable
-    protected Void transformToClasses3Format(CodeChange codeChange, File inputDir, File inputFile, File outputDir)
+    protected Void transformToClasses3Format(ModifyClassFinder.CodeChange codeChange, File inputDir, File inputFile, File outputDir)
             throws IOException {
         LOGGER.warning("transformToClasses3Format:" + inputFile.getPath());
 
@@ -709,7 +693,7 @@ public class TaobaoInstantRunTransform extends Transform {
                         boolean matched = MatcherCreator.create(s).match(newPath);
                         if (matched) {
                             File file = TBIncrementalVisitor.instrumentClass(
-                                    new CodeChange(), targetPlatformApi.getFeatureLevel(),
+                                    new ModifyClassFinder.CodeChange(), targetPlatformApi.getFeatureLevel(),
                                     inputDir,
                                     inputFile,
                                     outputDir,
@@ -758,7 +742,7 @@ public class TaobaoInstantRunTransform extends Transform {
                     }
 
                     File file = TBIncrementalVisitor.instrumentClass(
-                            new CodeChange(), targetPlatformApi.getFeatureLevel(),
+                            new ModifyClassFinder.CodeChange(), targetPlatformApi.getFeatureLevel(),
                             inputDir,
                             inputFile,
                             outputDir,
@@ -898,54 +882,7 @@ public class TaobaoInstantRunTransform extends Transform {
     }
 
 
-    public enum PatchPolicy {
 
-        ADD, MODIFY, NONE
-    }
-
-    public static class CodeChange {
-
-        private String code;
-
-        public boolean isAnnotation() {
-            return annotation;
-        }
-
-        public void setAnnotation(boolean annotation) {
-            this.annotation = annotation;
-        }
-
-        private boolean annotation;
-
-        public String getCode() {
-            return code;
-        }
-
-        public void setCode(String code) {
-            this.code = code;
-        }
-
-        private PatchPolicy py = PatchPolicy.NONE;
-
-        public PatchPolicy getPy() {
-            return py;
-        }
-
-        public void setPy(PatchPolicy py) {
-            this.py = py;
-        }
-
-        public List<CodeChange> getCodeChanges() {
-            return codeChanges;
-        }
-
-        public void setCodeChanges(List<CodeChange> codeChanges) {
-            this.codeChanges = codeChanges;
-        }
-
-        private List<CodeChange> codeChanges = new ArrayList<>();
-
-    }
 
 
     public static class ConstPool {

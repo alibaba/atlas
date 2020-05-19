@@ -8,6 +8,7 @@ import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.Files;
+import com.taobao.android.builder.insant.ModifyClassFinder;
 import com.taobao.android.builder.insant.TaobaoInstantRunTransform;
 import com.taobao.android.builder.insant.matcher.Imatcher;
 import com.taobao.android.builder.insant.matcher.ImplementsMatcher;
@@ -29,7 +30,7 @@ import java.util.*;
  */
 public class TBIncrementalVisitor extends IncrementalVisitor {
 
-    protected TaobaoInstantRunTransform.CodeChange codeChange;
+    protected ModifyClassFinder.CodeChange codeChange;
 
     public TBIncrementalVisitor(AsmClassNode classNode, ClassVisitor classVisitor, ILogger logger) {
         super(classNode, classVisitor, logger);
@@ -92,7 +93,7 @@ public class TBIncrementalVisitor extends IncrementalVisitor {
 
     @Nullable
     public static File instrumentClass(
-            TaobaoInstantRunTransform.CodeChange codeChange, int targetApiLevel,
+            ModifyClassFinder.CodeChange codeChange, int targetApiLevel,
             @NonNull File inputRootDirectory,
             @NonNull File inputFile,
             @NonNull File outputDirectory,

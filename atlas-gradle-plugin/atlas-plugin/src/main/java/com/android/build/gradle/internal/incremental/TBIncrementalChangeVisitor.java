@@ -4,6 +4,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 import com.android.utils.ILogger;
+import com.taobao.android.builder.insant.ModifyClassFinder;
 import com.taobao.android.builder.insant.TaobaoInstantRunTransform;
 import org.objectweb.asm.*;
 import org.objectweb.asm.commons.GeneratorAdapter;
@@ -26,7 +27,7 @@ import java.util.function.Consumer;
  */
 public class TBIncrementalChangeVisitor extends TBIncrementalVisitor {
 
-    List<TaobaoInstantRunTransform.CodeChange> changes = new ArrayList<>();
+    List<ModifyClassFinder.CodeChange> changes = new ArrayList<>();
 
     public static final VisitorBuilder VISITOR_BUILDER = new TBIncrementalVisitor.VisitorBuilder() {
 
@@ -243,7 +244,7 @@ public class TBIncrementalChangeVisitor extends TBIncrementalVisitor {
     }
 
 
-    public void setCodeChange(TaobaoInstantRunTransform.CodeChange codeChange) {
+    public void setCodeChange(ModifyClassFinder.CodeChange codeChange) {
         this.codeChange = codeChange;
         if (codeChange.getCodeChanges() != null && codeChange.getCodeChanges().size() > 0) {
             changes = codeChange.getCodeChanges();
@@ -523,7 +524,7 @@ public class TBIncrementalChangeVisitor extends TBIncrementalVisitor {
 
             boolean visitAddMethod = false;
             if (changes.size() > 0) {
-                for (TaobaoInstantRunTransform.CodeChange codeChange : changes) {
+                for (ModifyClassFinder.CodeChange codeChange : changes) {
                     if (codeChange.getCode().equals(name + "|" + desc)) {
                         System.err.println("Generic Method dispatch : " + opcode +
                                 ":" + owner + ":" + name + ":" + desc + ":" + itf + ":" + isStatic);
