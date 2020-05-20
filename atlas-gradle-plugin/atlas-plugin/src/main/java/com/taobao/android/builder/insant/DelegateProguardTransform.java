@@ -42,6 +42,7 @@ import com.taobao.android.builder.tools.cache.Cache;
 import com.taobao.android.builder.tools.log.FileLogger;
 import com.taobao.android.builder.tools.proguard.AtlasProguardHelper;
 import com.taobao.android.builder.tools.proguard.AwbProguardConfiguration;
+import com.taobao.android.provider.MainDexListProvider;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -126,12 +127,6 @@ public class DelegateProguardTransform extends MtlInjectTransform {
     @Override
     public void transform(TransformInvocation transformInvocation) throws TransformException, InterruptedException, IOException {
         super.transform(transformInvocation);
-
-
-//        if (buildConfig.getConsumerProguardEnabled()){
-//            defaultProguardFiles.addAll(appVariantContext.getScope().getArtifactFileCollection(AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH, AndroidArtifacts.ArtifactScope.ALL, AndroidArtifacts.ArtifactType.CONSUMER_PROGUARD_RULES).getFiles());
-//        }
-        
 
 
         System.getProperties().setProperty("class_not_found_note", new File(appVariantContext.getScope().getGlobalScope().getOutputsDir(),"warning-classnotfound-note.properties").getPath());
@@ -267,6 +262,7 @@ public class DelegateProguardTransform extends MtlInjectTransform {
         IntermediateFolderUtils folderUtils = (IntermediateFolderUtils) ReflectUtils.getField(transformInvocation.getOutputProvider(), "folderUtils");
         AtlasBuildContext.atlasMainDexHelperMap.get(appVariantContext.getVariantName()).addAllMainDexJars(FileUtils.listFiles(folderUtils.getRootFolder(), new String[]{"jar"}, true));
 
+
     }
 
     private Collection<TransformInput> getAllInput() {
@@ -368,6 +364,7 @@ public class DelegateProguardTransform extends MtlInjectTransform {
         }
 
         return awbInOutConfig;
+
     }
 
     public File applyMapping(final AppVariantContext appVariantContext) {
@@ -386,7 +383,6 @@ public class DelegateProguardTransform extends MtlInjectTransform {
             proGuardTransform.applyTestedMapping(mappingFile);
             return mappingFile;
         }
-
         return null;
 
     }
@@ -426,6 +422,7 @@ public class DelegateProguardTransform extends MtlInjectTransform {
     private void maybeAddFeatureProguardRules(
             @NonNull VariantScope variantScope,
             @NonNull ConfigurableFileCollection configurationFiles) {
+
         if (variantScope.consumesFeatureJars()) {
             configurationFiles.from(
                     variantScope.getArtifactFileCollection(

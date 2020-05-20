@@ -249,10 +249,14 @@ public class JarRefactor {
 
     public Collection<File> repackageJarList(Collection<File> files, File mainDexListFile, boolean minifyEnabled) throws IOException {
 
+        if (mainDexListFile.exists()){
+            return null;
+        }
         if (!minifyEnabled && new File(appVariantContext.getProject().getRootDir(),"mainDexList.txt").exists()){
             FileUtils.copyFile(new File(appVariantContext.getProject().getRootDir(),"mainDexList.txt"),mainDexListFile);
             return null;
         }
+
 
         List<String> mainDexList = new MainDexLister(appVariantContext, multiDexConfig).getMainDexList(files,mainDexListFile);
         if (minifyEnabled){

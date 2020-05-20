@@ -75,9 +75,6 @@ public class ModifyClassFinder {
             }
             jarFile.close();
         }
-
-
-
     }
 
     private JarFile newJarFile(File file){

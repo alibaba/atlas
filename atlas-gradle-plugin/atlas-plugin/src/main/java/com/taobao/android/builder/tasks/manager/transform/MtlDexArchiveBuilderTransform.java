@@ -40,6 +40,9 @@ import com.google.common.collect.*;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.tools.TransformInputUtils;
+import com.taobao.android.builder.tools.multidex.mutli.JarRefactor;
+import com.taobao.android.provider.MainDexListProvider;
+
 import org.gradle.tooling.BuildException;
 import org.gradle.workers.IsolationMode;
 
@@ -53,6 +56,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
+import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -159,6 +163,7 @@ public class MtlDexArchiveBuilderTransform extends Transform {
         this.enableDexingArtifactTransform = enableDexingArtifactTransform;
 
         this.atlasIntermediateStreamHelper = atlasIntermediateStreamHelper;
+
 
 
     }
@@ -299,6 +304,7 @@ public class MtlDexArchiveBuilderTransform extends Transform {
             atlasIntermediateStreamHelper.replaceProvider(transformInvocation);
 
         }
+
         Preconditions.checkNotNull(outputProvider, "Missing output provider.");
         if (dexOptions.getAdditionalParameters().contains("--no-optimize")) {
             logger.warning(DefaultDexOptions.OPTIMIZE_WARNING);
@@ -377,7 +383,7 @@ public class MtlDexArchiveBuilderTransform extends Transform {
                     if (jarInput.getFile().getName().equals("instant-run-bootstrap.jar")){
                         continue;
                     }
-                    logger.warning("Jar input %s", jarInput.getFile().toString());
+                        logger.warning("Jar input %s", jarInput.getFile().toString());
                     MtlDexArchiveBuilderTransform.D8DesugaringCacheInfo cacheInfo =
                             getD8DesugaringCacheInfo(
                                     desugarIncrementalTransformHelper,
@@ -394,7 +400,7 @@ public class MtlDexArchiveBuilderTransform extends Transform {
                                     classpathServiceKey,
                                     cacheInfo);
 
-                    if (cacheInfo != MtlDexArchiveBuilderTransform.D8DesugaringCacheInfo.DONT_CACHE && !dexArchives.isEmpty()) {
+                    if (!dexArchives.isEmpty()) {
                         cacheableItems.add(
                                 new DexArchiveHandler.CacheableItem(
                                         jarInput,
