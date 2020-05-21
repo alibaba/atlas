@@ -11,6 +11,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.jar.JarEntry;
@@ -53,8 +54,9 @@ public class ModifyClassFinder {
         }
     }
 
-    public void parseJarPolicies(File file, List<CodeChange> codeChanges) throws IOException {
+    public boolean parseJarPolicies(File file, Collection<CodeChange> codeChanges) throws IOException {
         JarFile jarFile = newJarFile(file);
+        boolean hasChange = false;
         if (jarFile != null){
             Enumeration<JarEntry> enumeration = jarFile.entries();
             while (enumeration.hasMoreElements()){
@@ -68,13 +70,15 @@ public class ModifyClassFinder {
                 classReader.accept(new ModifyClassVisitor(Opcodes.ASM5, codeChange), ClassReader.SKIP_CODE);
                 if (!variantContext.getBuildType().getPatchConfig().isCreateIPatch()) {
                     codeChange.py = PatchPolicy.NONE;
-                    return;
+                    return false;
                 }else if (codeChange.getPy() != PatchPolicy.NONE){
+                    hasChange = true;
                     codeChanges.add(codeChange);
                 }
             }
             jarFile.close();
         }
+        return hasChange;
     }
 
     private JarFile newJarFile(File file){
@@ -137,5 +141,14 @@ public class ModifyClassFinder {
 
         private List<CodeChange> codeChanges = new ArrayList<>();
 
+        @Override
+        public String toString() {
+            return "CodeChange{" +
+                    "code='" + code + '\'' +
+                    ", annotation=" + annotation +
+                    ", py=" + py +
+                    ", codeChanges=" + codeChanges +
+                    '}';
+        }
     }
 }

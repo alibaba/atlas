@@ -1,5 +1,6 @@
 package com.taobao.android.builder.insant;
 
+import com.alibaba.fastjson.JSON;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.api.transform.*;
@@ -31,6 +32,7 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.Sets;
 import com.google.common.io.Files;
 import com.google.common.util.concurrent.SettableFuture;
+import com.google.gson.Gson;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.model.AwbBundle;
@@ -58,8 +60,11 @@ import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
+import proguard.ClassPathEntry;
 import proguard.Configuration;
 
 import static com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactScope.ALL;
@@ -84,6 +89,12 @@ public class DelegateProguardTransform extends MtlInjectTransform {
     private static final String VERSION = "1.0";
 
     private static org.gradle.api.logging.Logger sLogger = null;
+
+    private static final String CHANGE_ENTRY_KEY = "instantpatch_change_classpathEntries";
+
+    private static final String CHANGE_CFG_KEY = "proguard_cfg_changed";
+
+    private static final String WHERE_NOTE_KEY = "class_not_found_note";
 
 
     private ProGuardTransform proGuardTransform;
@@ -129,7 +140,7 @@ public class DelegateProguardTransform extends MtlInjectTransform {
         super.transform(transformInvocation);
 
 
-        System.getProperties().setProperty("class_not_found_note", new File(appVariantContext.getScope().getGlobalScope().getOutputsDir(),"warning-classnotfound-note.properties").getPath());
+        System.getProperties().setProperty(WHERE_NOTE_KEY, new File(appVariantContext.getScope().getGlobalScope().getOutputsDir(),"warning-classnotfound-note.properties").getPath());
 
         PostprocessingFeatures postprocessingFeatures = scope.getPostprocessingFeatures();
         if (postprocessingFeatures != null) {
@@ -156,9 +167,9 @@ public class DelegateProguardTransform extends MtlInjectTransform {
             e.printStackTrace();
         }
         if (queryResult != null && queryResult.getQueryEvent().equals(FileCache.QueryEvent.HIT)){
-            System.getProperties().setProperty("proguard_cfg_changed", "false");
+            System.getProperties().setProperty(CHANGE_CFG_KEY, "false");
         }else {
-            System.getProperties().setProperty("proguard_cfg_changed", "true");
+            System.getProperties().setProperty(CHANGE_CFG_KEY, "true");
 
         }
 
@@ -233,9 +244,15 @@ public class DelegateProguardTransform extends MtlInjectTransform {
         //apply mapping
         applyMapping(appVariantContext);
 
-        if (configuration.applyMapping != null) {
-            configuration.optimize = false;
+
+
+        Collection<TransformInput>transformInputs= getAllInput();
+
+        if (appVariantContext.getBuildType().getPatchConfig().isCreateIPatch()){
+            collectPatchInfo(transformInputs);
+
         }
+
 
         //set output
         File proguardOutFile = new File(appVariantContext.getProject().getBuildDir(), "outputs/proguard.cfg");
@@ -248,7 +265,7 @@ public class DelegateProguardTransform extends MtlInjectTransform {
                 try {
                     Method m = ProGuardTransform.class.getDeclaredMethod("doMinification", Collection.class, Collection.class, TransformOutputProvider.class);
                     m.setAccessible(true);
-                    m.invoke(proGuardTransform, getAllInput(), transformInvocation.getReferencedInputs(), transformInvocation.getOutputProvider());
+                    m.invoke(proGuardTransform, transformInputs, transformInvocation.getReferencedInputs(), transformInvocation.getOutputProvider());
                     if (!appVariantContext.getScope().getOutputProguardMappingFile().isFile()) {
                         Files.asCharSink(appVariantContext.getScope().getOutputProguardMappingFile(), Charsets.UTF_8).write("");
                     }
@@ -416,6 +433,30 @@ public class DelegateProguardTransform extends MtlInjectTransform {
         }
         defaultProguardFiles.addAll(proguardFiles);
 
+    }
+
+    void collectPatchInfo(Collection<TransformInput> transformInputs){
+        ModifyClassFinder modifyClassFinder = new ModifyClassFinder(appVariantContext);
+        List<ModifyClassFinder.CodeChange> codeChanges = new ArrayList<>();
+        List<File>changeJarFiles = new ArrayList<>();
+        configuration.optimize = false;
+        configuration.shrink = false;
+        transformInputs.parallelStream().forEach(transformInput -> transformInput.getJarInputs().parallelStream().forEach(jarInput -> {
+            Collection<ModifyClassFinder.CodeChange> changes = new ArrayList<>();
+            try {
+                if (modifyClassFinder.parseJarPolicies(jarInput.getFile(),changes)){
+                    codeChanges.addAll(changes);
+                    changeJarFiles.add(jarInput.getFile());
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+        }));
+        codeChanges.forEach(codeChange -> System.err.println("codeChange:"+codeChange.toString()));
+        if (changeJarFiles.size() > 0){
+            System.setProperty(CHANGE_ENTRY_KEY, new Gson().toJson(changeJarFiles.stream().map(file -> new ClassPathEntry(file,false)).collect(Collectors.toList())));
+        }
     }
 
 
