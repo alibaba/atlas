@@ -48,7 +48,7 @@ public class ModifyClassFinder {
                 e.printStackTrace();
             }
         }
-        if (!variantContext.getBuildType().getPatchConfig().isCreateIPatch()) {
+        if (variantContext!= null && !variantContext.getBuildType().getPatchConfig().isCreateIPatch()) {
             codeChange.py = PatchPolicy.NONE;
             return;
         }
@@ -68,7 +68,7 @@ public class ModifyClassFinder {
                 InputStream inputStream = jarFile.getInputStream(jarEntry);
                 ClassReader classReader = new ClassReader(inputStream);
                 classReader.accept(new ModifyClassVisitor(Opcodes.ASM5, codeChange), ClassReader.SKIP_CODE);
-                if (!variantContext.getBuildType().getPatchConfig().isCreateIPatch()) {
+                if (variantContext!= null && !variantContext.getBuildType().getPatchConfig().isCreateIPatch()) {
                     codeChange.py = PatchPolicy.NONE;
                     return false;
                 }else if (codeChange.getPy() != PatchPolicy.NONE){
