@@ -211,17 +211,28 @@ package com.taobao.android.builder.tasks.manager.transform;
 
 import com.android.build.api.transform.Format;
 import com.android.build.api.transform.JarInput;
+import com.android.build.api.transform.QualifiedContent;
+import com.android.build.api.transform.Transform;
 import com.android.build.api.transform.TransformOutputProvider;
+import com.android.build.gradle.internal.InternalScope;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
+import com.android.build.gradle.internal.api.AwbTransform;
 import com.android.build.gradle.internal.pipeline.InjectTransform;
+import com.android.build.gradle.internal.pipeline.TransformManagerDelegate;
+import com.android.build.gradle.internal.pipeline.TransformTask;
 import com.android.build.gradle.internal.scope.ApkData;
 import com.android.build.gradle.internal.scope.VariantScope;
+import com.taobao.android.builder.AtlasBuildContext;
+import com.taobao.android.builder.tasks.app.BuildAtlasEnvTask;
 import com.taobao.android.builder.tools.FileNameUtils;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.util.List;
+import java.util.function.Consumer;
 
 /**
  * Created by wuzhong on 2016/11/30.
@@ -236,7 +247,7 @@ public abstract class MtlInjectTransform extends InjectTransform {
 
     public MtlInjectTransform(AppVariantContext appVariantContext, ApkData apkData) {
         this.appVariantContext = appVariantContext;
-        this.apkData= apkData;
+        this.apkData = apkData;
         this.scope = appVariantContext.getScope();
     }
 
@@ -247,13 +258,13 @@ public abstract class MtlInjectTransform extends InjectTransform {
 
     protected AppVariantOutputContext getAppVariantOutputContext() {
 
-        AppVariantOutputContext appVariantOutputContext = (AppVariantOutputContext)appVariantContext
-            .getOutputContextMap().get(apkData.getFullName());
+        AppVariantOutputContext appVariantOutputContext = (AppVariantOutputContext) appVariantContext
+                .getOutputContextMap().get(apkData.getFullName());
 
         if (null == appVariantOutputContext) {
             appVariantOutputContext =
-                new AppVariantOutputContext(apkData.getFullName(), appVariantContext,
-                        apkData, scope.getVariantData());
+                    new AppVariantOutputContext(apkData.getFullName(), appVariantContext,
+                            apkData, scope.getVariantData());
             appVariantContext.getOutputContextMap().put(apkData.getFullName(), appVariantOutputContext);
         }
 
@@ -267,15 +278,42 @@ public abstract class MtlInjectTransform extends InjectTransform {
         }
 
         return outputProvider.getContentLocation(getUniqueJarName(jarInput),
-                                                 jarInput.getContentTypes(),
-                                                 jarInput.getScopes(),
-                                                 Format.JAR);
+                jarInput.getContentTypes(),
+                jarInput.getScopes(),
+                Format.JAR);
 
     }
 
     protected String getUniqueJarName(JarInput jarInput) {
 
         return FileNameUtils.getUniqueJarName(jarInput.getFile());
+    }
+
+    protected void updateStreamForNextTransform(List<File> libraries, List<File> inputDirs, List<File> transformInputFiles, AwbTransform awbTransform, Class<? extends Transform> transformClazz) {
+        if (appVariantContext.getScope().getFullVariantName().toLowerCase().contains("debug")) {
+
+            TransformManagerDelegate.findTransformTaskByTransformType(appVariantContext, transformClazz).forEach(new Consumer<TransformTask>() {
+                public void accept(TransformTask transformTask) {
+                    appVariantContext.getTransformManager().addStreamsForTask(transformTask, InternalScope.MAIN_SPLIT, QualifiedContent.DefaultContentType.CLASSES, awbTransform.getAwbBundle().getName() + getName(), appVariantContext.getProject().files(new Object[]{transformInputFiles}));
+                }
+            });
+            libraries.forEach(new Consumer<File>() {
+                @Override
+                public void accept(File file) {
+                    AtlasBuildContext.atlasMainDexHelperMap.get(appVariantContext.getVariantName()).addMainDex(new BuildAtlasEnvTask.FileIdentity(file.getName(), file, false, false));
+                }
+            });
+
+
+            inputDirs.forEach(new Consumer<File>() {
+                @Override
+                public void accept(File file) {
+                    AtlasBuildContext.atlasMainDexHelperMap.get(appVariantContext.getVariantName()).addMainDex(new BuildAtlasEnvTask.FileIdentity(file.getName(), file, false, false));
+
+                }
+            });
+
+        }
     }
 
 
