@@ -308,11 +308,11 @@ public class ApkFileListUtils {
 
     private static String getResMd5(File file) {
         String md5;
-        if (isCompiledFile(file.getName())) {
-            md5 = getCompiledFileMd5(file);
-        } else {
+//        if (isCompiledFile(file.getName())) {
+//            md5 = getCompiledFileMd5(file);
+//        } else {
             md5 = MD5Util.getFileMD5(file);
-        }
+//        }
         return md5;
     }
 
