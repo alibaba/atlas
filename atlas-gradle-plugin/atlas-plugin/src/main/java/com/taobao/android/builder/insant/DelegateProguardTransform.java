@@ -92,6 +92,9 @@ public class DelegateProguardTransform extends MtlInjectTransform {
 
     private static final String CHANGE_ENTRY_KEY = "instantpatch_change_classpathEntries";
 
+    private static final String CHANGE_CLASS_KEY = "instantpatch_change_classes";
+
+
     private static final String CHANGE_CFG_KEY = "proguard_cfg_changed";
 
     private static final String WHERE_NOTE_KEY = "class_not_found_note";
@@ -279,7 +282,6 @@ public class DelegateProguardTransform extends MtlInjectTransform {
         IntermediateFolderUtils folderUtils = (IntermediateFolderUtils) ReflectUtils.getField(transformInvocation.getOutputProvider(), "folderUtils");
         AtlasBuildContext.atlasMainDexHelperMap.get(appVariantContext.getVariantName()).addAllMainDexJars(FileUtils.listFiles(folderUtils.getRootFolder(), new String[]{"jar"}, true));
 
-
     }
 
     private Collection<TransformInput> getAllInput() {
@@ -436,6 +438,7 @@ public class DelegateProguardTransform extends MtlInjectTransform {
     }
 
     void collectPatchInfo(Collection<TransformInput> transformInputs){
+        long start = System.currentTimeMillis();
         ModifyClassFinder modifyClassFinder = new ModifyClassFinder(appVariantContext);
         List<ModifyClassFinder.CodeChange> codeChanges = new ArrayList<>();
         List<File>changeJarFiles = new ArrayList<>();
@@ -454,9 +457,13 @@ public class DelegateProguardTransform extends MtlInjectTransform {
 
         }));
         codeChanges.forEach(codeChange -> System.err.println("codeChange:"+codeChange.toString()));
+        if (codeChanges.size() > 0){
+            System.setProperty(CHANGE_CLASS_KEY,new Gson().toJson(codeChanges.stream().map(codeChange -> codeChange.getCode()).collect(Collectors.toList())));
+        }
         if (changeJarFiles.size() > 0){
             System.setProperty(CHANGE_ENTRY_KEY, new Gson().toJson(changeJarFiles.stream().map(file -> new ClassPathEntry(file,false)).collect(Collectors.toList())));
         }
+        sLogger.warn("collectPatchInfo cost:"+(System.currentTimeMillis() - start));
     }
 
 

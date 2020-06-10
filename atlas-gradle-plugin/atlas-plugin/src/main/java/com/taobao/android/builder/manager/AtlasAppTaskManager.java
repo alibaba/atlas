@@ -341,7 +341,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                                                               mtlTaskContextList.add(new MtlTaskContext(PrepareBundleInfoTask.ConfigAction.class, null));
 
-                                                              if (atlasExtension.isAtlasEnabled()) {
+                                                              if (atlasExtension.isAtlasEnabled() && !appVariantContext.getBuildType().getPatchConfig().isCreateIPatch()) {
                                                                   mtlTaskContextList.add(new MtlTaskContext(GenerateBundleInfoSourceTask.ConfigAction.class, null));
                                                               }
 

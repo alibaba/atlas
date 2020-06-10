@@ -40,7 +40,6 @@ import com.google.common.collect.*;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.tools.TransformInputUtils;
-import com.taobao.android.builder.tools.multidex.mutli.JarRefactor;
 import com.taobao.android.provider.MainDexListProvider;
 
 import org.gradle.tooling.BuildException;
@@ -299,6 +298,11 @@ public class MtlDexArchiveBuilderTransform extends Transform {
     @Override
     public void transform(@NonNull TransformInvocation transformInvocation)
             throws TransformException, IOException, InterruptedException {
+
+        if (!variantOutputContext.getVariantContext().getBuildType().getPatchConfig().isCreateIPatch()) {
+            new Thread(() -> MainDexListProvider.getInstance().generateMainDexList(variantOutputContext.getVariantContext())).start();
+
+        }
         TransformOutputProvider outputProvider = transformInvocation.getOutputProvider();
         if (atlasIntermediateStreamHelper != null) {
             atlasIntermediateStreamHelper.replaceProvider(transformInvocation);

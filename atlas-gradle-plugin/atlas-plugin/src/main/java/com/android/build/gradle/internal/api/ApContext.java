@@ -285,6 +285,10 @@ public class ApContext {
         return apFile;
     }
 
+    public File getCompileDir(){
+        return new File(apExploredFolder,"classes");
+    }
+
     public void setApFile(File apFile) {
         this.apFile = apFile;
     }

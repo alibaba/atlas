@@ -218,6 +218,8 @@ import com.android.build.gradle.internal.api.ApContext;
 import com.android.build.gradle.internal.api.VariantContext;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.tasks.VariantAwareTask;
+import com.android.build.gradle.internal.tasks.Workers;
+import com.android.ide.common.workers.WorkerExecutorFacade;
 import com.android.utils.FileUtils;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
@@ -239,17 +241,16 @@ import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.Dependency;
 import org.gradle.api.internal.ConventionTask;
 import org.gradle.api.tasks.*;
-import org.jetbrains.annotations.NotNull;
+import org.gradle.workers.WorkerExecutor;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.Serializable;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
-
-import static com.android.SdkConstants.ANDROID_MANIFEST_XML;
-import static com.android.SdkConstants.FN_APK_CLASSES_DEX;
-import static com.android.build.gradle.internal.api.ApContext.*;
+import javax.inject.Inject;
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
 
 /**
@@ -266,6 +267,13 @@ public class PrepareAPTask extends ConventionVariantAwareTask {
     private File explodedDir;
 
     Set<String> awbBundles;
+
+    private WorkerExecutorFacade workers;
+
+    @Inject
+    public PrepareAPTask(WorkerExecutor workExecutor) {
+        this.workers = Workers.INSTANCE.getWorker(workExecutor);
+    }
 
 
     @InputFile
@@ -343,24 +351,25 @@ public class PrepareAPTask extends ConventionVariantAwareTask {
                 explodedDir = getExplodedDir();
                 BetterZip.unzipDirectory(apBaseFile, explodedDir);
                 apContext.setApExploredFolder(explodedDir);
-                Set<String> awbBundles = getAwbBundles();
-                if (awbBundles != null) {
-                    // Unzip the baseline Bundle
-                    for (String awbBundle : awbBundles) {
-                        File awbFile = BetterZip.extractFile(new File(explodedDir, AP_INLINE_APK_FILENAME),
-                                                             "lib/armeabi/" + awbBundle,
-                                                             new File(explodedDir, AP_INLINE_AWB_EXTRACT_DIRECTORY));
-                        File awbExplodedDir = new File(new File(explodedDir, AP_INLINE_AWB_EXPLODED_DIRECTORY),
-                                                       FilenameUtils.getBaseName(awbBundle));
-                        BetterZip.unzipDirectory(awbFile, awbExplodedDir);
-                        FileUtils.renameTo(new File(awbExplodedDir, FN_APK_CLASSES_DEX),
-                                           new File(awbExplodedDir, "classes2.dex"));
-                    }
-                    // Preprocessing increment androidmanifest.xml
-                    ManifestFileUtils.updatePreProcessBaseManifestFile(
-                        FileUtils.join(explodedDir, "manifest-modify", ANDROID_MANIFEST_XML),
-                        new File(explodedDir, ANDROID_MANIFEST_XML));
-                }
+                AtlasBuildContext.atlasMainDexHelperMap.get(variantName).getInputDirs().add(apContext.getCompileDir());
+//                Set<String> awbBundles = getAwbBundles();
+//                if (awbBundles != null) {
+//                    // Unzip the baseline Bundle
+//                    for (String awbBundle : awbBundles) {
+//                        File awbFile = BetterZip.extractFile(new File(explodedDir, AP_INLINE_APK_FILENAME),
+//                                                             "lib/armeabi/" + awbBundle,
+//                                                             new File(explodedDir, AP_INLINE_AWB_EXTRACT_DIRECTORY));
+//                        File awbExplodedDir = new File(new File(explodedDir, AP_INLINE_AWB_EXPLODED_DIRECTORY),
+//                                                       FilenameUtils.getBaseName(awbBundle));
+//                        BetterZip.unzipDirectory(awbFile, awbExplodedDir);
+//                        FileUtils.renameTo(new File(awbExplodedDir, FN_APK_CLASSES_DEX),
+//                                           new File(awbExplodedDir, "classes2.dex"));
+//                    }
+//                    // Preprocessing increment androidmanifest.xml
+//                    ManifestFileUtils.updatePreProcessBaseManifestFile(
+//                        FileUtils.join(explodedDir, "manifest-modify", ANDROID_MANIFEST_XML),
+//                        new File(explodedDir, ANDROID_MANIFEST_XML));
+//                }
                 if (explodedDir.listFiles().length == 0){
                     throw new RuntimeException("unzip ap exception, no files found");
                 }
@@ -371,6 +380,8 @@ public class PrepareAPTask extends ConventionVariantAwareTask {
             }
         }
     }
+
+
 
     public static class ConfigAction extends MtlBaseTaskAction<PrepareAPTask> {
 

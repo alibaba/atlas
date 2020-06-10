@@ -298,7 +298,7 @@ public class ApBuildTask extends ConventionTask implements VariantAwareTask {
 
         addFile(com.android.utils.FileUtils.join(baseVariantOutputData.getProcessManifestProvider().get().getManifestOutputDirectory().get().getAsFile(),ApkDataUtils.get(baseVariantOutputData).getDirName(),"AndroidManifest.xml"),
                 "AndroidManifest.xml");
-        addFile(apkFile, ApContext.AP_INLINE_APK_FILENAME);
+//        addFile(apkFile, ApContext.AP_INLINE_APK_FILENAME);
         addFile(new File(
                 appVariantContext.getScope().getGlobalScope().getIntermediatesDir().getAbsolutePath()+"/"+
                 "symbols/"
@@ -307,6 +307,7 @@ public class ApBuildTask extends ConventionTask implements VariantAwareTask {
                         .getDirName(), "R.txt"),
                 "R.txt");
 
+        addDirAndFile(appVariantContext.getScope().getTaskContainer().javacTask.get().getDestinationDir());
         addFile(appBuildInfo.getPackageIdFile());
         addFile(injectFailedFile);
         addFile(appBuildInfo.getDependenciesFile());
@@ -374,6 +375,16 @@ public class ApBuildTask extends ConventionTask implements VariantAwareTask {
         FileUtils.deleteDirectory(apUnzipDir);
 
         return APFile;
+    }
+
+    private void addDirAndFile(File destinationDir) {
+        if (destinationDir != null && destinationDir.exists()){
+            try {
+                FileUtils.copyDirectory(destinationDir,new File(apUnzipDir,destinationDir.getName()));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     private static File getApkFiles(File outputDir,
