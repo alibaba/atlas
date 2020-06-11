@@ -169,7 +169,8 @@ public class DelegateProguardTransform extends MtlInjectTransform {
         } catch (ExecutionException e) {
             e.printStackTrace();
         }
-        if (queryResult != null && queryResult.getQueryEvent().equals(FileCache.QueryEvent.HIT)){
+        if (queryResult != null && queryResult.getQueryEvent().equals(FileCache.QueryEvent.HIT)
+                || appVariantContext.getBuildType().getPatchConfig().isCreateIPatch()){
             System.getProperties().setProperty(CHANGE_CFG_KEY, "false");
         }else {
             System.getProperties().setProperty(CHANGE_CFG_KEY, "true");
