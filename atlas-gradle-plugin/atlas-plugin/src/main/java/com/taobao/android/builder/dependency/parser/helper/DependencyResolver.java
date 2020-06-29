@@ -351,6 +351,11 @@ public class DependencyResolver {
             for (ResolvedArtifact resolvedArtifact : moduleArtifacts) {
                 String key = moduleVersion.getGroup() + ":" + moduleVersion.getName();
                 //remove android.jar
+
+                if (resolvedArtifact == null){
+
+                    continue;
+                }
                 if(key.equals("com.google.android:android")){
                     continue;
                 }
