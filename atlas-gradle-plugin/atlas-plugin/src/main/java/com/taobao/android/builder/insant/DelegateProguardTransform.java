@@ -257,7 +257,7 @@ public class DelegateProguardTransform extends MtlInjectTransform {
 
         }
 
-
+        configuration.ignoreWarnings = true;
         //set output
         File proguardOutFile = new File(appVariantContext.getProject().getBuildDir(), "outputs/proguard.cfg");
         proGuardTransform.printconfiguration(proguardOutFile);
