@@ -381,6 +381,7 @@ public class MtlDexArchiveBuilderTransform extends Transform {
                 }
 
                 for (JarInput jarInput : input.getJarInputs()) {
+                    logger.warning("Jar input 。。。。。。。%s", jarInput.getFile().toString());
                     if ( !AtlasBuildContext.atlasMainDexHelperMap.get(variantOutputContext.getVariantContext().getVariantName()).getAllMainDexJars().contains(jarInput.getFile())) {
                         continue;
                     }
@@ -877,8 +878,6 @@ public class MtlDexArchiveBuilderTransform extends Transform {
             @NonNull MtlDexArchiveBuilderTransform.ClasspathServiceKey classpath,
             @NonNull Set<File> additionalPaths) {
 
-        logger.verbose("Dexing %s", input.getFile().getAbsolutePath());
-
         if (!input.getFile().isDirectory() && isNotVilid(input.getFile())) {
             return ImmutableList.of();
         }
@@ -978,8 +977,6 @@ public class MtlDexArchiveBuilderTransform extends Transform {
                                                   @NonNull MtlDexArchiveBuilderTransform.ClasspathServiceKey bootClasspath,
                                                   @NonNull MtlDexArchiveBuilderTransform.ClasspathServiceKey classpath,
                                                   @NonNull Set<File> additionalPaths,AtomicInteger atomicInteger) {
-
-        logger.verbose("Dexing %s", input.getFile().getAbsolutePath());
 
         if (!input.getFile().isDirectory() && isNotVilid(input.getFile())) {
             return ImmutableList.of();
