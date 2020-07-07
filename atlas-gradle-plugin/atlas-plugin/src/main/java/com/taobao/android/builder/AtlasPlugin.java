@@ -210,26 +210,12 @@
 package com.taobao.android.builder;
 
 import com.taobao.android.builder.manager.AtlasConfigurationHelper;
-import com.taobao.android.builder.tasks.helper.AtlasListTask;
-import com.taobao.android.builder.tools.PluginTypeUtils;
 
-import groovy.lang.Closure;
-
-import org.gradle.api.Action;
-import org.gradle.api.GradleException;
-import org.gradle.api.Plugin;
 import org.gradle.api.Project;
-import org.gradle.api.ProjectState;
-import org.gradle.api.artifacts.Configuration;
-import org.gradle.api.artifacts.Dependency;
-import org.gradle.internal.reflect.Instantiator;
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
 import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
-
-import java.util.HashMap;
-import java.util.Map;
 
 
 public class AtlasPlugin extends AtlasBasePlugin {
@@ -245,8 +231,6 @@ public class AtlasPlugin extends AtlasBasePlugin {
         super.apply(project);
 
 
-
-
     }
 
     @Override
@@ -260,7 +244,6 @@ public class AtlasPlugin extends AtlasBasePlugin {
 
         return toolingModelBuilderRegistry;
     }
-
 
 
 }

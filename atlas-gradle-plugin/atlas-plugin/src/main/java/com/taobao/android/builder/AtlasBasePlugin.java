@@ -61,12 +61,7 @@ public abstract class AtlasBasePlugin implements Plugin<Project>, ToolingRegistr
 
         atlasConfigurationHelper.createLibCompenents();
 
-        project.afterEvaluate(new Action<Project>() {
-            @Override
-            public void execute(Project project) {
-                afterEvaluate(project);
-            }
-        });
+        project.afterEvaluate(project1 -> afterEvaluate(project1));
 
     }
 
