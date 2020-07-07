@@ -234,6 +234,7 @@ import org.gradle.api.Project;
 import org.gradle.api.artifacts.*;
 import org.gradle.api.artifacts.result.DependencyResult;
 import org.gradle.api.internal.artifacts.dependencies.DefaultProjectDependency;
+import org.gradle.api.internal.project.DefaultProject;
 import org.gradle.api.internal.project.ProjectInternal;
 import org.gradle.api.specs.Specs;
 
@@ -356,7 +357,10 @@ public class AtlasDepTreeParser {
             if (dependency instanceof ProjectDependency) {
                 ProjectDependency projectDependency = (ProjectDependency)dependency;
                 prepareProject(projectDependency,config);
-                project.evaluationDependsOn(projectDependency.getDependencyProject().getPath());
+                DefaultProject defaultProject = (DefaultProject) projectDependency.getDependencyProject();
+                if (!defaultProject.getState().isConfiguring()) {
+                    project.evaluationDependsOn(projectDependency.getDependencyProject().getPath());
+                }
 
             }
         }
