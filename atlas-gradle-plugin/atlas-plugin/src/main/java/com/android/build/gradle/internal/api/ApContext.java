@@ -209,6 +209,9 @@
 
 package com.android.build.gradle.internal.api;
 
+import com.android.SdkConstants;
+import com.android.build.gradle.api.BaseVariantOutput;
+import com.android.build.gradle.internal.ApkDataUtils;
 import com.android.utils.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 
@@ -287,6 +290,10 @@ public class ApContext {
 
     public File getCompileDir(){
         return new File(apExploredFolder,"classes");
+    }
+
+    public File getResApFile(BaseVariantOutput baseVariantOutput){
+        return new File(apExploredFolder,SdkConstants.FN_RES_BASE + SdkConstants.RES_QUALIFIER_SEP + ApkDataUtils.get(baseVariantOutput).getFullName() + SdkConstants.DOT_RES);
     }
 
     public void setApFile(File apFile) {

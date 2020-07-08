@@ -381,7 +381,6 @@ public class MtlDexArchiveBuilderTransform extends Transform {
                 }
 
                 for (JarInput jarInput : input.getJarInputs()) {
-                    logger.warning("Jar input 。。。。。。。%s", jarInput.getFile().toString());
                     if ( !AtlasBuildContext.atlasMainDexHelperMap.get(variantOutputContext.getVariantContext().getVariantName()).getAllMainDexJars().contains(jarInput.getFile())) {
                         continue;
                     }
@@ -544,6 +543,9 @@ public class MtlDexArchiveBuilderTransform extends Transform {
             @NonNull List<Path> classpath,
             @NonNull JarInput jarInput) {
 
+        if (variantOutputContext.getVariantContext().getProject().hasProperty("LocalDev")){
+            return D8DesugaringCacheInfo.NO_INFO;
+        }
         if (java8LangSupportType != VariantScope.Java8LangSupport.D8) {
             return MtlDexArchiveBuilderTransform.D8DesugaringCacheInfo.NO_INFO;
         }
@@ -583,6 +585,8 @@ public class MtlDexArchiveBuilderTransform extends Transform {
 
         allDependencies.addAll(bootclasspathPaths);
         allDependencies.addAll(classpathJars);
+
+
         return new MtlDexArchiveBuilderTransform.D8DesugaringCacheInfo(allDependencies);
     }
 

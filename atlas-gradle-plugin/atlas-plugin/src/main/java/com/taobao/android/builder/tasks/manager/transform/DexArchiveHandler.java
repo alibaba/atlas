@@ -87,11 +87,12 @@ public class DexArchiveHandler {
     File getCachedVersionIfPresent(@NonNull JarInput input, @NonNull List<Path> dependencies)
             throws IOException {
 
-        FileCache cache = getBuildCache(input.getFile(), isExternalLib(input), userLevelCache);
+        FileCache cache = getBuildCache(input.getFile(), false, userLevelCache);
 
         if (cache == null) {
             return null;
         }
+
 
         FileCache.Inputs buildCacheInputs =
                 DexArchiveHandler.getBuildCacheInputs(
@@ -114,7 +115,7 @@ public class DexArchiveHandler {
             FileCache cache =
                     getBuildCache(
                             cacheableItem.input.getFile(),
-                            isExternalLib(cacheableItem.input),
+                            false,
                             userLevelCache);
             if (cache != null) {
                 FileCache.Inputs buildCacheInputs =
@@ -300,7 +301,7 @@ public class DexArchiveHandler {
             @NonNull File inputFile, boolean isExternalLib, @Nullable FileCache buildCache) {
         // We use the build cache only when it is enabled and the input file is a (non-snapshot)
         // external-library jar file
-        if (buildCache == null || !isExternalLib) {
+        if (buildCache == null) {
             return null;
         }
         // After the check above, here the build cache should be enabled and the input file is an

@@ -216,6 +216,7 @@ import com.android.build.gradle.internal.api.ApContext;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
+import com.android.build.gradle.internal.scope.InternalArtifactType;
 import com.android.build.gradle.internal.tasks.VariantAwareTask;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import com.taobao.android.builder.tools.zip.BetterZip;
@@ -310,6 +311,10 @@ public class ApBuildTask extends ConventionTask implements VariantAwareTask {
         addDirAndFile(appVariantContext.getScope().getTaskContainer().javacTask.get().getDestinationDir());
         addFile(appBuildInfo.getPackageIdFile());
         addFile(injectFailedFile);
+        if (baseVariantOutputData.getProcessResourcesProvider().get().isEnabled()) {
+            File resourceFile = FileUtils.listFiles(appVariantContext.getScope().getArtifacts().getFinalArtifactFiles(InternalArtifactType.PROCESSED_RES).getFiles().iterator().next(), new String[]{"ap_"}, true).iterator().next();
+            addFile(resourceFile);
+        }
         addFile(appBuildInfo.getDependenciesFile());
         addFile(appBuildInfo.getBuildInfoFile());
         addFile(appBuildInfo.getVersionPropertiesFile());
