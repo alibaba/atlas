@@ -5,6 +5,7 @@ import com.android.annotations.Nullable;
 import com.android.utils.ILogger;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
+
 import org.objectweb.asm.*;
 import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.JSRInlinerAdapter;
@@ -33,10 +34,12 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
     private boolean patchInitMethod = true;
     private boolean supportAddCallSuper = true;
     private boolean patchInterface = false;
+    private boolean patchEachMethod = false;
 
-    private List<MethodNode>methodNodes = new ArrayList<>();
 
-    private Map<String,String>visitSuperMethods = new HashMap<>();
+    private List<MethodNode> methodNodes = new ArrayList<>();
+
+    private Map<String, String> visitSuperMethods = new HashMap<>();
 
 
     public void setPatchInitMethod(boolean patchInitMethod) {
@@ -45,6 +48,10 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
 
     public void setSupportAddCallSuper(boolean supportAddCallSuper) {
         this.supportAddCallSuper = supportAddCallSuper;
+    }
+
+    public void setPatchEachMethod(boolean patchEachMethod) {
+        this.patchEachMethod = patchEachMethod;
     }
 
     private static final class VisitorBuilder implements TBIncrementalVisitor.VisitorBuilder {
@@ -83,7 +90,7 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
             @NonNull ILogger logger) {
         super(classNode, classVisitor, logger);
         classNode.getClassNode().methods.forEach((Consumer<MethodNode>) o -> {
-            if (!o.name.equals(ByteCodeUtils.CONSTRUCTOR) &&! o.name.equals(ByteCodeUtils.CLASS_INITIALIZER)) {
+            if (!o.name.equals(ByteCodeUtils.CONSTRUCTOR) && !o.name.equals(ByteCodeUtils.CLASS_INITIALIZER)) {
                 methodNodes.add(o);
             }
         });
@@ -117,15 +124,21 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
 
         // when dealing with interfaces, the $change field is an AtomicReference to the CHANGE_TYPE
         // since fields in interface must be final. For classes, it's the CHANGE_TYPE directly.
-        if (isInterface && patchInterface) {
-            super.visitField(
-                    fieldAccess,
-                    "$ipChange",
-                    getRuntimeTypeName(Type.getType(AtomicReference.class)),
-                    null,
-                    null);
+        if (isInterface) {
+
+                super.visitField(
+                        fieldAccess,
+                        "$ipChange",
+                        getRuntimeTypeName(Type.getType(AtomicReference.class)),
+                        null,
+                        null);
+
         } else {
-            super.visitField(fieldAccess, "$ipChange", getRuntimeTypeName(ALI_CHANGE_TYPE), null, null);
+            if (patchEachMethod && methodNodes.size() > 0) {
+                methodNodes.forEach(methodNode -> TBIncrementalSupportVisitor.super.visitField(fieldAccess, "$ipChange$" + (methodNode.name + "." + methodNode.desc).hashCode(), getRuntimeTypeName(ALI_CHANGE_TYPE), null, null));
+            } else {
+                super.visitField(fieldAccess, "$ipChange", getRuntimeTypeName(ALI_CHANGE_TYPE), null, null);
+            }
         }
         access = transformClassAccessForInstantRun(access);
         super.visit(version, access, name, signature, superName, interfaces);
@@ -185,8 +198,8 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
                 public void visitMethodInsn(int opcode, String owner, String name, String desc, boolean itf) {
                     if (opcode == Opcodes.INVOKESPECIAL && !owner.equals(visitedClassName)) {
                         String newDesc = name + "." + desc;
-                        if (!visitSuperMethods.containsKey(newDesc)){
-                            visitSuperMethods.put(newDesc,owner);
+                        if (!visitSuperMethods.containsKey(newDesc)) {
+                            visitSuperMethods.put(newDesc, owner);
                         }
                     }
                     super.visitMethodInsn(opcode, owner, name, desc, itf);
@@ -273,7 +286,7 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
      *   reload.dex are loaded from a different class loader but private methods/fields are accessed
      *   through reflection, therefore you need visibility.
      * </ul>
-     *
+     * <p>
      * remember that in Java, protected methods or fields can be accessed by classes in the same
      * package : {@see https://docs.oracle.com/javase/tutorial/java/javaOO/accesscontrol.html}
      *
@@ -294,6 +307,8 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
 
         protected boolean disableRedirection = false;
         protected int change;
+        protected int hash;
+
         protected final List<Type> args;
         protected final List<Redirection> redirections;
         protected final Map<Label, Redirection> resolvedRedirections;
@@ -301,6 +316,7 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
 
         public ISAbstractMethodVisitor(MethodVisitor mv, int access, String name, String desc) {
             super(Opcodes.ASM5, mv, access, name, desc);
+            this.hash = (name + "." + desc).hashCode();
             this.change = -1;
             this.redirections = new ArrayList<>();
             this.resolvedRedirections = new HashMap<>();
@@ -328,7 +344,7 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
          * <p>
          * Pseudo code:
          * <code>
-         *   $package/IncrementalChange $local1 = $className$.$change;
+         * $package/IncrementalChange $local1 = $className$.$change;
          * </code>
          */
         @Override
@@ -344,8 +360,6 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
                 change = newLocal(ALI_CHANGE_TYPE);
                 visitChangeField();
                 storeLocal(change);
-
-
 
 
                 redirectAt(start);
@@ -400,15 +414,24 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
 
         public ISMethodVisitor(MethodVisitor mv, int access, String name, String desc) {
             super(mv, access, name, desc);
+
         }
 
         @Override
         protected void visitChangeField() {
-            visitFieldInsn(
-                    Opcodes.GETSTATIC,
-                    visitedClassName,
-                    "$ipChange",
-                    getRuntimeTypeName(ALI_CHANGE_TYPE));
+            if (patchEachMethod) {
+                visitFieldInsn(
+                        Opcodes.GETSTATIC,
+                        visitedClassName,
+                        "$ipChange$" + hash,
+                        getRuntimeTypeName(ALI_CHANGE_TYPE));
+            } else {
+                visitFieldInsn(
+                        Opcodes.GETSTATIC,
+                        visitedClassName,
+                        "$ipChange",
+                        getRuntimeTypeName(ALI_CHANGE_TYPE));
+            }
         }
     }
 
@@ -420,11 +443,12 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
 
         @Override
         protected void visitChangeField() {
-            visitFieldInsn(
-                    Opcodes.GETSTATIC,
-                    visitedClassName,
-                    "$ipChange",
-                    getRuntimeTypeName(Type.getType(AtomicReference.class)));
+                visitFieldInsn(
+                        Opcodes.GETSTATIC,
+                        visitedClassName,
+                        "$ipChange",
+                        getRuntimeTypeName(Type.getType(AtomicReference.class)));
+
             mv.visitMethodInsn(
                     Opcodes.INVOKEVIRTUAL,
                     "java/util/concurrent/atomic/AtomicReference",
@@ -467,6 +491,7 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
             return method.name + "." + method.desc;
         }
     }
+
     /***
      * Inserts a trampoline to this class so that the updated methods can make calls to super
      * class methods.
@@ -521,31 +546,29 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
 
         // and gather all default methods of all directly/inherited implemented interfaces.
 
-            for (AsmInterfaceNode implementedInterface : classAndInterfaceNode.getInterfaces()) {
-                addDefaultMethods(
-                        classAndInterfaceNode.getClassNode(), implementedInterface, uniqueMethods);
+        for (AsmInterfaceNode implementedInterface : classAndInterfaceNode.getInterfaces()) {
+            addDefaultMethods(
+                    classAndInterfaceNode.getClassNode(), implementedInterface, uniqueMethods);
 
-                implementedInterface.onAll(
-                        interfaceNode -> {
-                            addAllNewMethods(
-                                    classAndInterfaceNode.getClassNode(), interfaceNode, uniqueMethods);
-                            return null;
-                        });
-            }
+            implementedInterface.onAll(
+                    interfaceNode -> {
+                        addAllNewMethods(
+                                classAndInterfaceNode.getClassNode(), interfaceNode, uniqueMethods);
+                        return null;
+                    });
+        }
 
 
-            Map<String,MethodReference>shouldVisitMethods = new HashMap<>();
+        Map<String, MethodReference> shouldVisitMethods = new HashMap<>();
 
-            uniqueMethods.keySet().forEach(new Consumer<String>() {
-                @Override
-                public void accept(String s) {
-                    if (visitSuperMethods.containsKey(s)){
-                        shouldVisitMethods.put(s,uniqueMethods.get(s));
-                    }
+        uniqueMethods.keySet().forEach(new Consumer<String>() {
+            @Override
+            public void accept(String s) {
+                if (visitSuperMethods.containsKey(s)) {
+                    shouldVisitMethods.put(s, uniqueMethods.get(s));
                 }
-            });
-
-
+            }
+        });
 
 
         new TBStringSwitch() {
@@ -704,7 +727,7 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
             void visitDefault() {
                 writeMissingMessageWithHash(mv, visitedClassName);
             }
-        }.visit(mv,uniqueMethods.keySet());
+        }.visit(mv, uniqueMethods.keySet());
 
         mv.visitMaxs(1, 3);
         mv.visitEnd();
@@ -752,7 +775,7 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
 
         if (isInterface && patchInterface) {
             addInterfaceClassInitializer();
-        } else if (patchInitMethod){
+        } else if (patchInitMethod) {
             createDispatchingThis();
         }
         super.visitEnd();
@@ -764,45 +787,45 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
      * <code>
      * package a;
      * public class A {
-     *     public void publicMethod();
+     * public void publicMethod();
      * }
-     *
+     * <p>
      * package a;
      * class B extends A {
-     *     public void publicMethod();
+     * public void publicMethod();
      * }
-     *
+     * <p>
      * package b;
      * public class C extends B {
-     *     ...
+     * ...
      * }
      * </code>
      * when instrumenting C, the first method reference for "publicMethod" is on class B which we
      * cannot invoke directly since it's present on a private package B which is not located in the
      * same package as C. However C can still call the "publicMethod" since it's defined on A which
      * is a public class.
-     *
+     * <p>
      * We cannot just blindly take the top most definition of "publicMethod" hoping this is the
      * accessible one since you can very well do :
      * <code>
      * package a;
      * class A {
-     *     public void publicMethod();
+     * public void publicMethod();
      * }
-     *
+     * <p>
      * package a;
      * public class B extends A {
-     *     public void publicMethod();
+     * public void publicMethod();
      * }
-     *
+     * <p>
      * package b;
      * public class C extends B {
-     *     ...
+     * ...
      * }
      * </code>
-     *
+     * <p>
      * In that case, the top most parent class is the one defined the unaccessible method reference.
-     *
+     * <p>
      * Therefore, the solution is to walk up the hierarchy until we find the same method defined on
      * an accessible class, if we cannot find such a method, the suitable parent is the parent class
      * of the visited class which is legal (but might consume a DEX id).
@@ -882,11 +905,11 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
     /**
      * Add all unseen method from the passed ClassNode's methods and implemented interfaces.
      *
-     * @see ClassNode#methods
      * @param instrumentedClass class that is being visited
-     * @param superClass the class to save all directly implemented methods as well as default
-     *     methods from implemented interfaces from
-     * @param methods the methods already encountered in the ClassNode hierarchy
+     * @param superClass        the class to save all directly implemented methods as well as default
+     *                          methods from implemented interfaces from
+     * @param methods           the methods already encountered in the ClassNode hierarchy
+     * @see ClassNode#methods
      */
     private void addAllNewMethods(
             ClassNode instrumentedClass,
@@ -903,10 +926,10 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
     /**
      * Add all unseen methods from the passed ClassNode's methods.
      *
-     * @see ClassNode#methods
      * @param instrumentedClass class that is being visited
-     * @param superClass the class to save all new methods from
-     * @param methods the methods already encountered in the ClassNode hierarchy
+     * @param superClass        the class to save all new methods from
+     * @param methods           the methods already encountered in the ClassNode hierarchy
+     * @see ClassNode#methods
      */
     private List<MethodReference> addAllNewMethods(
             ClassNode instrumentedClass,
@@ -915,7 +938,7 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
 
         ImmutableList.Builder<MethodReference> methodRefs = ImmutableList.builder();
 
-        if (superClass == null || superClass.name.equals("java/lang/Object")||(instrumentedClass.access& Opcodes.ACC_INTERFACE) != 0){
+        if (superClass == null || superClass.name.equals("java/lang/Object") || (instrumentedClass.access & Opcodes.ACC_INTERFACE) != 0) {
             return methodRefs.build();
         }
 
@@ -934,9 +957,9 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
      * Adds all default method for the passed implemented interface of a class as well as all
      * default methods from any interface extended by the passed implemented interface.
      *
-     * @param instrumentedClass the class we are bytecode instrumenting.
+     * @param instrumentedClass    the class we are bytecode instrumenting.
      * @param implementedInterface the interface that might contain default methods.
-     * @param methods map of methods we already encountered on the instrumentedClass implementation.
+     * @param methods              map of methods we already encountered on the instrumentedClass implementation.
      * @return nothing
      */
     private Void addDefaultMethods(
@@ -981,11 +1004,11 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
      * Add a new method in the list of unseen methods in the instrumentedClass hierarchy.
      *
      * @param instrumentedClass class that is being visited
-     * @param superClass the class or interface defining the passed method.
-     * @param method the method to study
-     * @param methods the methods arlready encountered in the ClassNode hierarchy
+     * @param superClass        the class or interface defining the passed method.
+     * @param method            the method to study
+     * @param methods           the methods arlready encountered in the ClassNode hierarchy
      * @return the newly added {@link MethodReference} of null if the method was not added for any
-     *     reason.
+     * reason.
      */
     @Nullable
     private static MethodReference addNewMethod(
@@ -1021,13 +1044,13 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
     /**
      * Add a new method in the list of unseen methods in the instrumentedClass hierarchy.
      *
-     * @param name the dispatching name that will be used for matching callers to the passed method.
+     * @param name              the dispatching name that will be used for matching callers to the passed method.
      * @param instrumentedClass class that is being visited
-     * @param superClass the class or interface defining the passed method.
-     * @param method the method to study
-     * @param methods the methods arlready encountered in the ClassNode hierarchy
+     * @param superClass        the class or interface defining the passed method.
+     * @param method            the method to study
+     * @param methods           the methods arlready encountered in the ClassNode hierarchy
      * @return the newly added {@link MethodReference} of null if the method was not added for any
-     *     reason.
+     * reason.
      */
     @Nullable
     private static MethodReference addNewMethod(
@@ -1042,9 +1065,9 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
                 && isCallableFromSubclass(method, superClass, instrumentedClass)) {
 
 //            if (visitSuperMethods.containsKey(MethodReference.getDefaultDispatchName(method))) {
-                MethodReference methodReference = new MethodReference(method, superClass);
-                methods.put(MethodReference.getDefaultDispatchName(method), methodReference);
-                return methodReference;
+            MethodReference methodReference = new MethodReference(method, superClass);
+            methods.put(MethodReference.getDefaultDispatchName(method), methodReference);
+            return methodReference;
 
 //            }
 
@@ -1071,8 +1094,9 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
 
     /**
      * Add all constructors from the passed ClassNode's methods. {@see ClassNode#methods}
-     * @param methods the constructors already encountered in the ClassNode hierarchy
-     * @param classNode the class to save all new methods from.
+     *
+     * @param methods                 the constructors already encountered in the ClassNode hierarchy
+     * @param classNode               the class to save all new methods from.
      * @param keepPrivateConstructors whether to keep the private constructors.
      */
     private void addAllNewConstructors(Map<String, MethodNode> methods, ClassNode classNode,

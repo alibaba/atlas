@@ -298,6 +298,7 @@ public class TBIncrementalVisitor extends IncrementalVisitor {
                 visitorBuilder.build(parentedClassNode, classWriter, logger);
         if (visitor instanceof TBIncrementalSupportVisitor) {
             ((TBIncrementalSupportVisitor) visitor).setPatchInitMethod(patchInitMethod);
+            ((TBIncrementalSupportVisitor) visitor).setPatchEachMethod(patchEachMethod);
             ((TBIncrementalSupportVisitor) visitor).setSupportAddCallSuper(supportAddCallSuper);
 
         }else if (visitor instanceof TBIncrementalChangeVisitor){
