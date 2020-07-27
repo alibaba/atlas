@@ -135,7 +135,7 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
 
         } else {
             if (patchEachMethod && methodNodes.size() > 0) {
-                methodNodes.forEach(methodNode -> TBIncrementalSupportVisitor.super.visitField(fieldAccess, "$ipChange$" + (methodNode.name + "." + methodNode.desc).hashCode(), getRuntimeTypeName(ALI_CHANGE_TYPE), null, null));
+                methodNodes.forEach(methodNode -> TBIncrementalSupportVisitor.super.visitField(fieldAccess, "$ipChange$" + Integer.toHexString((methodNode.name + "." + methodNode.desc).hashCode()), getRuntimeTypeName(ALI_CHANGE_TYPE), null, null));
             } else {
                 super.visitField(fieldAccess, "$ipChange", getRuntimeTypeName(ALI_CHANGE_TYPE), null, null);
             }
@@ -423,7 +423,7 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
                 visitFieldInsn(
                         Opcodes.GETSTATIC,
                         visitedClassName,
-                        "$ipChange$" + hash,
+                        "$ipChange$" + Integer.toHexString(hash),
                         getRuntimeTypeName(ALI_CHANGE_TYPE));
             } else {
                 visitFieldInsn(
