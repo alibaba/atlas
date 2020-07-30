@@ -36,10 +36,15 @@ public class TBIncrementalVisitor extends IncrementalVisitor {
         super(classNode, classVisitor, logger);
     }
 
-    public interface InjectErrorListener {
+    public interface InjectErrorCallBack {
 
         void onError(ErrorType errorType);
 
+    }
+
+    public interface InjectMethodCallBack {
+
+        void method(String javaMethod,String fullDesc);
     }
 
     public static final String ALI_RUNTIME_PACKAGE = "com/android/alibaba/ip/runtime";
@@ -99,7 +104,8 @@ public class TBIncrementalVisitor extends IncrementalVisitor {
             @NonNull File outputDirectory,
             @NonNull VisitorBuilder visitorBuilder,
             @NonNull ILogger logger,
-            InjectErrorListener injectErrorListener,
+            InjectErrorCallBack injectErrorListener,
+            InjectMethodCallBack injectMethodCallBack,
             boolean addSerialVersionUID, boolean patchInitMethod, boolean patchEachMethod, boolean supportAddCallSuper, int count) throws IOException {
 
         byte[] classBytes;
@@ -300,6 +306,8 @@ public class TBIncrementalVisitor extends IncrementalVisitor {
             ((TBIncrementalSupportVisitor) visitor).setPatchInitMethod(patchInitMethod);
             ((TBIncrementalSupportVisitor) visitor).setPatchEachMethod(patchEachMethod);
             ((TBIncrementalSupportVisitor) visitor).setSupportAddCallSuper(supportAddCallSuper);
+            ((TBIncrementalSupportVisitor) visitor).setInjectMethodCallback(injectMethodCallBack);
+
 
         }else if (visitor instanceof TBIncrementalChangeVisitor){
             ((TBIncrementalChangeVisitor)visitor).setCodeChange(codeChange);

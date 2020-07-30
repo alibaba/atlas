@@ -65,6 +65,7 @@ import static com.android.builder.model.AndroidProject.FD_OUTPUTS;
  */
 public class TaobaoInstantRunTransform extends Transform {
     private final File injectSuccessFile;
+    private final File methodDescFile;
     private InstantRunVariantScope transformScope;
     protected static final ILogger LOGGER =
             new LoggerWrapper(Logging.getLogger(TaobaoInstantRunTransform.class));
@@ -84,6 +85,8 @@ public class TaobaoInstantRunTransform extends Transform {
 
     private Map<String, String> modifyClasses = new HashMap<>();
 
+    BufferedWriter bufferedWriter;
+
 
     public TaobaoInstantRunTransform(AppVariantContext variantContext, AppVariantOutputContext variantOutputContext, WaitableExecutor executor, InstantRunVariantScope transformScope) {
         this.variantContext = variantContext;
@@ -98,6 +101,13 @@ public class TaobaoInstantRunTransform extends Transform {
 
         injectFailedFile = new File(variantContext.getProject().getBuildDir(), "outputs/warning-instrument-inject-error.properties");
         injectSuccessFile = new File(variantContext.getProject().getBuildDir(), "outputs/instrument.properties");
+        methodDescFile = new File(variantContext.getProject().getBuildDir(), "outputs/method-desc.properties");
+        try {
+            bufferedWriter = new BufferedWriter(new FileWriter(methodDescFile));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
 
     }
 
@@ -242,7 +252,6 @@ public class TaobaoInstantRunTransform extends Transform {
                     if (isMainRClass(className)) {
                         LOGGER.info("mainRclass:" + className + path);
                         mainRFiles.add(file);
-//                        continue;
                     }
 
                     if (file.getName().endsWith(SdkConstants.DOT_CLASS)) {
@@ -344,6 +353,8 @@ public class TaobaoInstantRunTransform extends Transform {
         mergeInstrumentJars(awbBundleFileMap,classesTwoOutput,classesTwoOutputJar);
 
 
+        bufferedWriter.flush();
+        bufferedWriter.close();
         // If our classes.2 transformations indicated that a cold swap was necessary,
         // clean up the classes.3 output folder as some new files may have been generated.
         if (generatedClasses3Names.build().size() == 0) {
@@ -648,6 +659,7 @@ public class TaobaoInstantRunTransform extends Transform {
                         TBIncrementalChangeVisitor.VISITOR_BUILDER,
                         LOGGER,
                         null,
+                        null,
                         false,
                         variantContext.getAtlasExtension().getTBuildConfig().isPatchConstructors(),
                         variantContext.getAtlasExtension().getTBuildConfig().isPatchEachMethod(),
@@ -692,6 +704,8 @@ public class TaobaoInstantRunTransform extends Transform {
                     for (String s : pkgs) {
                         boolean matched = MatcherCreator.create(s).match(newPath);
                         if (matched) {
+                            bufferedWriter.write(newPath.replace("/", ".").substring(0, newPath.length() - 6));
+                            bufferedWriter.newLine();
                             File file = TBIncrementalVisitor.instrumentClass(
                                     new ModifyClassFinder.CodeChange(), targetPlatformApi.getFeatureLevel(),
                                     inputDir,
@@ -699,8 +713,14 @@ public class TaobaoInstantRunTransform extends Transform {
                                     outputDir,
                                     TBIncrementalSupportVisitor.VISITOR_BUILDER,
                                     LOGGER,
-                                    errorType -> {
-                                        errors.add(errorType.name() + ":" + path);
+                                    errorType -> errors.add(errorType.name() + ":" + path),
+                                    (javaMethod, fullDesc) -> {
+                                        try {
+                                            bufferedWriter.write("\t" + javaMethod + "->" + fullDesc);
+                                            bufferedWriter.newLine();
+                                        }catch (Exception e){
+                                            e.printStackTrace();
+                                        }
                                     },
                                     variantContext.getAtlasExtension().getTBuildConfig().isInjectSerialVersionUID(), variantContext.getAtlasExtension().getTBuildConfig().isPatchConstructors(), variantContext.getAtlasExtension().getTBuildConfig().isPatchEachMethod(), variantContext.getAtlasExtension().getTBuildConfig().isSupportAddCallSuper(), variantContext.getAtlasExtension().getTBuildConfig().getPatchSuperMethodCount());
                             if (file.length() == inputFile.length()) {
@@ -740,7 +760,8 @@ public class TaobaoInstantRunTransform extends Transform {
                         }
 
                     }
-
+                    bufferedWriter.write(newPath.replace("/", ".").substring(0, newPath.length() - 6));
+                    bufferedWriter.newLine();
                     File file = TBIncrementalVisitor.instrumentClass(
                             new ModifyClassFinder.CodeChange(), targetPlatformApi.getFeatureLevel(),
                             inputDir,
@@ -750,6 +771,14 @@ public class TaobaoInstantRunTransform extends Transform {
                             LOGGER,
                             errorType -> {
                                 errors.add(errorType.name() + ":" + path);
+                            },
+                            (javaMethod, fullDesc) -> {
+                                try {
+                                    bufferedWriter.write("\t" + javaMethod + "->" + fullDesc);
+                                    bufferedWriter.newLine();
+                                }catch (Exception e){
+                                    e.printStackTrace();
+                                }
                             },
                             variantContext.getAtlasExtension().getTBuildConfig().isInjectSerialVersionUID(), variantContext.getAtlasExtension().getTBuildConfig().isPatchConstructors(), variantContext.getAtlasExtension().getTBuildConfig().isPatchEachMethod(), variantContext.getAtlasExtension().getTBuildConfig().isSupportAddCallSuper(), variantContext.getAtlasExtension().getTBuildConfig().getPatchSuperMethodCount());
                     if (file.length() == inputFile.length()) {

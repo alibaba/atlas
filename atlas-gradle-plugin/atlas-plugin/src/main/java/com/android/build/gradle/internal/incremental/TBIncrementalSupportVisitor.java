@@ -35,6 +35,7 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
     private boolean supportAddCallSuper = true;
     private boolean patchInterface = false;
     private boolean patchEachMethod = false;
+    private InjectMethodCallBack injectMethodCallBack;
 
 
     private List<MethodNode> methodNodes = new ArrayList<>();
@@ -52,6 +53,10 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
 
     public void setPatchEachMethod(boolean patchEachMethod) {
         this.patchEachMethod = patchEachMethod;
+    }
+
+    public void setInjectMethodCallback(InjectMethodCallBack injectMethodCallback) {
+        this.injectMethodCallBack = injectMethodCallback;
     }
 
     private static final class VisitorBuilder implements TBIncrementalVisitor.VisitorBuilder {
@@ -261,9 +266,20 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
                             name + "." + desc,
                             args,
                             Type.getReturnType(desc)));
+            if (injectMethodCallBack != null){
+                injectMethodCallBack.method(javaMethod(method),name+"."+desc);
+            }
         }
         method.accept(mv);
         return null;
+    }
+
+    private String javaMethod(MethodNode method) {
+        Method m = new Method(method.name,method.desc);
+        Type[]types = m.getArgumentTypes();
+        Type type = m.getReturnType();
+        Type methodType= Type.getMethodType(type,types);
+        return method.name+methodType.getClassName();
     }
 
     /**
