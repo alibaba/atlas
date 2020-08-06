@@ -209,34 +209,33 @@ public class DelegateProguardTransform extends MtlInjectTransform {
             proGuardTransform.keep("class **.R$*");
         }
 
-//        List<AwbBundle> awbBundles = AtlasBuildContext.androidDependencyTrees.get(
-//                appVariantContext.getScope().getVariantConfiguration().getFullName()).getAwbBundles();
-//        if (awbBundles != null && awbBundles.size() > 0) {
-//            File bundleRKeepFile = new File(appVariantContext.getBaseVariantData().getScope().getGlobalScope().getIntermediatesDir(), "awb-proguard/bundleRKeep.cfg");
-//            if (!bundleRKeepFile.getParentFile().exists()) {
-//                bundleRKeepFile.getParentFile().mkdirs();
-//            }
-//
-//            StringBuilder keepRStr = new StringBuilder();
-//            for (AwbBundle bundleItem : awbBundles) {
-//                keepRStr.append(String.format("-keep class %s.R{*;}\n", bundleItem.bundleInfo.getPkgName()));
-//                keepRStr.append(String.format("-keep class %s.R$*{*;}\n", bundleItem.bundleInfo.getPkgName()));
-//            }
-//            try {
-//                BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(bundleRKeepFile));
-//                bufferedWriter.write(keepRStr.toString());
-//                bufferedWriter.flush();
-//                IOUtils.closeQuietly(bufferedWriter);
-//                FileLogger.getInstance("proguard").log("R keep infos: " + keepRStr);
-//            } catch (IOException e) {
-//                throw new RuntimeException("generate bundleRkeepFile failed", e);
-//            }
-//            appVariantContext.getBaseVariantData().getVariantConfiguration().getBuildType().getProguardFiles().add(bundleRKeepFile);
-//            defaultProguardFiles.add(bundleRKeepFile);
-//        }
+        List<AwbBundle> awbBundles = AtlasBuildContext.androidDependencyTrees.get(
+                appVariantContext.getScope().getVariantConfiguration().getFullName()).getAwbBundles();
+        if (awbBundles != null && awbBundles.size() > 0) {
+            File bundleRKeepFile = new File(appVariantContext.getBaseVariantData().getScope().getGlobalScope().getIntermediatesDir(), "awb-proguard/bundleRKeep.cfg");
+            if (!bundleRKeepFile.getParentFile().exists()) {
+                bundleRKeepFile.getParentFile().mkdirs();
+            }
 
-        //apply bundle Inout
-//        applyBundleInOutConfigration(appVariantContext);
+            StringBuilder keepRStr = new StringBuilder();
+            for (AwbBundle bundleItem : awbBundles) {
+                keepRStr.append(String.format("-keep class %s.R{*;}\n", bundleItem.bundleInfo.getPkgName()));
+                keepRStr.append(String.format("-keep class %s.R$*{*;}\n", bundleItem.bundleInfo.getPkgName()));
+            }
+            try {
+                BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(bundleRKeepFile));
+                bufferedWriter.write(keepRStr.toString());
+                bufferedWriter.flush();
+                IOUtils.closeQuietly(bufferedWriter);
+                FileLogger.getInstance("proguard").log("R keep infos: " + keepRStr);
+            } catch (IOException e) {
+                throw new RuntimeException("generate bundleRkeepFile failed", e);
+            }
+            appVariantContext.getBaseVariantData().getVariantConfiguration().getBuildType().getProguardFiles().add(bundleRKeepFile);
+            defaultProguardFiles.add(bundleRKeepFile);
+        }
+
+        applyBundleInOutConfigration(appVariantContext);
 
         //apply bundle's configuration, Switch control
         if (buildConfig.isBundleProguardConfigEnabled() && !buildConfig.getConsumerProguardEnabled()) {

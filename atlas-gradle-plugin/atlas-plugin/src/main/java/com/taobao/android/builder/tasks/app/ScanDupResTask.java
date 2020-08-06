@@ -71,11 +71,10 @@ public class ScanDupResTask extends AndroidBuilderTask {
 
         File dupResFileXml = new File(appVariantContext.getProject().getBuildDir(), "outputs/warning-dup-res.xls");
 
-
         WritableWorkbook writableWorkbook = null;
 
         try {
-
+            dupResFileXml.getParentFile().mkdirs();
             dupResFileXml.createNewFile();
             writableWorkbook = Workbook.createWorkbook(dupResFileXml);
 
