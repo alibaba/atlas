@@ -279,7 +279,7 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
         Type[]types = m.getArgumentTypes();
         Type type = m.getReturnType();
         Type methodType= Type.getMethodType(type,types);
-        return method.name+methodType.getClassName();
+        return method.name+methodType.getDescriptor();
     }
 
     /**
