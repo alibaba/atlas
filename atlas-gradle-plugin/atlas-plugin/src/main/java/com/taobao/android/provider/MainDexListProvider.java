@@ -47,7 +47,7 @@ public class MainDexListProvider {
                 .getVariantConfiguration()
                 .getMinSdkVersion()
                 .getFeatureLevel()
-                > 20 || !variantContext.getVariantConfiguration().getBuildType().getMultiDexEnabled()) {
+                > 20 || !variantContext.getVariantConfiguration().isMultiDexEnabled()) {
             return null;
         }
 

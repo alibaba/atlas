@@ -260,7 +260,9 @@ dependencies {
 }
 jar {
     from zipTree("libs/libarsc.jar")
+    from zipTree("libs/jxl.jar")
+
 }
 
-version = '3.4.2-rc37-SNAPSHOT'
+version = '3.4.2-rc38'
 

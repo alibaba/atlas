@@ -79,7 +79,7 @@ public class TaobaoInstantRunTransform extends Transform {
     private List<String> success = new ArrayList<>();
     public static List<String> sAnnotations = new ArrayList<>();
 
-    MappingReaderProcess mappingReaderProcess = new MappingReaderProcess();
+    public static MappingReaderProcess mappingReaderProcess = new MappingReaderProcess();
 
     private ModifyClassFinder modifyClassFinder = null;
 
@@ -102,6 +102,7 @@ public class TaobaoInstantRunTransform extends Transform {
         injectFailedFile = new File(variantContext.getProject().getBuildDir(), "outputs/warning-instrument-inject-error.properties");
         injectSuccessFile = new File(variantContext.getProject().getBuildDir(), "outputs/instrument.properties");
         methodDescFile = new File(variantContext.getProject().getBuildDir(), "outputs/method-desc.properties");
+        methodDescFile.getParentFile().mkdirs();
         try {
             bufferedWriter = new BufferedWriter(new FileWriter(methodDescFile));
         } catch (IOException e) {

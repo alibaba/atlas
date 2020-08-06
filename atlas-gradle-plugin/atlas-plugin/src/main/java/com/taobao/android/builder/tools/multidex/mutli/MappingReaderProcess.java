@@ -210,20 +210,24 @@
 package com.taobao.android.builder.tools.multidex.mutli;
 
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
+import com.android.utils.SparseIntArray;
 import com.google.common.collect.Maps;
 import proguard.obfuscate.MappingProcessor;
 
 public class MappingReaderProcess implements MappingProcessor {
     public Map<String, String> classMapping = Maps.newHashMap();
 
-    public Map<String, String> reversedClassMapping = Maps.newHashMap();
+    public Map<String, AtomicInteger> classMethods = Maps.newHashMap();
+
+
 
 
     @Override
     public boolean processClassMapping(String className, String newClassName) {
         classMapping.put(newClassName, className);
-        reversedClassMapping.put(className,newClassName);
+        classMethods.put(newClassName,new AtomicInteger());
         return true;
     }
 
@@ -237,5 +241,8 @@ public class MappingReaderProcess implements MappingProcessor {
                                      String methodReturnType, String methodName, String methodArguments,
                                      String newClassName, int newFirstLineNumber, int newLastLineNumber,
                                      String newMethodName) {
+        if (classMethods.containsKey(className)){
+            classMethods.get(className).getAndIncrement();
+        }
     }
 }

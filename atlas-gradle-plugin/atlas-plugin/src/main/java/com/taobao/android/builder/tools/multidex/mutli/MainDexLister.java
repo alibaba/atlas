@@ -395,18 +395,24 @@ public class MainDexLister {
             } catch (IOException e) {
                 throw new GradleException(e.getMessage(), e);
             }
-            classMap = process.reversedClassMapping;
+            classMap = process.classMapping;
         }
         return classMap;
     }
 
     @Nullable
     private String getRealClazz(Map<String, String> classMap, String line) {
-        String realClazz = classMap.isEmpty() ? line : classMap.get(line);
-        if (null == realClazz) {
-            realClazz = line;
+
+        if (classMap.containsValue(line)){
+            for (String key:classMap.keySet()){
+                if (classMap.get(key).equals(line)){
+                    return key;
+                }
+            }
+        }else {
+            return line;
         }
-        return realClazz;
+        return line;
     }
 
 

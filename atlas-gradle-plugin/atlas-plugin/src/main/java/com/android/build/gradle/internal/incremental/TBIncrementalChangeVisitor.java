@@ -6,6 +6,8 @@ import com.android.annotations.VisibleForTesting;
 import com.android.utils.ILogger;
 import com.taobao.android.builder.insant.ModifyClassFinder;
 import com.taobao.android.builder.insant.TaobaoInstantRunTransform;
+
+import org.apache.http.util.Asserts;
 import org.objectweb.asm.*;
 import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.JSRInlinerAdapter;
@@ -93,7 +95,10 @@ public class TBIncrementalChangeVisitor extends TBIncrementalVisitor {
         super.visit(version, Opcodes.ACC_PUBLIC | Opcodes.ACC_SUPER,
                 name + OVERRIDE_SUFFIX, signature, "java/lang/Object",
                 new String[]{TBIncrementalSupportVisitor.ALI_CHANGE_TYPE.getInternalName()});
-
+        if (changes.size() > 0){
+            Asserts.check(classAndInterfaceNode.getClassNode().methods.size() == TaobaoInstantRunTransform.mappingReaderProcess.classMethods.get(name.replace("/",".")).get(),
+                    "there has method REMOVE/ADD in modify class:"+name);
+        }
         if (DEBUG) {
             System.out.println(">>>>>>>> Processing " + name + "<<<<<<<<<<<<<");
         }
