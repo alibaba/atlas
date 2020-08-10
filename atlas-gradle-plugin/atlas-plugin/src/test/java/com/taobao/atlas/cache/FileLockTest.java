@@ -258,4 +258,16 @@ public class FileLockTest {
 
     }
 
+    @Test
+    public void test1(){
+        String className = "com/taobao/ugcvision/liteeffect/gg.class";
+
+        String rule = "com.taobao.ugc.**";
+
+        String tempRule = rule.substring(0,rule.lastIndexOf(".")+1).replace(".","/");
+        if (className.startsWith(tempRule)) {
+            System.out.println("xxx");
+        }
+    }
+
 }

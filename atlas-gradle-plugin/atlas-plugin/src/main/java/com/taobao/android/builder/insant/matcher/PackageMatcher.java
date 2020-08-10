@@ -16,9 +16,8 @@ public class PackageMatcher implements Imatcher {
     @Override
     public boolean match(String s) {
         if (s.endsWith(".class")) {
-            String className = s.replace("/", ".").substring(0, s.length() - 6);
-            String tempRule = rule.substring(0, rule.lastIndexOf("."));
-            if (className.startsWith(tempRule)) {
+            String tempRule = rule.substring(0,rule.lastIndexOf(".")+1).replace(".","/");
+            if (s.startsWith(tempRule)) {
                 return true;
             }
         }
