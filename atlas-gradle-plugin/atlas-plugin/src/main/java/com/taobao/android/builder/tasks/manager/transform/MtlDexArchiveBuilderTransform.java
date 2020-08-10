@@ -148,7 +148,7 @@ public class MtlDexArchiveBuilderTransform extends Transform {
         this.executor = WaitableExecutor.useGlobalSharedThreadPool();
         this.cacheHandler =
                 new DexArchiveHandler(
-                        userLevelCache, dexOptions, minSdkVersion, isDebuggable, dexer);
+                        userLevelCache, dexOptions, minSdkVersion, isDebuggable, dexer,variantOutputContext.getVariantContext().getVariantConfiguration().getApplicationId());
         this.useGradleWorkers = useGradleWorkers;
         this.inBufferSize =
                 (inBufferSize == null ? DEFAULT_BUFFER_SIZE_IN_KB : inBufferSize) * 1024;

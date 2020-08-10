@@ -35,6 +35,25 @@ import java.util.jar.JarOutputStream;
  */
 public class DexArchiveHandler {
 
+    @Nullable
+    private final FileCache userLevelCache;
+
+    @NonNull private final DexOptions dexOptions;
+
+    private static String appId = null;
+    private final int minSdkVersion;
+    private final boolean isDebuggable;
+    @NonNull private final DexerTool dexer;
+
+    public DexArchiveHandler(FileCache userLevelCache, DexOptions dexOptions, int minSdkVersion, boolean isDebuggable, DexerTool dexer, String applicationId) {
+            this.userLevelCache = userLevelCache;
+            this.dexOptions = dexOptions;
+            this.minSdkVersion = minSdkVersion;
+            this.isDebuggable = isDebuggable;
+            this.dexer = dexer;
+        appId = applicationId;
+    }
+
     static final class CacheableItem {
         @NonNull
         final QualifiedContent input;
@@ -55,14 +74,9 @@ public class DexArchiveHandler {
             LoggerWrapper.getLogger(MtlDexArchiveBuilderTransform.class);
 
     // Increase this if we might have generated broken cache entries to invalidate them.
-    private static final int CACHE_KEY_VERSION = 4;
+    private static final int CACHE_KEY_VERSION = 5;
 
-    @Nullable
-    private final FileCache userLevelCache;
-    @NonNull private final DexOptions dexOptions;
-    private final int minSdkVersion;
-    private final boolean isDebuggable;
-    @NonNull private final DexerTool dexer;
+
     /**
      * A cache session to share between all cache access. We can do that because each {@link
      * DexArchiveBuilderCacheHandler} is used only by one DexArchiveBuilderTransform and all files
@@ -70,18 +84,7 @@ public class DexArchiveHandler {
      */
     @NonNull private final FileCache.CacheSession cacheSession = FileCache.newSession();
 
-    DexArchiveHandler(
-            @Nullable FileCache userLevelCache,
-            @NonNull DexOptions dexOptions,
-            int minSdkVersion,
-            boolean isDebuggable,
-            @NonNull DexerTool dexer) {
-        this.userLevelCache = userLevelCache;
-        this.dexOptions = dexOptions;
-        this.minSdkVersion = minSdkVersion;
-        this.isDebuggable = isDebuggable;
-        this.dexer = dexer;
-    }
+
 
     @Nullable
     File getCachedVersionIfPresent(@NonNull JarInput input, @NonNull List<Path> dependencies)
@@ -202,6 +205,8 @@ public class DexArchiveHandler {
      */
     private enum FileCacheInputParams {
 
+        APPLICATION_ID,
+
         /** The input file. */
         FILE,
 
@@ -262,6 +267,7 @@ public class DexArchiveHandler {
                         !dexOptions.getAdditionalParameters().contains("--no-optimize"))
                 .putString(DexArchiveHandler.FileCacheInputParams.DEXER_TOOL.name(), dexerTool.name())
                 .putLong(DexArchiveHandler.FileCacheInputParams.CACHE_KEY_VERSION.name(), CACHE_KEY_VERSION)
+                .putString(FileCacheInputParams.APPLICATION_ID.name(),appId)
                 .putLong(DexArchiveHandler.FileCacheInputParams.MIN_SDK_VERSION.name(), minSdkVersion)
                 .putBoolean(DexArchiveHandler.FileCacheInputParams.IS_DEBUGGABLE.name(), isDebuggable);
 
