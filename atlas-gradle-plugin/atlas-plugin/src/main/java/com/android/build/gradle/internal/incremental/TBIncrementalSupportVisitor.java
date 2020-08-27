@@ -577,14 +577,16 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
 
         Map<String, MethodReference> shouldVisitMethods = new HashMap<>();
 
-        uniqueMethods.keySet().forEach(new Consumer<String>() {
-            @Override
-            public void accept(String s) {
+        if (!supportAddCallSuper) {
+            Map<String, MethodReference> finalShouldVisitMethods = shouldVisitMethods;
+            uniqueMethods.keySet().forEach(s -> {
                 if (visitSuperMethods.containsKey(s)) {
-                    shouldVisitMethods.put(s, uniqueMethods.get(s));
+                    finalShouldVisitMethods.put(s, uniqueMethods.get(s));
                 }
-            }
-        });
+            });
+        }else {
+            shouldVisitMethods = uniqueMethods;
+        }
 
 
         new TBStringSwitch() {
