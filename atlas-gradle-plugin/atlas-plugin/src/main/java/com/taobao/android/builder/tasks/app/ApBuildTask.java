@@ -299,9 +299,9 @@ public class ApBuildTask extends ConventionTask implements VariantAwareTask {
 
         addFile(com.android.utils.FileUtils.join(baseVariantOutputData.getProcessManifestProvider().get().getManifestOutputDirectory().get().getAsFile(),ApkDataUtils.get(baseVariantOutputData).getDirName(),"AndroidManifest.xml"),
                 "AndroidManifest.xml");
-        if (appVariantContext.getVariantConfiguration().getBuildType().getName().toLowerCase().endsWith("debug")) {
+//        if (appVariantContext.getVariantConfiguration().getBuildType().getName().toLowerCase().endsWith("debug")) {
             addFile(apkFile, ApContext.AP_INLINE_APK_FILENAME);
-        }
+//        }
         addFile(new File(
                 appVariantContext.getScope().getGlobalScope().getIntermediatesDir().getAbsolutePath()+"/"+
                 "symbols/"
@@ -322,6 +322,7 @@ public class ApBuildTask extends ConventionTask implements VariantAwareTask {
         addFile(appBuildInfo.getVersionPropertiesFile());
         addFile(new File(appVariantContext.getScope().getGlobalScope().getOutputsDir(),
                 "full-classlist.properties"));
+        apkFile(apkFile,)
         addFile(new File(this.getProject().getBuildDir(),"outputs/atlasFrameworkProperties.json"));
         addFile(new File(this.getProject().getBuildDir(), "outputs/public.txt"));
         //addFile( appBuildInfo.getBundleInfoFile());
