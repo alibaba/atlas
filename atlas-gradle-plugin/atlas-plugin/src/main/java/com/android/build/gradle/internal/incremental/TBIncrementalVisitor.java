@@ -248,6 +248,7 @@ public class TBIncrementalVisitor extends IncrementalVisitor {
 
 
 
+
         AsmUtils.DirectoryBasedClassReader directoryClassReader =
                 new AsmUtils.DirectoryBasedClassReader(getBinaryFolder(inputFile, classNode));
 

@@ -478,9 +478,11 @@ public class DelegateProguardTransform extends MtlInjectTransform {
         if (codeChanges.size() > 0){
             System.setProperty(CHANGE_CLASS_KEY,new Gson().toJson(codeChanges.stream().map(codeChange -> codeChange.getCode()).collect(Collectors.toList())));
         }
-        if (changeJarFiles.size() > 0){
-            System.setProperty(CHANGE_ENTRY_KEY, new Gson().toJson(changeJarFiles.stream().map(file -> new ClassPathEntry(file,false)).collect(Collectors.toList())));
-        }
+
+
+//        if (changeJarFiles.size() > 0){
+//            System.setProperty(CHANGE_ENTRY_KEY, new Gson().toJson(changeJarFiles.stream().map(file -> new ClassPathEntry(file,false)).collect(Collectors.toList())));
+//        }
         sLogger.warn("collectPatchInfo cost:"+(System.currentTimeMillis() - start));
     }
 
