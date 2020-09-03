@@ -235,6 +235,13 @@ public class DelegateProguardTransform extends MtlInjectTransform {
             defaultProguardFiles.add(bundleRKeepFile);
         }
 
+        Collection<TransformInput>transformInputs= getAllInput();
+
+        if (appVariantContext.getBuildType().getPatchConfig().isCreateIPatch()){
+            collectPatchInfo(transformInputs);
+
+        }
+
         applyBundleInOutConfigration(appVariantContext);
 
         //apply bundle's configuration, Switch control
@@ -249,12 +256,7 @@ public class DelegateProguardTransform extends MtlInjectTransform {
 
 
 
-        Collection<TransformInput>transformInputs= getAllInput();
 
-        if (appVariantContext.getBuildType().getPatchConfig().isCreateIPatch()){
-            collectPatchInfo(transformInputs);
-
-        }
 
         configuration.ignoreWarnings = true;
         //set output
@@ -456,6 +458,22 @@ public class DelegateProguardTransform extends MtlInjectTransform {
             }
 
         }));
+
+        getAppVariantOutputContext().getAwbTransformMap().values().forEach(awbTransform -> {
+            Collection<ModifyClassFinder.CodeChange> changes = new ArrayList<>();
+            awbTransform.getInputLibraries().forEach(file -> {
+                try {
+                    if (modifyClassFinder.parseJarPolicies(file,changes)){
+                        codeChanges.addAll(changes);
+                        changeJarFiles.add(file);
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            });
+
+        });
+
         codeChanges.forEach(codeChange -> System.err.println("codeChange:"+codeChange.toString()));
         if (codeChanges.size() > 0){
             System.setProperty(CHANGE_CLASS_KEY,new Gson().toJson(codeChanges.stream().map(codeChange -> codeChange.getCode()).collect(Collectors.toList())));
