@@ -214,7 +214,7 @@
 //
 //import com.alibaba.fastjson.JSON;
 //
-//import com.android.build.gradle.api.LibraryVariant;
+//import com.android.build.gradle.kts.api.LibraryVariant;
 //import com.android.builder.model.SourceProvider;
 //import com.taobao.android.builder.tasks.awo.projectstrucure.ModuleInfo;
 //import org.apache.commons.io.FileUtils;

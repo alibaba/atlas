@@ -48,9 +48,4 @@ public class MainFilesCollection extends AbstractFileCollection{
         }
         return mainJars;
     }
-
-    @Override
-    public TaskDependency getBuildDependencies() {
-        return TaskDependencyInternal.EMPTY;
-    }
 }

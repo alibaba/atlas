@@ -207,24 +207,34 @@
  *
  */
 
+
+
+
 buildscript {
 
     repositories {
 
         //本地库，local repository(${user.home}/.m2/repository)
         mavenLocal()
-
         jcenter()
         google()
+        gradlePluginPortal()
+
     }
 
     dependencies {
-        classpath 'com.github.dcendents:android-maven-gradle-plugin:1.3'
-        classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.8.4'
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.3.31"
+        classpath ("com.github.dcendents:android-maven-gradle-plugin:1.3")
+        classpath ("com.jfrog.bintray.gradle:gradle-bintray-plugin:1.8.5")
+        classpath ("org.jetbrains.kotlin:kotlin-gradle-plugin:1.3.70")
+
         //引入其他的插件
     }
 }
+
+
+
+
+
 
 
 description = """atlas gradle plugin"""
@@ -233,16 +243,16 @@ description = """atlas gradle plugin"""
 
 subprojects {
 
-    if (!project.getBuildFile().exists()) {
-        return;
+    if (!project.buildFile.exists()) {
+        return@subprojects
     }
 
-    def command = project.getGradle().startParameter.toString()
-    def publishFile = new File(project.getRootDir(),
-                               "publish_" + (command.contains("bintray") ? "bintray" : "mvn") + ".gradle");
+    var command = project.gradle.startParameter.toString()
+    var publishFile = File(project.rootDir,
+                               "publish_" + if(command.contains("bintray")) "bintray.gradle" else "mvn" + ".gradle.kts")
 
     if (publishFile.exists()) {
-        apply from: publishFile.getAbsolutePath()
+        apply(from = publishFile.absolutePath)
     }
 
     repositories {
@@ -252,10 +262,10 @@ subprojects {
         google()
     }
 
-    group = 'com.taobao.android'
+    group = "com.taobao.android"
 
-    tasks.withType(JavaCompile) {
-        sourceCompatibility = 1.8
-        targetCompatibility = 1.8
+    tasks.withType(JavaCompile::class) {
+        sourceCompatibility = "1.8"
+        targetCompatibility = "1.8"
     }
 }

@@ -740,7 +740,7 @@ open class ProcessFeatureResource @Inject constructor(workerExecutor: WorkerExec
 
     /**
      * Un-mangle a split name as created by the aapt tool to retrieve a split name as configured in
-     * the project's build.gradle.
+     * the project's build.gradle.kts.
      *
      *
      * when dealing with several split language in a single split, each language (+ optional

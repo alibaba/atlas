@@ -5,12 +5,7 @@ def siteUrl = 'https://github.com/alibaba/atlas'
 // 项目的主页
 def gitUrl = 'https://github.com/alibaba/atlas'
 // Git仓库的url
-task sourcesJar(type: Jar) {
-    from('src/main/java') {
-        include '**'
-    }
-    classifier = 'sources'
-}
+
 
 project.afterEvaluate {
     publishing {

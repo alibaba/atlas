@@ -9,7 +9,6 @@ import com.taobao.android.builder.dependency.output.DependencyJson;
 import com.taobao.android.builder.dependency.parser.ResolvedDependencyInfo;
 import com.taobao.android.builder.extension.TBuildType;
 import org.apache.commons.io.IOUtils;
-import org.gradle.api.Nullable;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.Dependency;
@@ -110,7 +109,7 @@ public class ApDependency {
             configuration.setTransitive(false);
             apBaseFile = Iterables.getOnlyElement(Collections2.filter(configuration.getFiles(), new Predicate<File>() {
                 @Override
-                public boolean apply(@Nullable File file) {
+                public boolean apply( File file) {
                     return file.getName().endsWith(".ap");
                 }
             }));

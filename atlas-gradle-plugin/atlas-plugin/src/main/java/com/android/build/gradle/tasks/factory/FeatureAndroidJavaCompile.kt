@@ -49,7 +49,7 @@ open class FeatureAndroidJavaCompile : AndroidJavaCompile() {
         this.awbBundle = awbBundle
     }
 
-    override fun compile() {
+     fun compile() {
         logger.info(
                 "Compiling with source level {} and target level {}.",
                 sourceCompatibility,
@@ -71,7 +71,10 @@ open class FeatureAndroidJavaCompile : AndroidJavaCompile() {
 
         destinationDir.mkdirs()
 
-        super.compile()
+
+        this.options.isIncremental = false
+
+        super.compile(null)
 
         appVariantOutputContext!!.awbTransformMap.get(awbBundle!!.name)!!.inputDirs!!.add(destinationDir)
 

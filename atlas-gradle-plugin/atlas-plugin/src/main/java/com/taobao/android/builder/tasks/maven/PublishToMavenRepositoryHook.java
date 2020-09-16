@@ -217,11 +217,13 @@ import org.gradle.api.internal.artifacts.repositories.transport.RepositoryTransp
 import org.gradle.api.publish.internal.PublishOperation;
 import org.gradle.api.publish.maven.internal.publication.MavenPublicationInternal;
 import org.gradle.api.publish.maven.internal.publisher.MavenPublisher;
+import org.gradle.api.publish.maven.internal.publisher.MavenPublishers;
 import org.gradle.api.publish.maven.internal.publisher.MavenRemotePublisher;
 import org.gradle.api.publish.maven.internal.publisher.StaticLockingMavenPublisher;
 import org.gradle.api.publish.maven.internal.publisher.ValidatingMavenPublisher;
 import org.gradle.api.publish.maven.tasks.AbstractPublishToMaven;
 import org.gradle.api.tasks.TaskAction;
+import org.gradle.util.BuildCommencedTimeProvider;
 
 import javax.inject.Inject;
 
@@ -277,9 +279,9 @@ public class PublishToMavenRepositoryHook extends AbstractPublishToMaven {
 
                 try {
                     MavenPublisher remotePublisher = new MavenRemotePublisher(
-                            getMavenRepositoryLocator(),
                             getTemporaryDirFactory(),
-                            getRepositoryTransportFactory());
+                            new BuildCommencedTimeProvider()
+                           );
                     MavenPublisher staticLockingPublisher = new StaticLockingMavenPublisher(
                             remotePublisher);
                     MavenPublisher validatingPublisher = new ValidatingMavenPublisher(

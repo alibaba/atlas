@@ -210,11 +210,11 @@
 //package com.taobao.android.builder.tasks.transform;
 //
 //import com.android.build.api.transform.*;
-//import com.android.build.gradle.internal.api.AppVariantContext;
-//import com.android.build.gradle.internal.pipeline.TransformManager;
-//import com.android.build.gradle.internal.publishing.AndroidArtifacts;
-//import com.android.build.gradle.internal.scope.ApkData;
-//import com.android.build.gradle.internal.scope.VariantScopeImpl;
+//import com.android.build.gradle.kts.internal.api.AppVariantContext;
+//import com.android.build.gradle.kts.internal.pipeline.TransformManager;
+//import com.android.build.gradle.kts.internal.publishing.AndroidArtifacts;
+//import com.android.build.gradle.kts.internal.scope.ApkData;
+//import com.android.build.gradle.kts.internal.scope.VariantScopeImpl;
 //import com.google.common.base.Joiner;
 //import com.google.common.collect.Lists;
 //import com.taobao.android.builder.AtlasBuildContext;

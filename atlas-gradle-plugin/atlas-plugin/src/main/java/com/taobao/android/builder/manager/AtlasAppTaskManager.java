@@ -590,10 +590,6 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                                                               PackageAndroidArtifact packageAndroidArtifact = appVariantContext.getScope().getTaskContainer().getPackageAndroidTask().get();
                                                               if (packageAndroidArtifact != null) {
                                                                   ReflectUtils.updateField(packageAndroidArtifact, "javaResourceFiles", new AbstractFileCollection() {
-                                                                      @Override
-                                                                      public TaskDependency getBuildDependencies() {
-                                                                          return TaskDependencyInternal.EMPTY;
-                                                                      }
 
                                                                       @Override
                                                                       public String getDisplayName() {

@@ -217,7 +217,6 @@ import org.gradle.api.DefaultTask;
 import org.gradle.api.internal.project.DefaultProject;
 import org.gradle.api.internal.tasks.TaskExecuter;
 import org.gradle.api.tasks.TaskAction;
-import org.gradle.internal.impldep.aQute.bnd.build.Run;
 
 import java.util.List;
 import java.util.concurrent.Callable;

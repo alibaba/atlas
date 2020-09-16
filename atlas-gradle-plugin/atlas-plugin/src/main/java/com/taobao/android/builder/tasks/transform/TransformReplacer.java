@@ -46,23 +46,13 @@ import org.apache.commons.io.FileUtils;
 import org.gradle.api.Action;
 import org.gradle.api.Task;
 import org.gradle.api.file.FileCollection;
-import org.gradle.api.file.RegularFile;
-import org.gradle.api.internal.provider.DefaultPropertyState;
-import org.gradle.api.internal.provider.DefaultProvider;
-import org.gradle.api.provider.Provider;
-import org.gradle.api.provider.ProviderFactory;
 
 import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
+
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
-
-import static com.android.build.gradle.internal.scope.InternalArtifactType.APK_MAPPING;
 
 /**
  * @author lilong

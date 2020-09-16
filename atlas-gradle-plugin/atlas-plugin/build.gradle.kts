@@ -1,3 +1,5 @@
+import groovy.util.Node
+
 /*
  *
  *
@@ -207,15 +209,32 @@
  *
  */
 
-apply plugin: 'groovy'
-apply plugin: 'java'
-apply plugin: 'kotlin'
+
+plugins {
+    id("groovy")
+    id("java")
+    id("kotlin")
+    `maven-publish`
+    `maven`
+
+}
+
+
+val deployVersion: String? = System.getProperty("deployVersion")
+val mtlVersion: String? = System.getenv("MUPP_VERSION_NAME")
+
+val snapshotsRepoUrl:String by project
+
+val releasesRepoUrl:String by project
+
+val userName:String by project
+
+val passWord:String by project
+
+
 
 repositories {
-    //本地库，local repository(${user.home}/.m2/repository)
-//    maven {
-//        url 'http://storage.googleapis.com/r8-releases/raw'
-//    }
+
     mavenLocal()
     jcenter()
     google()
@@ -223,40 +242,189 @@ repositories {
 
 sourceSets {
     main {
-        groovy.srcDirs = ['src/main/groovy']
-        java.srcDirs = ['src/main/java']
-        resources.srcDirs = ['src/main/resources']
+        java.srcDirs("src/main/java")
+        resources.srcDir("src/main/resources")
+        withConvention(GroovySourceSet::class) {
+            groovy.srcDir("src/core/groovy")
+        }
+    }
+}
+
+val sourcesJar by tasks.registering(Jar::class) {
+    classifier = "sources"
+    from(sourceSets.main.get().allSource)
+}
+
+publishing {
+    if (null != deployVersion) {
+        version = deployVersion
+    } else if (null != mtlVersion) {
+        version = mtlVersion
+    }
+
+
+
+    publications {
+
+        register("mavenJava", MavenPublication::class) {
+            from(components["java"])
+            artifact(sourcesJar.get())
+
+            pom {
+                withXml {
+
+//                    val dependencies = asNode().dependencies.dependency as groovy.util.NodeList
+//                    dependencies.forEach {
+//                        it as Node
+//                        val scope = it.scope.text()
+//                        if(scope == "runtime") {
+//                            it.scope.setValue("compile")
+//                        }
+//                            String group = dep.groupId.text()
+//                            String name = dep.artifactId.text()
+//                            throw new GradleException("Dependency $group:$name has an invalid version: $version. This publication is invalid")
+//                        }
+//                    val dependenciesNode = asNode().appendNode("dependencies")
+//                    fun addDependency(dep: Dependency, scope: String) {
+//                        if (dep.group == null || dep.version == null || dep.name == "unspecified") {
+//                            return // ignore invalid dependencies
+//                        }
+//                        //currently we only handle the dependency implements ModuleDependency interface
+//                        // for support more feature, such as excludeRules
+//                        if (dep is ModuleDependency) {
+//                            val dependencyNode = dependenciesNode.appendNode("dependency")
+//                            dependencyNode.apply {
+//                                appendNode("groupId", dep.group)
+//                                appendNode("artifactId", dep.name)
+//                                appendNode("version", dep.version)
+//                                appendNode("scope", scope)
+//                                dep.artifacts.forEach { depArtifact ->
+//                                    appendNode("type", depArtifact.type)
+//                                }
+//                            }
+//
+//                            val exclusionsNode = dependencyNode.appendNode("exclusions")
+//                            when {
+//                                !dep.isTransitive -> { // If this dependency is not transitive, we should force exclude all its dependencies them from the POM
+//                                    val exclusionNode = exclusionsNode.appendNode("exclusion")
+//                                    exclusionNode.apply {
+//                                        appendNode("groupId", "*")
+//                                        appendNode("artifactId", "*")
+//                                    }
+//                                }
+//                                !dep.excludeRules.isEmpty() -> // Otherwise add specified exclude rules
+//                                    dep.excludeRules.forEach { rule ->
+//                                        val exclusionNode = exclusionsNode.appendNode("exclusion")
+//                                        exclusionNode.apply {
+//                                            appendNode("groupId", rule.group ?: "*")
+//                                            appendNode("artifactId", rule.module ?: "*")
+//                                        }
+//                                    }
+//                                else -> {
+//                                    //do nothing
+//                                }
+//                            }
+//                        }
+//                    }
+//
+//                    // List all "compile" dependencies (for old Gradle)
+//                    project.configurations.getByName("compile").dependencies.forEach { dep ->
+//                        addDependency(
+//                                dep,
+//                                "compile"
+//                        )
+//                    }
+//
+//                    //support api & implementation configuration until gradle version 3.4
+//                    if (project.configurations.findByName("api") != null) {
+//                        // List all "api" dependencies (for new Gradle) as "compile" dependencies
+//                        project.configurations.getByName("api").dependencies.forEach { dep -> addDependency(dep, "compile") }
+//                    }
+//
+//                    if (project.configurations.findByName("implementation") != null) {
+//                        // List all "implementation" dependencies (for new Gradle) as "runtime" dependencies
+//                        project.configurations.getByName("implementation").dependencies.forEach { dep -> addDependency(dep, "compile") }
+//                    }
+                }
+            }
+//                    pom.withXml {
+//                        (asNode().get("dependencies") as groovy.util.NodeList).forEach {
+//                           println(it)
+//
+//                        }
+//                    }
+////                    writePom(asNode())
+
+//                    asNode().children().filter { it is groovy.util.Node } .forEach{
+//                        (it as groovy.util.Node).children().filter { it is groovy.util.Node } .forEach{
+//                            (it as Node).children().forEach {
+//                                if(it.toString().contains("scope"))
+//                                  ((it as Node).children() as groovy.util.NodeList).apply{
+//                                      (get(0) as String).replace("runtime","compile")
+//                                  }
+//                                }
+//                            }
+//
+//                        }
+
+
+        }
+
+
+
+        repositories {
+            mavenLocal()
+            maven {
+                url = if (version.toString().endsWith("SNAPSHOT")) uri(snapshotsRepoUrl) else uri(releasesRepoUrl)
+                credentials {
+                    username = userName
+                    password = passWord
+                }
+            }
+
+        }
+
     }
 }
 
 
-tasks.findByName("test").enabled = false
+
+
+
+
+
+tasks.findByName("test")?.enabled = false
 
 
 dependencies {
-    implementation localGroovy()
-    implementation gradleApi()
-    implementation "com.android.tools.build:gradle:3.4.2"
-    implementation "org.apache.commons:commons-lang3:3.4"
-    compileOnly "org.jetbrains.kotlin:kotlin-gradle-plugin:1.3.50"
-    implementation "commons-lang:commons-lang:2.6"
-    implementation "com.alibaba:fastjson:1.2.6"
-    implementation 'org.dom4j:dom4j:2.0.0'
-    implementation 'jaxen:jaxen:1.1.6'
-    implementation 'commons-beanutils:commons-beanutils:1.9.0'
-    implementation 'org.javassist:javassist:3.19.0-GA'
-    implementation "org.codehaus.plexus:plexus-utils:3.0.24"
-    implementation "com.google.inject:guice:4.0"
-    implementation "com.google.auto.value:auto-value:1.0"
-    implementation fileTree(dir: 'libs', include: ['*.jar'])
-
-    testCompile "junit:junit:4.11"
-}
-jar {
-    from zipTree("libs/libarsc.jar")
-    from zipTree("libs/jxl.jar")
-
+    implementation(localGroovy())
+    implementation(gradleApi())
+    implementation("com.android.tools.build:gradle:3.4.2")
+    implementation("org.apache.commons:commons-lang3:3.4")
+    compileOnly("org.jetbrains.kotlin:kotlin-gradle-plugin:1.3.50")
+    implementation("commons-lang:commons-lang:2.6")
+    implementation("com.alibaba:fastjson:1.2.6")
+    implementation("org.dom4j:dom4j:2.0.0")
+    implementation("jaxen:jaxen:1.1.6")
+    implementation("commons-beanutils:commons-beanutils:1.9.0")
+    implementation("org.javassist:javassist:3.19.0-GA")
+    implementation("org.codehaus.plexus:plexus-utils:3.0.24")
+    implementation("com.google.inject:guice:4.0")
+    implementation("com.google.auto.value:auto-value:1.0")
+    implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar"))))
+    testCompile("junit:junit:4.11")
 }
 
-version = '3.4.2-rc48'
+
+tasks {
+    jar {
+        from(zipTree("libs/libarsc.jar"))
+        from(zipTree("libs/jxl.jar"))
+    }
+}
+version = "6.1.1-SNAPSHOT"
+
+
+
+
 
