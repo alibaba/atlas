@@ -444,7 +444,6 @@ public class DelegateProguardTransform extends MtlInjectTransform {
         ModifyClassFinder modifyClassFinder = new ModifyClassFinder(appVariantContext);
         List<ModifyClassFinder.CodeChange> codeChanges = new ArrayList<>();
         List<File>changeJarFiles = new ArrayList<>();
-        configuration.optimize = false;
         transformInputs.parallelStream().forEach(transformInput -> transformInput.getJarInputs().parallelStream().forEach(jarInput -> {
             Collection<ModifyClassFinder.CodeChange> changes = new ArrayList<>();
             try {

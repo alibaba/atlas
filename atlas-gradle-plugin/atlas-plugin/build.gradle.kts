@@ -223,13 +223,13 @@ plugins {
 val deployVersion: String? = System.getProperty("deployVersion")
 val mtlVersion: String? = System.getenv("MUPP_VERSION_NAME")
 
-val snapshotsRepoUrl:String by project
+val snapshotsRepoUrl: String by project
 
-val releasesRepoUrl:String by project
+val releasesRepoUrl: String by project
 
-val userName:String by project
+val userName: String by project
 
-val passWord:String by project
+val passWord: String by project
 
 
 
@@ -272,7 +272,25 @@ publishing {
 
             pom {
                 withXml {
-
+                    (asNode().get("dependencies") as groovy.util.NodeList).forEach {
+                        if (it is Node) {
+                            it.let { depNode ->
+                                (depNode.get("dependency") as groovy.util.NodeList).forEach {
+                                    if (it is Node) {
+                                        it.apply {
+                                            (get("scope") as groovy.util.NodeList).forEach {
+                                                if (it is Node) it.apply {
+                                                    setValue("compile")
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+//                    asElement().setAttribute("scope","compile")
+//                    asNode().setValue()
 //                    val dependencies = asNode().dependencies.dependency as groovy.util.NodeList
 //                    dependencies.forEach {
 //                        it as Node
