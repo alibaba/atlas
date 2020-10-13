@@ -213,9 +213,12 @@ import com.android.SdkConstants;
 import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.ApkDataUtils;
 import com.android.utils.FileUtils;
+import com.taobao.android.builder.tools.zip.BetterZip;
+
 import org.apache.commons.io.FilenameUtils;
 
 import java.io.File;
+import java.io.IOException;
 
 import static com.android.SdkConstants.ANDROID_MANIFEST_XML;
 
@@ -289,7 +292,17 @@ public class ApContext {
     }
 
     public File getCompileDir(){
-        return new File(apExploredFolder,"classes");
+        File compileZip = new File(apExploredFolder,"classes.zip");
+        File compileDir = new File(apExploredFolder,"classes");
+
+        if (compileZip.exists()){
+            try {
+                BetterZip.unzipDirectory(compileZip,compileDir);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return compileDir;
     }
 
     public File getResApFile(BaseVariantOutput baseVariantOutput){
