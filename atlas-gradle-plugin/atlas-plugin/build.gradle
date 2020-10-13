@@ -243,6 +243,7 @@ dependencies {
     implementation "com.alibaba:fastjson:1.2.6"
     implementation 'org.dom4j:dom4j:2.0.0'
     implementation 'jaxen:jaxen:1.1.6'
+    implementation 'org.tukaani:xz:1.8'
     implementation 'commons-beanutils:commons-beanutils:1.9.0'
     implementation 'org.javassist:javassist:3.19.0-GA'
     implementation "org.codehaus.plexus:plexus-utils:3.0.24"

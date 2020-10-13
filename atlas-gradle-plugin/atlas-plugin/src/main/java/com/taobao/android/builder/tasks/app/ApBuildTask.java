@@ -220,6 +220,9 @@ import com.android.build.gradle.internal.scope.InternalArtifactType;
 import com.android.build.gradle.internal.tasks.VariantAwareTask;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import com.taobao.android.builder.tools.zip.BetterZip;
+import com.taobao.android.builder.tools.zip.SevenZip;
+
+import org.apache.commons.compress.archivers.sevenz.SevenZFile;
 import org.apache.commons.io.FileUtils;
 import org.gradle.api.GradleException;
 import org.gradle.api.internal.ConventionTask;
@@ -263,9 +266,9 @@ public class ApBuildTask extends ConventionTask implements VariantAwareTask {
         // Generate build. Ap
         try {
             createAP(getApkFile(), baseVariantOutputData, appVariantContext);
-        }catch (Throwable e){
+        } catch (Throwable e) {
             //getProject().getLogger().error("createAp exception", e);
-            throw new GradleException("createAp exception",e);
+            throw new GradleException("createAp exception", e);
         }
     }
 
@@ -274,20 +277,20 @@ public class ApBuildTask extends ConventionTask implements VariantAwareTask {
                           AppVariantContext appVariantContext) throws IOException {
 
         File jarshrinkLog = new File(variantOutputData.getOutputFile()
-                                         .getParentFile()
-                                         .getParentFile(), "jar-shrink.log");
+                .getParentFile()
+                .getParentFile(), "jar-shrink.log");
 
         File injectFailedFile = new File(appVariantContext.getProject().getBuildDir(), "outputs/warning-instrument-inject-error.properties");
 
 
         File proguardOut = new File(String.valueOf(appVariantContext.getScope()
-                                                       .getGlobalScope()
-                                                       .getBuildDir()) +
-                                        "/outputs/mapping/" +
-                                        appVariantContext
-                                            .getScope()
-                                            .getVariantConfiguration()
-                                            .getDirName());
+                .getGlobalScope()
+                .getBuildDir()) +
+                "/outputs/mapping/" +
+                appVariantContext
+                        .getScope()
+                        .getVariantConfiguration()
+                        .getDirName());
 
         // Generate build. Ap
         String path = apkFile.getAbsolutePath();
@@ -297,17 +300,15 @@ public class ApBuildTask extends ConventionTask implements VariantAwareTask {
         int index = path.lastIndexOf(".apk");
         File APFile = new File(path.substring(0, index) + ".ap");
 
-        addFile(com.android.utils.FileUtils.join(baseVariantOutputData.getProcessManifestProvider().get().getManifestOutputDirectory().get().getAsFile(),ApkDataUtils.get(baseVariantOutputData).getDirName(),"AndroidManifest.xml"),
+        addFile(com.android.utils.FileUtils.join(baseVariantOutputData.getProcessManifestProvider().get().getManifestOutputDirectory().get().getAsFile(), ApkDataUtils.get(baseVariantOutputData).getDirName(), "AndroidManifest.xml"),
                 "AndroidManifest.xml");
-//        if (appVariantContext.getVariantConfiguration().getBuildType().getName().toLowerCase().endsWith("debug")) {
-            addFile(apkFile, ApContext.AP_INLINE_APK_FILENAME);
-//        }
+        addFile(apkFile, ApContext.AP_INLINE_APK_FILENAME);
         addFile(new File(
-                appVariantContext.getScope().getGlobalScope().getIntermediatesDir().getAbsolutePath()+"/"+
-                "symbols/"
-                        + appVariantContext.getScope().getVariantData()
-                        .getVariantConfiguration()
-                        .getDirName(), "R.txt"),
+                        appVariantContext.getScope().getGlobalScope().getIntermediatesDir().getAbsolutePath() + "/" +
+                                "symbols/"
+                                + appVariantContext.getScope().getVariantData()
+                                .getVariantConfiguration()
+                                .getDirName(), "R.txt"),
                 "R.txt");
 
         addDirAndFile(appVariantContext.getScope().getTaskContainer().javacTask.get().getDestinationDir());
@@ -345,39 +346,41 @@ public class ApBuildTask extends ConventionTask implements VariantAwareTask {
 //        }
 
         getLogger().error(new File(proguardOut
-                ,"j2cmap.zip").getAbsolutePath() +"is exist "+new File(proguardOut
-                ,"j2cmap.zip").exists());
+                , "j2cmap.zip").getAbsolutePath() + "is exist " + new File(proguardOut
+                , "j2cmap.zip").exists());
         if (null != proguardOut &&
 
-            proguardOut.exists() &&
-            (new File(proguardOut, "mapping.txt").exists() ||
-                new File(proguardOut, "full-mapping.txt").exists()||new File(proguardOut,"j2cmap.zip").exists())) {
+                proguardOut.exists() &&
+                (new File(proguardOut, "mapping.txt").exists() ||
+                        new File(proguardOut, "full-mapping.txt").exists() || new File(proguardOut, "j2cmap.zip").exists())) {
 //            File usageFile = new File(proguardOut, "usage.txt");
             File mappingFile = new File(proguardOut, "mapping.txt");
-            File dexCocoMap = new File(proguardOut,"dexcocomap.zip");
-            File j2cMap = new File(proguardOut,"j2cmap.zip");
-//            addFile(usageFile, "usage.txt");
+            File dexCocoMap = new File(proguardOut, "dexcocomap.zip");
+            File j2cMap = new File(proguardOut, "j2cmap.zip");
             addFile(mappingFile, "mapping.txt");
-            addFile(dexCocoMap,"dexcocomap.zip");
-            addFile(j2cMap,"j2cmap.zip");
+            addFile(dexCocoMap, "dexcocomap.zip");
+            addFile(j2cMap, "j2cmap.zip");
             addFile(new File(proguardOut, "full-mapping.txt"), "full-mapping.txt");
             addFile(new File(proguardOut, "mapping.data"), "mapping.data");
         } else if (null != appVariantContext.apContext.getApExploredFolder() &&
                 appVariantContext.apContext.getApExploredFolder().exists()) {
             File lastApDir = appVariantContext.apContext.getApExploredFolder();
-//            File usageFile = new File(lastApDir, "usage.txt");
             File mappingFile = new File(lastApDir, "mapping.txt");
-            File dexCocoMap = new File(lastApDir,"dexcocomap.zip");
-            File j2cMap = new File(lastApDir,"j2cmap.zip");
+            File dexCocoMap = new File(lastApDir, "dexcocomap.zip");
+            File j2cMap = new File(lastApDir, "j2cmap.zip");
 //            addFile(usageFile, "usage.txt");
             addFile(mappingFile, "mapping.txt");
-            addFile(dexCocoMap,"dexcocomap.zip");
-            addFile(j2cMap,"j2cmap.zip");
+            addFile(dexCocoMap, "dexcocomap.zip");
+            addFile(j2cMap, "j2cmap.zip");
             addFile(new File(lastApDir, "full-mapping.txt"), "full-mapping.txt");
             addFile(new File(lastApDir, "mapping.data"), "mapping.data");
         }
 
-        BetterZip.zipDirectory(apUnzipDir, APFile);
+
+
+
+
+        SevenZip.compress(APFile.getAbsolutePath(), apUnzipDir.listFiles());
 
         FileUtils.deleteDirectory(apUnzipDir);
 
@@ -385,14 +388,11 @@ public class ApBuildTask extends ConventionTask implements VariantAwareTask {
     }
 
     private void addDirAndFile(File destinationDir) {
-        if (destinationDir != null && destinationDir.exists()){
-            try {
-                File zipFile = new File(apUnzipDir,"classes.zip");
-                BetterZip.addFileAndDir(zipFile,"classes",destinationDir);
+        if (destinationDir != null && destinationDir.exists()) {
+                File zipFile = new File(apUnzipDir, "classes.zip");
+                SevenZip.compress(zipFile.getAbsolutePath(),destinationDir);
 //                FileUtils.copyDirectory(destinationDir,new File(apUnzipDir,destinationDir.getName()));
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+
         }
     }
 
@@ -401,12 +401,12 @@ public class ApBuildTask extends ConventionTask implements VariantAwareTask {
 
         File apkFiles = new File(outputDir, ApContext.APK_FILE_LIST);
         FileUtils.writeStringToFile(apkFiles,
-                                    JSON.toJSONString(appVariantContext.getApkFiles().finalApkFileList));
+                JSON.toJSONString(appVariantContext.getApkFiles().finalApkFileList));
         return apkFiles;
     }
 
     private void addFile(File file) throws IOException {
-        if (null != file && file.exists()){
+        if (null != file && file.exists()) {
             addFile(file, file.getName());
         }
     }
@@ -478,8 +478,8 @@ public class ApBuildTask extends ConventionTask implements VariantAwareTask {
             super.configure(apBuildTask);
 
             boolean isCreateAP = appVariantContext.getAtlasExtension()
-                .getTBuildConfig()
-                .getCreateAP();
+                    .getTBuildConfig()
+                    .getCreateAP();
 
             if (!isCreateAP) {
                 apBuildTask.setEnabled(false);

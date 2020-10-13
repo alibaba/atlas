@@ -2,6 +2,7 @@ package com.taobao.zip;
 
 import com.android.tools.r8.CompilationFailedException;
 import com.taobao.android.builder.tools.zip.BetterZip;
+import com.taobao.android.builder.tools.zip.SevenZip;
 
 import org.junit.Test;
 
@@ -19,8 +20,10 @@ public class ZipTest {
 
     @Test
     public void test() throws IOException, CompilationFailedException {
-        File zipFile = new File("/Users/lilong/Downloads/core-1.6.4.zip");
-        File folder = new File("/Users/lilong/Downloads/lib");
-        BetterZip.addFileAndDir(zipFile, "lib", folder);
+        File zipFile = new File("/Users/lilong/Downloads/unzip7/classes.zip");
+        File unzip = new File("/Users/lilong/Downloads/unzip71");
+
+        SevenZip.decompress(zipFile.getAbsolutePath(),unzip.getAbsolutePath());
+//        BetterZip.addFileAndDir(zipFile, "lib", folder);
     }
 }
