@@ -213,6 +213,7 @@ import com.android.SdkConstants;
 import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.ApkDataUtils;
 import com.android.utils.FileUtils;
+import com.taobao.android.builder.tools.zip.Better7Zip;
 import com.taobao.android.builder.tools.zip.BetterZip;
 import com.taobao.android.builder.tools.zip.SevenZip;
 
@@ -297,7 +298,11 @@ public class ApContext {
         File compileDir = new File(apExploredFolder, "classes");
 
         if (compileZip.exists()) {
-            SevenZip.decompress(compileZip.getAbsolutePath(), apExploredFolder.getAbsolutePath());
+            try {
+                Better7Zip.unzipDirectory(compileDir, apExploredFolder);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
         return compileDir;
     }
