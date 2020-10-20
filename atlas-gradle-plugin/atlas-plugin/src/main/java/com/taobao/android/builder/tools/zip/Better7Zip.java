@@ -55,7 +55,7 @@ public class Better7Zip {
         dest.delete();
 
         try {
-            ZipUtils.unzip(zipFile, dest.getAbsolutePath());
+            SevenZip.decompress(zipFile.getAbsolutePath(), dest.getAbsolutePath());
         } catch (Exception e) {
             e.printStackTrace();
             return false;

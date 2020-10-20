@@ -299,7 +299,7 @@ public class ApContext {
 
         if (compileZip.exists()) {
             try {
-                Better7Zip.unzipDirectory(compileDir, apExploredFolder);
+                Better7Zip.unzipDirectory(compileZip, compileDir);
             } catch (IOException e) {
                 e.printStackTrace();
             }
