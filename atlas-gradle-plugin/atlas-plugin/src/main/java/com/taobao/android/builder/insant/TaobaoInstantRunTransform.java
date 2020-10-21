@@ -649,11 +649,7 @@ public class TaobaoInstantRunTransform extends Transform {
     protected Void transformToClasses3Format(ModifyClassFinder.CodeChange codeChange, File inputDir, File inputFile, File outputDir)
             throws IOException {
         LOGGER.warning("transformToClasses3Format:" + inputFile.getPath());
-
-        if (codeChange.getCode().equals("com/taobao/android/detail/core/ultronengine/a")){
-            return null;
-        }
-
+        
         File outputFile =
                 TBIncrementalVisitor.instrumentClass(codeChange,
                         targetPlatformApi.getFeatureLevel(),
