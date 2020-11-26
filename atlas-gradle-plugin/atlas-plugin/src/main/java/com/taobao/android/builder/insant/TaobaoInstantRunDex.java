@@ -96,6 +96,8 @@ public class TaobaoInstantRunDex extends Transform {
             return;
         }
         File outputFolder = variantScope.getReloadDexOutputFolder();
+
+
 //        boolean changesAreCompatible =
 //                variantScope.getInstantRunBuildContext().hasPassedVerification();
 //        boolean restartDexRequested =

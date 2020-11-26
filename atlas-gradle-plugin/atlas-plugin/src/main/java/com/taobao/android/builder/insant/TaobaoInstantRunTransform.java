@@ -223,11 +223,11 @@ public class TaobaoInstantRunTransform extends Transform {
                     String path = FileUtils.relativePath(file, inputDir);
                     String className = path.replace("/", ".").substring(0, path.length() - 6);
                     if (isMainRClass(className)) {
-                        LOGGER.info("mainRclass:" + className + path);
                         mainRFiles.add(file);
                     }
 
                     if (file.getName().endsWith(SdkConstants.DOT_CLASS)) {
+                        System.err.println("parseClassPolicy:"+file.getName());
                         parseClassPolicy(file, codeChange);
                     }
                     if (codeChange.isAnnotation()) {
@@ -247,6 +247,8 @@ public class TaobaoInstantRunTransform extends Transform {
                             break;
 
                         case MODIFY:
+                            System.err.println("MODIFY CLASS:"+file.getName());
+
                             if (errors.contains(path)) {
                                 exceptions.add(new TransformException(path + " is not support modify because inject error in base build!"));
                             }
@@ -476,7 +478,7 @@ public class TaobaoInstantRunTransform extends Transform {
         try {
             inputStream = new BufferedInputStream(new FileInputStream(file));
             ClassReader classReader = new ClassReader(inputStream);
-            classReader.accept(new ModifyClassVisitor(Opcodes.ASM5, codeChange), ClassReader.SKIP_CODE);
+            classReader.accept(new ModifyClassVisitor(Opcodes.ASM5, codeChange), ClassReader.EXPAND_FRAMES);
         } catch (Exception e) {
             e.printStackTrace();
 //            throw new RuntimeException(e);

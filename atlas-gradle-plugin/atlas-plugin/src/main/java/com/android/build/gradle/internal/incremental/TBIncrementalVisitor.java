@@ -297,6 +297,8 @@ public class TBIncrementalVisitor extends IncrementalVisitor {
 
         }else if (visitor instanceof TBIncrementalChangeVisitor){
             ((TBIncrementalChangeVisitor)visitor).setCodeChange(codeChange);
+            ((TBIncrementalChangeVisitor)visitor).setPatchInitMethod(patchInitMethod);
+
         }
 
         if (visitorBuilder.getOutputType() == OutputType.INSTRUMENT) {
