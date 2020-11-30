@@ -32,6 +32,13 @@ public class TBIncrementalVisitor extends IncrementalVisitor {
 
     protected ModifyClassFinder.CodeChange codeChange;
 
+    protected boolean patchInitMethod = true;
+
+
+    public void setPatchInitMethod(boolean patchInitMethod) {
+        this.patchInitMethod = patchInitMethod;
+    }
+
     public TBIncrementalVisitor(AsmClassNode classNode, ClassVisitor classVisitor, ILogger logger) {
         super(classNode, classVisitor, logger);
     }
@@ -303,8 +310,8 @@ public class TBIncrementalVisitor extends IncrementalVisitor {
         Files.createParentDirs(outputFile);
         IncrementalVisitor visitor =
                 visitorBuilder.build(parentedClassNode, classWriter, logger);
+        ((TBIncrementalVisitor) visitor).setPatchInitMethod(patchInitMethod);
         if (visitor instanceof TBIncrementalSupportVisitor) {
-            ((TBIncrementalSupportVisitor) visitor).setPatchInitMethod(patchInitMethod);
             ((TBIncrementalSupportVisitor) visitor).setPatchEachMethod(patchEachMethod);
             ((TBIncrementalSupportVisitor) visitor).setSupportAddCallSuper(supportAddCallSuper);
             ((TBIncrementalSupportVisitor) visitor).setInjectMethodCallback(injectMethodCallBack);

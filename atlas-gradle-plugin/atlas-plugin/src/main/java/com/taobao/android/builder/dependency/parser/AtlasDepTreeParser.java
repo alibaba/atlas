@@ -389,7 +389,7 @@ public class AtlasDepTreeParser {
 
         Set<ResolvedArtifact> allArtifacts;
 
-            allArtifacts = configuration.getResolvedConfiguration().getResolvedArtifacts();
+            allArtifacts = configuration.getResolvedConfiguration().getLenientConfiguration().getArtifacts();
         for (ResolvedArtifact artifact : allArtifacts) {
             ModuleVersionIdentifier id = artifact.getModuleVersion().getId();
             List<ResolvedArtifact> moduleArtifacts = artifacts.get(id);

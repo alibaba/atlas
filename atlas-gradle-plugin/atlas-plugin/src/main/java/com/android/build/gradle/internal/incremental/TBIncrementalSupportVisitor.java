@@ -31,7 +31,6 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
     private boolean disableRedirectionForClass = false;
     private boolean isInterface = false;
     private boolean classInitializerAdded = false;
-    private boolean patchInitMethod = true;
     private boolean supportAddCallSuper = true;
     private boolean patchInterface = false;
     private boolean patchEachMethod = false;
@@ -43,9 +42,7 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
     private Map<String, String> visitSuperMethods = new HashMap<>();
 
 
-    public void setPatchInitMethod(boolean patchInitMethod) {
-        this.patchInitMethod = patchInitMethod;
-    }
+
 
     public void setSupportAddCallSuper(boolean supportAddCallSuper) {
         this.supportAddCallSuper = supportAddCallSuper;

@@ -431,6 +431,7 @@ dependencies {
     implementation("com.google.auto.value:auto-value:1.0")
     implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar"))))
     testCompile("junit:junit:4.11")
+
 }
 
 
@@ -441,8 +442,4 @@ tasks {
     }
 }
 version = "6.1.1-SNAPSHOT"
-
-
-
-
 

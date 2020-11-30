@@ -53,7 +53,7 @@ public class TBIncrementalChangeVisitor extends TBIncrementalVisitor {
     };
 
     // todo : find a better way to specify logging and append to a log file.
-    private static final boolean DEBUG = false;
+    private static final boolean DEBUG = true;
 
     @VisibleForTesting
     public static final String OVERRIDE_SUFFIX = "$ipReplace";
@@ -69,6 +69,7 @@ public class TBIncrementalChangeVisitor extends TBIncrementalVisitor {
 
     // List of constructors we encountered and deconstructed.
     List<MethodNode> addedMethods = new ArrayList<>();
+
 
     private enum MachineState {
         NORMAL, AFTER_NEW
@@ -159,7 +160,7 @@ public class TBIncrementalChangeVisitor extends TBIncrementalVisitor {
             // Nothing to generate.
             return null;
         }
-        if (name.equals(ByteCodeUtils.CLASS_INITIALIZER)) {
+        if (name.equals(ByteCodeUtils.CLASS_INITIALIZER) || (name.equals(ByteCodeUtils.CONSTRUCTOR) && !patchInitMethod)) {
             // we skip the class init as it can reset static fields which we don't support right now
             return null;
         }

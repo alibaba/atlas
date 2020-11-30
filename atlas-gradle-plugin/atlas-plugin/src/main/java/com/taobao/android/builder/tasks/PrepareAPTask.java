@@ -236,6 +236,7 @@ import com.taobao.android.builder.tasks.manager.ConventionVariantAwareTask;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import com.taobao.android.builder.tools.manifest.ManifestFileUtils;
 import com.taobao.android.builder.tools.zip.BetterZip;
+import com.taobao.android.builder.tools.zip.SevenZip;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.StringUtils;
@@ -359,7 +360,7 @@ public class PrepareAPTask extends ConventionVariantAwareTask {
 
             try {
                 explodedDir = getExplodedDir();
-                BetterZip.unzipDirectory(apBaseFile, explodedDir);
+                SevenZip.decompress(apBaseFile.getAbsolutePath(), explodedDir.getAbsolutePath());
                 apContext.setApExploredFolder(explodedDir);
                 AtlasBuildContext.atlasMainDexHelperMap.get(variantName).getInputDirs().add(apContext.getCompileDir());
                 File resFile = apContext.getResApFile(baseVariantOutput);
