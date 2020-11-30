@@ -40,6 +40,8 @@ import com.google.common.collect.*;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.tools.TransformInputUtils;
+import com.taobao.android.provider.MainDexListProvider;
+
 import org.gradle.tooling.BuildException;
 import org.gradle.workers.IsolationMode;
 
@@ -53,6 +55,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
+import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -145,7 +148,7 @@ public class MtlDexArchiveBuilderTransform extends Transform {
         this.executor = WaitableExecutor.useGlobalSharedThreadPool();
         this.cacheHandler =
                 new DexArchiveHandler(
-                        userLevelCache, dexOptions, minSdkVersion, isDebuggable, dexer);
+                        userLevelCache, dexOptions, minSdkVersion, isDebuggable, dexer,variantOutputContext.getVariantContext().getVariantConfiguration().getApplicationId());
         this.useGradleWorkers = useGradleWorkers;
         this.inBufferSize =
                 (inBufferSize == null ? DEFAULT_BUFFER_SIZE_IN_KB : inBufferSize) * 1024;
@@ -159,6 +162,7 @@ public class MtlDexArchiveBuilderTransform extends Transform {
         this.enableDexingArtifactTransform = enableDexingArtifactTransform;
 
         this.atlasIntermediateStreamHelper = atlasIntermediateStreamHelper;
+
 
 
     }
@@ -294,11 +298,17 @@ public class MtlDexArchiveBuilderTransform extends Transform {
     @Override
     public void transform(@NonNull TransformInvocation transformInvocation)
             throws TransformException, IOException, InterruptedException {
+
+        if (!variantOutputContext.getVariantContext().getBuildType().getPatchConfig().isCreateIPatch()) {
+            new Thread(() -> MainDexListProvider.getInstance().generateMainDexList(variantOutputContext.getVariantContext())).start();
+
+        }
         TransformOutputProvider outputProvider = transformInvocation.getOutputProvider();
         if (atlasIntermediateStreamHelper != null) {
             atlasIntermediateStreamHelper.replaceProvider(transformInvocation);
 
         }
+
         Preconditions.checkNotNull(outputProvider, "Missing output provider.");
         if (dexOptions.getAdditionalParameters().contains("--no-optimize")) {
             logger.warning(DefaultDexOptions.OPTIMIZE_WARNING);
@@ -375,7 +385,7 @@ public class MtlDexArchiveBuilderTransform extends Transform {
                     if (jarInput.getFile().getName().equals("instant-run-bootstrap.jar")){
                         continue;
                     }
-                    logger.warning("Jar input %s", jarInput.getFile().toString());
+                        logger.warning("Jar input %s", jarInput.getFile().toString());
                     MtlDexArchiveBuilderTransform.D8DesugaringCacheInfo cacheInfo =
                             getD8DesugaringCacheInfo(
                                     desugarIncrementalTransformHelper,
@@ -392,7 +402,7 @@ public class MtlDexArchiveBuilderTransform extends Transform {
                                     classpathServiceKey,
                                     cacheInfo);
 
-                    if (cacheInfo != MtlDexArchiveBuilderTransform.D8DesugaringCacheInfo.DONT_CACHE && !dexArchives.isEmpty()) {
+                    if (!dexArchives.isEmpty()) {
                         cacheableItems.add(
                                 new DexArchiveHandler.CacheableItem(
                                         jarInput,
@@ -531,6 +541,9 @@ public class MtlDexArchiveBuilderTransform extends Transform {
             @NonNull List<Path> classpath,
             @NonNull JarInput jarInput) {
 
+        if (variantOutputContext.getVariantContext().getProject().hasProperty("LocalDev")){
+            return D8DesugaringCacheInfo.NO_INFO;
+        }
         if (java8LangSupportType != VariantScope.Java8LangSupport.D8) {
             return MtlDexArchiveBuilderTransform.D8DesugaringCacheInfo.NO_INFO;
         }
@@ -570,6 +583,8 @@ public class MtlDexArchiveBuilderTransform extends Transform {
 
         allDependencies.addAll(bootclasspathPaths);
         allDependencies.addAll(classpathJars);
+
+
         return new MtlDexArchiveBuilderTransform.D8DesugaringCacheInfo(allDependencies);
     }
 
@@ -865,8 +880,6 @@ public class MtlDexArchiveBuilderTransform extends Transform {
             @NonNull MtlDexArchiveBuilderTransform.ClasspathServiceKey classpath,
             @NonNull Set<File> additionalPaths) {
 
-        logger.verbose("Dexing %s", input.getFile().getAbsolutePath());
-
         if (!input.getFile().isDirectory() && isNotVilid(input.getFile())) {
             return ImmutableList.of();
         }
@@ -966,8 +979,6 @@ public class MtlDexArchiveBuilderTransform extends Transform {
                                                   @NonNull MtlDexArchiveBuilderTransform.ClasspathServiceKey bootClasspath,
                                                   @NonNull MtlDexArchiveBuilderTransform.ClasspathServiceKey classpath,
                                                   @NonNull Set<File> additionalPaths,AtomicInteger atomicInteger) {
-
-        logger.verbose("Dexing %s", input.getFile().getAbsolutePath());
 
         if (!input.getFile().isDirectory() && isNotVilid(input.getFile())) {
             return ImmutableList.of();
@@ -1145,6 +1156,10 @@ public class MtlDexArchiveBuilderTransform extends Transform {
             @NonNull TransformInvocation transformInvocation,
             @NonNull VariantScope.Java8LangSupport java8LangSupportType) {
         if (java8LangSupportType != VariantScope.Java8LangSupport.D8) {
+            return Collections.emptyList();
+        }
+
+        if (Boolean.TRUE.booleanValue()){
             return Collections.emptyList();
         }
         ImmutableList.Builder<String> classpathEntries = ImmutableList.builder();

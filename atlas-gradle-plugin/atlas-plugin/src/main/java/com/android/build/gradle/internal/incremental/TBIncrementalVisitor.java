@@ -8,6 +8,7 @@ import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.Files;
+import com.taobao.android.builder.insant.ModifyClassFinder;
 import com.taobao.android.builder.insant.TaobaoInstantRunTransform;
 import com.taobao.android.builder.insant.matcher.Imatcher;
 import com.taobao.android.builder.insant.matcher.ImplementsMatcher;
@@ -29,16 +30,28 @@ import java.util.*;
  */
 public class TBIncrementalVisitor extends IncrementalVisitor {
 
-    protected TaobaoInstantRunTransform.CodeChange codeChange;
+    protected ModifyClassFinder.CodeChange codeChange;
+
+    protected boolean patchInitMethod = true;
+
+
+    public void setPatchInitMethod(boolean patchInitMethod) {
+        this.patchInitMethod = patchInitMethod;
+    }
 
     public TBIncrementalVisitor(AsmClassNode classNode, ClassVisitor classVisitor, ILogger logger) {
         super(classNode, classVisitor, logger);
     }
 
-    public interface InjectErrorListener {
+    public interface InjectErrorCallBack {
 
         void onError(ErrorType errorType);
 
+    }
+
+    public interface InjectMethodCallBack {
+
+        void method(String javaMethod,String fullDesc);
     }
 
     public static final String ALI_RUNTIME_PACKAGE = "com/android/alibaba/ip/runtime";
@@ -92,13 +105,14 @@ public class TBIncrementalVisitor extends IncrementalVisitor {
 
     @Nullable
     public static File instrumentClass(
-            TaobaoInstantRunTransform.CodeChange codeChange, int targetApiLevel,
+            ModifyClassFinder.CodeChange codeChange, int targetApiLevel,
             @NonNull File inputRootDirectory,
             @NonNull File inputFile,
             @NonNull File outputDirectory,
             @NonNull VisitorBuilder visitorBuilder,
             @NonNull ILogger logger,
-            InjectErrorListener injectErrorListener,
+            InjectErrorCallBack injectErrorListener,
+            InjectMethodCallBack injectMethodCallBack,
             boolean addSerialVersionUID, boolean patchInitMethod, boolean patchEachMethod, boolean supportAddCallSuper, int count) throws IOException {
 
         byte[] classBytes;
@@ -241,6 +255,7 @@ public class TBIncrementalVisitor extends IncrementalVisitor {
 
 
 
+
         AsmUtils.DirectoryBasedClassReader directoryClassReader =
                 new AsmUtils.DirectoryBasedClassReader(getBinaryFolder(inputFile, classNode));
 
@@ -295,9 +310,12 @@ public class TBIncrementalVisitor extends IncrementalVisitor {
         Files.createParentDirs(outputFile);
         IncrementalVisitor visitor =
                 visitorBuilder.build(parentedClassNode, classWriter, logger);
+        ((TBIncrementalVisitor) visitor).setPatchInitMethod(patchInitMethod);
         if (visitor instanceof TBIncrementalSupportVisitor) {
-            ((TBIncrementalSupportVisitor) visitor).setPatchInitMethod(patchInitMethod);
+            ((TBIncrementalSupportVisitor) visitor).setPatchEachMethod(patchEachMethod);
             ((TBIncrementalSupportVisitor) visitor).setSupportAddCallSuper(supportAddCallSuper);
+            ((TBIncrementalSupportVisitor) visitor).setInjectMethodCallback(injectMethodCallBack);
+
 
         }else if (visitor instanceof TBIncrementalChangeVisitor){
             ((TBIncrementalChangeVisitor)visitor).setCodeChange(codeChange);

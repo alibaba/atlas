@@ -1,5 +1,6 @@
 package com.taobao.android.builder.insant.visitor;
 
+import com.taobao.android.builder.insant.ModifyClassFinder;
 import com.taobao.android.builder.insant.TaobaoInstantRunTransform;
 import com.android.build.gradle.internal.incremental.TBIncrementalVisitor;
 import org.objectweb.asm.*;
@@ -13,10 +14,10 @@ import java.util.ArrayList;
  */
 public class ModifyClassVisitor extends ClassVisitor {
 
-    private TaobaoInstantRunTransform.CodeChange codeChange;
+    private ModifyClassFinder.CodeChange codeChange;
 
 
-    public ModifyClassVisitor(int asm5, TaobaoInstantRunTransform.CodeChange codeChange) {
+    public ModifyClassVisitor(int asm5, ModifyClassFinder.CodeChange codeChange) {
         super(asm5);
         this.codeChange = codeChange;
         this.codeChange.setCodeChanges(new ArrayList<>());
@@ -44,10 +45,10 @@ public class ModifyClassVisitor extends ClassVisitor {
         public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
             if (desc.equals(TBIncrementalVisitor.ADD_CLASS.getDescriptor()) && visible) {
                 System.err.println("add class:"+TBIncrementalVisitor.ADD_CLASS.getDescriptor());
-                codeChange.setPy(TaobaoInstantRunTransform.PatchPolicy.ADD);
+                codeChange.setPy(ModifyClassFinder.PatchPolicy.ADD);
             } else if (desc.equals(TBIncrementalVisitor.MODIFY_CLASS.getDescriptor()) && visible) {
                 System.err.println("modify class:"+TBIncrementalVisitor.MODIFY_CLASS.getDescriptor());
-                codeChange.setPy(TaobaoInstantRunTransform.PatchPolicy.MODIFY);
+                codeChange.setPy(ModifyClassFinder.PatchPolicy.MODIFY);
             }
             return super.visitAnnotation(desc, visible);
         }

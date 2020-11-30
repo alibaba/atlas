@@ -1,4 +1,5 @@
 package com.taobao.android.builder.manager;
+
 import com.android.build.gradle.BaseExtension;
 import com.android.build.gradle.FeatureExtension;
 import com.android.build.gradle.api.BaseVariantOutput;
@@ -13,10 +14,12 @@ import com.taobao.android.builder.extension.TBuildType;
 import com.taobao.android.builder.tasks.library.AwbGenerator;
 import com.taobao.android.builder.tasks.library.JarExtractTask;
 import com.taobao.android.builder.tools.ideaplugin.AwoPropHandler;
+
 import org.apache.commons.lang.StringUtils;
 import org.gradle.api.GradleException;
 import org.gradle.api.Project;
 import org.gradle.api.tasks.bundling.Zip;
+
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
@@ -50,8 +53,6 @@ public class AtlasFeatureTaskManager extends AtlasBaseTaskManager {
 
 
         featureExtension.getFeatureVariants().forEach(featureVariant -> {
-
-
 
 
         });

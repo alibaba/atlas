@@ -4,7 +4,10 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 import com.android.utils.ILogger;
+import com.taobao.android.builder.insant.ModifyClassFinder;
 import com.taobao.android.builder.insant.TaobaoInstantRunTransform;
+
+import org.apache.http.util.Asserts;
 import org.objectweb.asm.*;
 import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.JSRInlinerAdapter;
@@ -26,7 +29,7 @@ import java.util.function.Consumer;
  */
 public class TBIncrementalChangeVisitor extends TBIncrementalVisitor {
 
-    List<TaobaoInstantRunTransform.CodeChange> changes = new ArrayList<>();
+    List<ModifyClassFinder.CodeChange> changes = new ArrayList<>();
 
     public static final VisitorBuilder VISITOR_BUILDER = new TBIncrementalVisitor.VisitorBuilder() {
 
@@ -50,7 +53,7 @@ public class TBIncrementalChangeVisitor extends TBIncrementalVisitor {
     };
 
     // todo : find a better way to specify logging and append to a log file.
-    private static final boolean DEBUG = false;
+    private static final boolean DEBUG = true;
 
     @VisibleForTesting
     public static final String OVERRIDE_SUFFIX = "$ipReplace";
@@ -66,6 +69,7 @@ public class TBIncrementalChangeVisitor extends TBIncrementalVisitor {
 
     // List of constructors we encountered and deconstructed.
     List<MethodNode> addedMethods = new ArrayList<>();
+
 
     private enum MachineState {
         NORMAL, AFTER_NEW
@@ -92,7 +96,10 @@ public class TBIncrementalChangeVisitor extends TBIncrementalVisitor {
         super.visit(version, Opcodes.ACC_PUBLIC | Opcodes.ACC_SUPER,
                 name + OVERRIDE_SUFFIX, signature, "java/lang/Object",
                 new String[]{TBIncrementalSupportVisitor.ALI_CHANGE_TYPE.getInternalName()});
-
+        if (changes.size() > 0){
+            Asserts.check(classAndInterfaceNode.getClassNode().methods.size() == TaobaoInstantRunTransform.mappingReaderProcess.classMethods.get(name.replace("/",".")).get(),
+                    "there has method REMOVE/ADD in modify class:"+name);
+        }
         if (DEBUG) {
             System.out.println(">>>>>>>> Processing " + name + "<<<<<<<<<<<<<");
         }
@@ -153,7 +160,7 @@ public class TBIncrementalChangeVisitor extends TBIncrementalVisitor {
             // Nothing to generate.
             return null;
         }
-        if (name.equals(ByteCodeUtils.CLASS_INITIALIZER)) {
+        if (name.equals(ByteCodeUtils.CLASS_INITIALIZER) || (name.equals(ByteCodeUtils.CONSTRUCTOR) && !patchInitMethod)) {
             // we skip the class init as it can reset static fields which we don't support right now
             return null;
         }
@@ -243,7 +250,7 @@ public class TBIncrementalChangeVisitor extends TBIncrementalVisitor {
     }
 
 
-    public void setCodeChange(TaobaoInstantRunTransform.CodeChange codeChange) {
+    public void setCodeChange(ModifyClassFinder.CodeChange codeChange) {
         this.codeChange = codeChange;
         if (codeChange.getCodeChanges() != null && codeChange.getCodeChanges().size() > 0) {
             changes = codeChange.getCodeChanges();
@@ -523,7 +530,7 @@ public class TBIncrementalChangeVisitor extends TBIncrementalVisitor {
 
             boolean visitAddMethod = false;
             if (changes.size() > 0) {
-                for (TaobaoInstantRunTransform.CodeChange codeChange : changes) {
+                for (ModifyClassFinder.CodeChange codeChange : changes) {
                     if (codeChange.getCode().equals(name + "|" + desc)) {
                         System.err.println("Generic Method dispatch : " + opcode +
                                 ":" + owner + ":" + name + ":" + desc + ":" + itf + ":" + isStatic);

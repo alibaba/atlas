@@ -349,6 +349,9 @@ public class DependencyResolver {
         // If you can find multiple dependencies at the same time, you can't judge for the time being that it's really useful
         if (null != moduleArtifacts) {
             for (ResolvedArtifact resolvedArtifact : moduleArtifacts) {
+                if (resolvedArtifact == null){
+                    continue;
+                }
                 String key = moduleVersion.getGroup() + ":" + moduleVersion.getName();
                 //remove android.jar
 

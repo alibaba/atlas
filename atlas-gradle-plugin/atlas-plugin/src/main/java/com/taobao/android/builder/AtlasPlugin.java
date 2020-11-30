@@ -210,26 +210,15 @@
 package com.taobao.android.builder;
 
 import com.taobao.android.builder.manager.AtlasConfigurationHelper;
-import com.taobao.android.builder.tasks.helper.AtlasListTask;
-import com.taobao.android.builder.tools.PluginTypeUtils;
-import groovy.lang.Closure;
-import org.gradle.api.Action;
-import org.gradle.api.GradleException;
-import org.gradle.api.Plugin;
+
 import org.gradle.api.Project;
-import org.gradle.api.artifacts.Configuration;
-import org.gradle.api.artifacts.Dependency;
-import org.gradle.internal.reflect.Instantiator;
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
 import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
-import java.util.HashMap;
-import java.util.Map;
 
 
 public class AtlasPlugin extends AtlasBasePlugin {
-
 
     @Inject
     public AtlasPlugin(ToolingModelBuilderRegistry toolingModelBuilderRegistry) {
@@ -241,49 +230,7 @@ public class AtlasPlugin extends AtlasBasePlugin {
 
         super.apply(project);
 
-        atlasConfigurationHelper.createLibCompenents();
 
-
-        project.afterEvaluate(project1 -> {
-
-//            if (PluginTypeUtils.isAppProject(project) && atlasExtension.isAtlasEnabled()) {
-//
-//                Map<String, String> multiDex = new HashMap<>();
-//                multiDex.put("group", "com.android.support");
-//                multiDex.put("module", "multidex");
-//                project1.getConfigurations().all(configuration -> configuration.exclude(multiDex));
-//
-//            }
-
-//            Plugin plugin = project.getPlugins().findPlugin("kotlin-android");
-//            if (plugin != null) {
-//                project.getDependencies().add("compile", "org.jetbrains.kotlin:kotlin-stdlib:1.2.41");
-//            }
-
-            try {
-                atlasConfigurationHelper.createBuilderAfterEvaluate();
-            } catch (Exception e) {
-                throw new GradleException("update builder failed", e);
-            }
-
-            atlasConfigurationHelper.registAtlasStreams();
-
-
-            atlasConfigurationHelper.configDependencies(atlasExtension.getTBuildConfig().getFeatureConfigFile());
-
-
-            //3. update extension
-            atlasConfigurationHelper.updateExtensionAfterEvaluate();
-
-            //4. Set up the android builder
-
-
-            //5. Configuration tasks
-           atlasConfigurationHelper.configTasksAfterEvaluate();
-
-            project1.getTasks().create("atlasList", AtlasListTask.class);
-
-        });
 
     }
 
@@ -298,4 +245,6 @@ public class AtlasPlugin extends AtlasBasePlugin {
 
         return toolingModelBuilderRegistry;
     }
+
+
 }

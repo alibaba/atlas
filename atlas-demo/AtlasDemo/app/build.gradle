@@ -22,11 +22,11 @@ repositories {
 }
 
 android {
-    compileSdkVersion 'android-R'
+    compileSdkVersion "android-R"
     defaultConfig {
         applicationId appId
         minSdkVersion minVersion
-        targetSdkVersion 'R'
+        targetSdkVersion 30
         versionCode 1
         versionName version
         vectorDrawables.useSupportLibrary = true

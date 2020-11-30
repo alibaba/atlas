@@ -209,10 +209,18 @@
 
 package com.android.build.gradle.internal.api;
 
+import com.android.SdkConstants;
+import com.android.build.gradle.api.BaseVariantOutput;
+import com.android.build.gradle.internal.ApkDataUtils;
 import com.android.utils.FileUtils;
+import com.taobao.android.builder.tools.zip.Better7Zip;
+import com.taobao.android.builder.tools.zip.BetterZip;
+import com.taobao.android.builder.tools.zip.SevenZip;
+
 import org.apache.commons.io.FilenameUtils;
 
 import java.io.File;
+import java.io.IOException;
 
 import static com.android.SdkConstants.ANDROID_MANIFEST_XML;
 
@@ -234,7 +242,7 @@ public class ApContext {
 
     public static final String APK_FILE_MD5 = "apk-files.txt";
 
-    private static final String SO_LOCATION_PREFIX="unzip/lib/armeabi";
+    private static final String SO_LOCATION_PREFIX = "unzip/lib/armeabi";
 
     public static final String PACKAGE_ID_PROPERTIES_FILENAME = "packageIdFile.properties";
 
@@ -285,6 +293,24 @@ public class ApContext {
         return apFile;
     }
 
+    public File getCompileDir() {
+        File compileZip = new File(apExploredFolder, "classes.zip");
+        File compileDir = new File(apExploredFolder, "classes");
+
+        if (compileZip.exists()) {
+            try {
+                Better7Zip.unzipDirectory(compileZip, compileDir);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return compileDir;
+    }
+
+    public File getResApFile(BaseVariantOutput baseVariantOutput) {
+        return new File(apExploredFolder, SdkConstants.FN_RES_BASE + SdkConstants.RES_QUALIFIER_SEP + ApkDataUtils.get(baseVariantOutput).getFullName() + SdkConstants.DOT_RES);
+    }
+
     public void setApFile(File apFile) {
         this.apFile = apFile;
     }
@@ -301,7 +327,7 @@ public class ApContext {
         this.baseApk = new File(apExploredFolder, AP_INLINE_APK_FILENAME);
         this.baseApkDirectory = new File(apExploredFolder, AP_INLINE_APK_EXTRACT_DIRECTORY);
         this.baseAwbDirectory = new File(apExploredFolder, AP_INLINE_AWB_EXTRACT_DIRECTORY);
-        this.baseUnzipBundleDirectory = new File(apExploredFolder,SO_LOCATION_PREFIX);
+        this.baseUnzipBundleDirectory = new File(apExploredFolder, SO_LOCATION_PREFIX);
         this.baseExplodedAwbDirectory = new File(apExploredFolder, AP_INLINE_AWB_EXPLODED_DIRECTORY);
         this.basePackageIdFile = new File(apExploredFolder, PACKAGE_ID_PROPERTIES_FILENAME);
         this.baseAtlasFrameworkPropertiesFile = new File(apExploredFolder, ATLAS_FRAMEWORK_PROPERTIES_FILENAME);
@@ -361,9 +387,9 @@ public class ApContext {
         return file;
     }
 
-    public File getBaseSo(String soFileName){
-        File file = FileUtils.join(baseUnzipBundleDirectory,soFileName);
-        if (file.exists()){
+    public File getBaseSo(String soFileName) {
+        File file = FileUtils.join(baseUnzipBundleDirectory, soFileName);
+        if (file.exists()) {
             return file;
         }
 

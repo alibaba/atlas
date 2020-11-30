@@ -1,6 +1,6 @@
 package com.taobao.android.builder.insant.visitor;
 
-import com.taobao.android.builder.insant.TaobaoInstantRunTransform;
+import com.taobao.android.builder.insant.ModifyClassFinder;
 import com.android.build.gradle.internal.incremental.TBIncrementalVisitor;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.FieldVisitor;
@@ -14,17 +14,17 @@ import org.objectweb.asm.TypePath;
 public class ModifyFieldVisitor extends FieldVisitor {
 
 
-    private TaobaoInstantRunTransform.CodeChange py = new TaobaoInstantRunTransform.CodeChange();
+    private ModifyClassFinder.CodeChange py = new ModifyClassFinder.CodeChange();
 
-    public ModifyFieldVisitor(int api, FieldVisitor fv, TaobaoInstantRunTransform.CodeChange patchPolicy) {
+    public ModifyFieldVisitor(int api, FieldVisitor fv, ModifyClassFinder.CodeChange patchPolicy) {
         super(api, fv);
         this.py = patchPolicy;
     }
 
     @Override
     public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
-        if (desc.equals(TBIncrementalVisitor.MODIFY_FIELD.getDescriptor()) && visible && py.getPy()!= TaobaoInstantRunTransform.PatchPolicy.ADD) {
-            py.setPy(TaobaoInstantRunTransform.PatchPolicy.MODIFY);
+        if (desc.equals(TBIncrementalVisitor.MODIFY_FIELD.getDescriptor()) && visible && py.getPy()!= ModifyClassFinder.PatchPolicy.ADD) {
+            py.setPy(ModifyClassFinder.PatchPolicy.MODIFY);
         }else if (desc.equals(TBIncrementalVisitor.ADD_FIELD.getDescriptor()) && visible){
             throw new RuntimeException("add field is not support!");
         }

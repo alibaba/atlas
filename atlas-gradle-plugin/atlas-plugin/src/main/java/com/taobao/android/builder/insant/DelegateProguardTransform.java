@@ -1,6 +1,8 @@
 package com.taobao.android.builder.insant;
 
+import com.alibaba.fastjson.JSON;
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.build.api.transform.*;
 import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.ApkDataUtils;
@@ -20,13 +22,17 @@ import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.WorkLimiter;
 import com.android.build.gradle.internal.transforms.ProGuardTransform;
 
+import com.android.build.gradle.options.BooleanOption;
 import com.android.builder.model.AndroidLibrary;
 
+import com.android.builder.utils.ExceptionConsumer;
+import com.android.builder.utils.FileCache;
 import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Sets;
 import com.google.common.io.Files;
 import com.google.common.util.concurrent.SettableFuture;
+import com.google.gson.Gson;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.model.AwbBundle;
@@ -34,9 +40,12 @@ import com.taobao.android.builder.extension.TBuildConfig;
 import com.taobao.android.builder.tasks.manager.transform.MtlInjectTransform;
 import com.taobao.android.builder.tools.ReflectUtils;
 import com.taobao.android.builder.tools.TransformInputUtils;
+import com.taobao.android.builder.tools.cache.Cache;
 import com.taobao.android.builder.tools.log.FileLogger;
 import com.taobao.android.builder.tools.proguard.AtlasProguardHelper;
 import com.taobao.android.builder.tools.proguard.AwbProguardConfiguration;
+import com.taobao.android.provider.MainDexListProvider;
+
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.gradle.api.GradleException;
@@ -51,7 +60,12 @@ import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
+
+import proguard.ClassPathEntry;
+import proguard.Configuration;
 
 import static com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactScope.ALL;
 import static com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactScope.MODULE;
@@ -70,9 +84,21 @@ public class DelegateProguardTransform extends MtlInjectTransform {
 
     private final TBuildConfig buildConfig;
 
+    private Configuration configuration;
+
+    private static final String VERSION = "1.0";
+
     private static org.gradle.api.logging.Logger sLogger = null;
 
-    private boolean firstTime;
+    private static final String CHANGE_ENTRY_KEY = "instantpatch_change_classpathEntries";
+
+    private static final String CHANGE_CLASS_KEY = "instantpatch_change_classes";
+
+
+    private static final String CHANGE_CFG_KEY = "proguard_cfg_changed";
+
+    private static final String WHERE_NOTE_KEY = "class_not_found_note";
+
 
     private ProGuardTransform proGuardTransform;
 
@@ -83,7 +109,7 @@ public class DelegateProguardTransform extends MtlInjectTransform {
         proGuardTransform = new ProGuardTransform(appVariantContext.getScope());
         this.buildConfig = appVariantContext.getAtlasExtension().getTBuildConfig();
         sLogger = appVariantContext.getProject().getLogger();
-
+        configuration = (Configuration) ReflectUtils.getField(proGuardTransform,"configuration");
 
     }
 
@@ -117,12 +143,7 @@ public class DelegateProguardTransform extends MtlInjectTransform {
         super.transform(transformInvocation);
 
 
-        firstTime = true;
-
-//        if (buildConfig.getConsumerProguardEnabled()){
-//            defaultProguardFiles.addAll(appVariantContext.getScope().getArtifactFileCollection(AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH, AndroidArtifacts.ArtifactScope.ALL, AndroidArtifacts.ArtifactType.CONSUMER_PROGUARD_RULES).getFiles());
-//        }
-
+        System.getProperties().setProperty(WHERE_NOTE_KEY, new File(appVariantContext.getScope().getGlobalScope().getOutputsDir(),"warning-classnotfound-note.properties").getPath());
 
         PostprocessingFeatures postprocessingFeatures = scope.getPostprocessingFeatures();
         if (postprocessingFeatures != null) {
@@ -132,6 +153,29 @@ public class DelegateProguardTransform extends MtlInjectTransform {
         Callable<Collection<File>> proguardConfigFiles = scope::getProguardFiles;
 
         defaultProguardFiles.addAll(appVariantContext.getVariantData().getVariantConfiguration().getBuildType().getProguardFiles());
+
+        Collections.sort(defaultProguardFiles);
+        FileCache.Inputs.Builder builder = new FileCache.Inputs.Builder(FileCache.Command.EXTRACT_DESUGAR_JAR);
+
+        builder.putString(getName(),VERSION);
+
+        defaultProguardFiles.forEach(file -> builder.putFile(file.getName(), file, FileCache.FileProperties.HASH));
+
+        FileCache fileCache = getUserIntermediatesCache();
+        FileCache.Inputs inputs = builder.build();
+        FileCache.QueryResult queryResult= null;
+        try {
+             queryResult = fileCache.createFileInCacheIfAbsent(inputs, cacheFile -> cacheFile.createNewFile());
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
+        if (queryResult != null && queryResult.getQueryEvent().equals(FileCache.QueryEvent.HIT)
+                || appVariantContext.getBuildType().getPatchConfig().isCreateIPatch()){
+            System.getProperties().setProperty(CHANGE_CFG_KEY, "false");
+        }else {
+            System.getProperties().setProperty(CHANGE_CFG_KEY, "true");
+
+        }
 
         ConfigurableFileCollection configurationFiles = null;
         final InternalArtifactType aaptProguardFileType =
@@ -191,7 +235,13 @@ public class DelegateProguardTransform extends MtlInjectTransform {
             defaultProguardFiles.add(bundleRKeepFile);
         }
 
-        //apply bundle Inout
+        Collection<TransformInput>transformInputs= getAllInput();
+
+        if (appVariantContext.getBuildType().getPatchConfig().isCreateIPatch()){
+            collectPatchInfo(transformInputs);
+
+        }
+
         applyBundleInOutConfigration(appVariantContext);
 
         //apply bundle's configuration, Switch control
@@ -204,6 +254,11 @@ public class DelegateProguardTransform extends MtlInjectTransform {
         //apply mapping
         applyMapping(appVariantContext);
 
+
+
+
+
+        configuration.ignoreWarnings = true;
         //set output
         File proguardOutFile = new File(appVariantContext.getProject().getBuildDir(), "outputs/proguard.cfg");
         proGuardTransform.printconfiguration(proguardOutFile);
@@ -215,7 +270,7 @@ public class DelegateProguardTransform extends MtlInjectTransform {
                 try {
                     Method m = ProGuardTransform.class.getDeclaredMethod("doMinification", Collection.class, Collection.class, TransformOutputProvider.class);
                     m.setAccessible(true);
-                    m.invoke(proGuardTransform, getAllInput(), transformInvocation.getReferencedInputs(), transformInvocation.getOutputProvider());
+                    m.invoke(proGuardTransform, transformInputs, transformInvocation.getReferencedInputs(), transformInvocation.getOutputProvider());
                     if (!appVariantContext.getScope().getOutputProguardMappingFile().isFile()) {
                         Files.asCharSink(appVariantContext.getScope().getOutputProguardMappingFile(), Charsets.UTF_8).write("");
                     }
@@ -250,12 +305,12 @@ public class DelegateProguardTransform extends MtlInjectTransform {
             }
         });
 
-        if (appVariantContext.getAtlasExtension().isAppBundlesEnabled()){
+        if (appVariantContext.getAtlasExtension().isAppBundlesEnabled()) {
 
             getAppVariantOutputContext().getAwbTransformMap().values().forEach(new Consumer<AwbTransform>() {
                 @Override
                 public void accept(AwbTransform awbTransform) {
-                    if (!awbTransform.getAwbBundle().dynamicFeature){
+                    if (!awbTransform.getAwbBundle().dynamicFeature) {
                         awbTransform.getInputDirs().forEach(new Consumer<File>() {
                             @Override
                             public void accept(File file) {
@@ -295,7 +350,6 @@ public class DelegateProguardTransform extends MtlInjectTransform {
         });
 
 
-
     }
 
     public File applyBundleInOutConfigration(final AppVariantContext appVariantContext) {
@@ -331,6 +385,7 @@ public class DelegateProguardTransform extends MtlInjectTransform {
         }
 
         return awbInOutConfig;
+
     }
 
     public File applyMapping(final AppVariantContext appVariantContext) {
@@ -349,7 +404,6 @@ public class DelegateProguardTransform extends MtlInjectTransform {
             proGuardTransform.applyTestedMapping(mappingFile);
             return mappingFile;
         }
-
         return null;
 
     }
@@ -385,14 +439,71 @@ public class DelegateProguardTransform extends MtlInjectTransform {
 
     }
 
+    void collectPatchInfo(Collection<TransformInput> transformInputs){
+        long start = System.currentTimeMillis();
+        ModifyClassFinder modifyClassFinder = new ModifyClassFinder(appVariantContext);
+        List<ModifyClassFinder.CodeChange> codeChanges = new ArrayList<>();
+        List<File>changeJarFiles = new ArrayList<>();
+        transformInputs.parallelStream().forEach(transformInput -> transformInput.getJarInputs().parallelStream().forEach(jarInput -> {
+            Collection<ModifyClassFinder.CodeChange> changes = new ArrayList<>();
+            try {
+                if (modifyClassFinder.parseJarPolicies(jarInput.getFile(),changes)){
+                    codeChanges.addAll(changes);
+                    changeJarFiles.add(jarInput.getFile());
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+        }));
+
+        getAppVariantOutputContext().getAwbTransformMap().values().forEach(awbTransform -> {
+            Collection<ModifyClassFinder.CodeChange> changes = new ArrayList<>();
+            awbTransform.getInputLibraries().forEach(file -> {
+                try {
+                    if (modifyClassFinder.parseJarPolicies(file,changes)){
+                        codeChanges.addAll(changes);
+                        changeJarFiles.add(file);
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            });
+
+        });
+
+        codeChanges.forEach(codeChange -> System.err.println("codeChange:"+codeChange.toString()));
+        if (codeChanges.size() > 0){
+            System.setProperty(CHANGE_CLASS_KEY,new Gson().toJson(codeChanges.stream().map(codeChange -> codeChange.getCode()).collect(Collectors.toList())));
+        }
+
+
+//        if (changeJarFiles.size() > 0){
+//            System.setProperty(CHANGE_ENTRY_KEY, new Gson().toJson(changeJarFiles.stream().map(file -> new ClassPathEntry(file,false)).collect(Collectors.toList())));
+//        }
+        sLogger.warn("collectPatchInfo cost:"+(System.currentTimeMillis() - start));
+    }
+
 
     private void maybeAddFeatureProguardRules(
             @NonNull VariantScope variantScope,
             @NonNull ConfigurableFileCollection configurationFiles) {
+
         if (variantScope.consumesFeatureJars()) {
             configurationFiles.from(
                     variantScope.getArtifactFileCollection(
                             METADATA_VALUES, MODULE, CONSUMER_PROGUARD_RULES));
+        }
+    }
+
+    @Nullable
+    private FileCache getUserIntermediatesCache() {
+        if (appVariantContext.getScope().getGlobalScope()
+                .getProjectOptions()
+                .get(BooleanOption.ENABLE_INTERMEDIATE_ARTIFACTS_CACHE)) {
+            return appVariantContext.getScope().getGlobalScope().getBuildCache();
+        } else {
+            return null;
         }
     }
 }

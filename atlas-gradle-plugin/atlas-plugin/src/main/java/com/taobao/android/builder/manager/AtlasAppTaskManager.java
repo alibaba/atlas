@@ -341,7 +341,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                                                               mtlTaskContextList.add(new MtlTaskContext(PrepareBundleInfoTask.ConfigAction.class, null));
 
-                                                              if (atlasExtension.isAtlasEnabled()) {
+                                                              if (atlasExtension.isAtlasEnabled() && !appVariantContext.getBuildType().getPatchConfig().isCreateIPatch()) {
                                                                   mtlTaskContextList.add(new MtlTaskContext(GenerateBundleInfoSourceTask.ConfigAction.class, null));
                                                               }
 
@@ -503,23 +503,18 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                                                               }
 
                                                               if (variantScope.getInstantRunBuildContext().isInInstantRunMode()){
-                                                                  project.getTasks().withType(GenerateBuildConfig.class).forEach(new Consumer<GenerateBuildConfig>() {
+                                                                  variantScope.getTaskContainer().getGenerateBuildConfigTask().get().doFirst(new Action<Task>() {
                                                                       @Override
-                                                                      public void accept(GenerateBuildConfig generateBuildConfig) {
-                                                                          generateBuildConfig.doFirst(new Action<Task>() {
+                                                                      public void execute(Task task) {
+
+                                                                          ReflectUtils.updateField(task, "debuggable", new Supplier<Boolean>() {
                                                                               @Override
-                                                                              public void execute(Task task) {
+                                                                              public Boolean get() {
 
-                                                                                  ReflectUtils.updateField(task, "debuggable", new Supplier<Boolean>() {
-                                                                                      @Override
-                                                                                      public Boolean get() {
-
-                                                                                          return appVariantContext.getBuildType().isDebuggable();
-                                                                                      }
-                                                                                  });
-
+                                                                                  return appVariantContext.getBuildType().isDebuggable();
                                                                               }
                                                                           });
+
                                                                       }
                                                                   });
 

@@ -9,8 +9,11 @@ import com.taobao.android.builder.tools.log.LogOutputListener;
 import com.taobao.android.builder.tools.process.ApkProcessor;
 import org.gradle.BuildResult;
 import org.gradle.api.Action;
+import org.gradle.api.GradleException;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
+import org.gradle.api.ProjectEvaluationListener;
+import org.gradle.api.ProjectState;
 import org.gradle.api.tasks.StopExecutionException;
 import org.gradle.internal.reflect.DirectInstantiator;
 import org.gradle.internal.reflect.Instantiator;
@@ -24,7 +27,7 @@ import java.util.regex.Pattern;
  * @create 2017-08-23 When in the morning
  */
 
-public abstract class AtlasBasePlugin implements Plugin<Project>, ToolingRegistryProvider {
+public abstract class AtlasBasePlugin implements Plugin<Project>, ToolingRegistryProvider, FakeProjectEvaluationListener {
 
 
     protected ToolingModelBuilderRegistry toolingModelBuilderRegistry;
@@ -56,6 +59,9 @@ public abstract class AtlasBasePlugin implements Plugin<Project>, ToolingRegistr
 
         atlasConfigurationHelper.autoSetBuildTypes(atlasExtension);
 
+        atlasConfigurationHelper.createLibCompenents();
+
+        project.afterEvaluate(project1 -> afterEvaluate(project1));
 
     }
 
@@ -69,7 +75,29 @@ public abstract class AtlasBasePlugin implements Plugin<Project>, ToolingRegistr
 
         project.getGradle().buildFinished(buildResult -> AtlasBuildContext.reset());
 
-
     }
 
+    @Override
+    public void afterEvaluate(Project project) {
+        try {
+            atlasConfigurationHelper.createBuilderAfterEvaluate();
+        } catch (Exception e) {
+            throw new GradleException("update builder failed", e);
+        }
+
+        atlasConfigurationHelper.registAtlasStreams();
+
+
+        atlasConfigurationHelper.configDependencies(atlasExtension.getTBuildConfig().getFeatureConfigFile());
+
+
+        //3. update extension
+        atlasConfigurationHelper.updateExtensionAfterEvaluate();
+
+        //4. Set up the android builder
+
+
+        //5. Configuration tasks
+        atlasConfigurationHelper.configTasksAfterEvaluate();
+    }
 }
