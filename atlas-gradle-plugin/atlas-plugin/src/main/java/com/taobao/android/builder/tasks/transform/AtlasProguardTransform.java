@@ -213,10 +213,15 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.api.transform.*;
 import com.android.build.api.transform.QualifiedContent.ContentType;
+import com.android.build.gradle.api.BaseVariantOutput;
+import com.android.build.gradle.internal.ApkDataUtils;
+import com.android.build.gradle.internal.InternalScope;
 import com.android.build.gradle.internal.api.AppVariantContext;
+import com.android.build.gradle.internal.api.AppVariantOutputContext;
 import com.android.build.gradle.internal.api.AwbTransform;
 import com.android.build.gradle.internal.pipeline.OriginalStream;
 import com.android.build.gradle.internal.pipeline.TransformManager;
+import com.android.build.gradle.internal.pipeline.TransformManagerDelegate;
 import com.android.build.gradle.internal.pipeline.TransformTask;
 import com.android.build.gradle.internal.publishing.AndroidArtifacts;
 import com.android.build.gradle.internal.transforms.BaseProguardAction;
@@ -224,14 +229,17 @@ import com.android.build.gradle.internal.transforms.ProGuardTransform;
 import com.android.build.gradle.internal.transforms.ProguardConfigurable;
 import com.google.common.collect.ImmutableList;
 import com.taobao.android.builder.AtlasBuildContext;
+import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.extension.TBuildConfig;
 import com.taobao.android.builder.tasks.app.BuildAtlasEnvTask;
+import com.taobao.android.builder.tasks.manager.transform.MtlDexArchiveBuilderTransform;
 import com.taobao.android.builder.tools.FileNameUtils;
 import com.taobao.android.builder.tools.Profiler;
 import com.taobao.android.builder.tools.ReflectUtils;
 import com.taobao.android.builder.tools.log.FileLogger;
 import com.taobao.android.builder.tools.proguard.AtlasProguardHelper;
+import com.taobao.android.builder.tools.proguard.AwbProguardConfiguration;
 import com.taobao.android.builder.tools.proguard.BundleProguarder;
 import com.taobao.android.builder.tools.proguard.KeepOnlyConfigurationParser;
 import com.taobao.android.builder.tools.proguard.domain.Input;
@@ -248,10 +256,8 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.function.Consumer;
 
 import static com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactScope.ALL;
 
@@ -312,8 +318,8 @@ public class AtlasProguardTransform extends ProGuardTransform {
 
         }
 
-        if (buildConfig.getConsumerProguardEnabled()){
-            nonConsumerProguardFiles.addAll(appVariantContext.getScope().getArtifactFileCollection(COMPILE_CLASSPATH,ALL, AndroidArtifacts.ArtifactType.CONSUMER_PROGUARD_RULES).getFiles());
+        if (buildConfig.getConsumerProguardEnabled()) {
+            nonConsumerProguardFiles.addAll(appVariantContext.getScope().getArtifactFileCollection(COMPILE_CLASSPATH, ALL, AndroidArtifacts.ArtifactType.CONSUMER_PROGUARD_RULES).getFiles());
 
         }
 
@@ -384,6 +390,35 @@ public class AtlasProguardTransform extends ProGuardTransform {
         this.printconfiguration(proguardOutFile);
 
         super.transform(invocation);
+
+        AtlasDependencyTree dependencyTree = AtlasBuildContext.androidDependencyTrees.get(
+                appVariantContext.getVariantConfiguration().getFullName());
+
+        if (dependencyTree.getAwbBundles().size() > 0) {
+
+            BaseVariantOutput vod = (BaseVariantOutput) appVariantContext.getVariantOutputData().iterator().next();
+            AppVariantOutputContext appVariantOutputContext = appVariantContext.getAppVariantOutputContext(ApkDataUtils.get(vod));
+            appVariantOutputContext.getAwbTransformMap().values().forEach(new Consumer<AwbTransform>() {
+                @Override
+                public void accept(AwbTransform awbTransform) {
+                    Collection<File> inputFiles = new HashSet<>();
+                    inputFiles.addAll(awbTransform.getInputFiles());
+                    inputFiles.addAll(awbTransform.getInputLibraries());
+                    TransformManagerDelegate.findTransformTaskByTransformType(appVariantContext, MtlDexArchiveBuilderTransform.class).forEach(new Consumer<TransformTask>() {
+                        @Override
+                        public void accept(TransformTask transformTask) {
+                            (appVariantContext.getTransformManager()).addStreamsForTask(transformTask, InternalScope.MAIN_SPLIT, QualifiedContent.DefaultContentType.CLASSES, "awb-proguard-classess", appVariantContext.getProject().files(inputFiles));
+                        }
+                    });
+
+                    inputFiles.forEach(file -> {
+                        AtlasBuildContext.atlasMainDexHelperMap.get(appVariantContext.getVariantName()).addMainDex(new BuildAtlasEnvTask.FileIdentity(file.getName(), file, false, false));
+                    });
+                }
+            });
+        }
+
+
     }
 
     public void fastTransform(TransformInvocation invocation) throws TransformException {
@@ -507,7 +542,7 @@ public class AtlasProguardTransform extends ProGuardTransform {
 
     }
 
-    private  void transformInput(Input input) {
+    private void transformInput(Input input) {
         if (input.maindexFileTransform.size() == 0 && input.maindexFolderTransform.size() == 0) {
             return;
         }

@@ -246,7 +246,9 @@ public class MtlDexMergeTransform extends Transform {
 
             // now wait for all merge tasks completion
             mergeTasks.forEach(ForkJoinTask::join);
-
+        }finally {
+            forkJoinPool.shutdown();
+            forkJoinPool.awaitTermination(100, TimeUnit.SECONDS);
         }
     }
 
@@ -284,6 +286,7 @@ public class MtlDexMergeTransform extends Transform {
                         .flatMap(transformInput -> transformInput.getJarInputs().stream())
                         .filter(jarInput -> jarInput.getStatus() != Status.REMOVED && isValidJar(jarInput))
                         .map(jarInput -> jarInput.getFile().toPath())
+                        .sorted()
                         .iterator();
         Iterator<Path> dexArchives = Iterators.concat(dirInputs, jarInputs);
 
@@ -297,7 +300,7 @@ public class MtlDexMergeTransform extends Transform {
         FileUtils.cleanOutputDir(outputDir);
 
         Path mainDexClasses;
-        if (mainDexListFile == null) {
+        if (mainDexListFile == null||mainDexListFile.get() == null) {
             mainDexClasses = null;
         } else {
             mainDexClasses = BuildableArtifactUtil.singleFile(mainDexListFile).toPath();
@@ -604,7 +607,7 @@ public class MtlDexMergeTransform extends Transform {
                         mainDexList,
                         forkJoinPool,
                         dexMerger,
-                        14,
+                        minSdkVersion,
                         isDebuggable);
         return forkJoinPool.submit(callable);
     }

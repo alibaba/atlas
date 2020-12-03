@@ -43,13 +43,6 @@ public class MainDexListProvider {
         if (mainDexListFile != null){
             return mainDexListFile;
         }
-        if (variantContext.getScope()
-                .getVariantConfiguration()
-                .getMinSdkVersion()
-                .getFeatureLevel()
-                > 20 || !variantContext.getVariantConfiguration().isMultiDexEnabled()) {
-            return null;
-        }
 
         if ((variantContext.getScope()
                 .getVariantConfiguration()
@@ -100,9 +93,19 @@ public class MainDexListProvider {
     }
 
     public void  generateMainDexList(AppVariantContext variantContext){
+        if (variantContext.getScope()
+                .getVariantConfiguration()
+                .getMinSdkVersion()
+                .getFeatureLevel()
+                > 20 || !variantContext.getVariantConfiguration().isMultiDexEnabled()) {
+            return;
+        }
+
         if (mainDexListFile == null){
             getMainDexList(variantContext);
         }
+
+
         if (!mainDexListFile.getParentFile().exists()) {
             mainDexListFile.getParentFile().mkdirs();
         }

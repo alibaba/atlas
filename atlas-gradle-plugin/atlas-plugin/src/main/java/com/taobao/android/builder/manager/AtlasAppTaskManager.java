@@ -232,12 +232,14 @@ import com.android.build.gradle.internal.transforms.*;
 import com.android.build.gradle.tasks.*;
 import com.android.builder.core.AtlasBuilder;
 import com.google.common.base.Supplier;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.AtlasMainDexHelper;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.extension.AtlasExtension;
 import com.taobao.android.builder.insant.DelegateProguardTransform;
+import com.taobao.android.builder.insant.DelegateReourceShrinkTransform;
 import com.taobao.android.builder.tasks.PrepareAPTask;
 import com.taobao.android.builder.tasks.app.*;
 import com.taobao.android.builder.tasks.app.BuildAtlasEnvTask;
@@ -272,6 +274,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.*;
 import java.util.function.Consumer;
+
 /**
  * MTLThe plug-in compiles apk's task management
  * Created by shenghua.nish on 2016-05-09 3:55 in the afternoon.
@@ -297,8 +300,8 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                                                               AppVariantContext appVariantContext = AtlasBuildContext.sBuilderAdapter.appVariantContextFactory
                                                                       .getAppVariantContext(project, applicationVariant);
-                                                              if (!AtlasBuildContext.atlasMainDexHelperMap.containsKey(appVariantContext.getVariantName())){
-                                                                  AtlasBuildContext.atlasMainDexHelperMap.put(appVariantContext.getVariantName(),new AtlasMainDexHelper());
+                                                              if (!AtlasBuildContext.atlasMainDexHelperMap.containsKey(appVariantContext.getVariantName())) {
+                                                                  AtlasBuildContext.atlasMainDexHelperMap.put(appVariantContext.getVariantName(), new AtlasMainDexHelper());
                                                               }
 
                                                               TransformReplacer transformReplacer = new TransformReplacer(appVariantContext);
@@ -312,7 +315,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                                                               mtlTaskContextList.add(new MtlTaskContext(BuildAtlasEnvTask.ConfigAction.class, null));
 
-                                                              mtlTaskContextList.add(new MtlTaskContext(ScanDupResTask.ConfigActon.class,null));
+                                                              mtlTaskContextList.add(new MtlTaskContext(ScanDupResTask.ConfigActon.class, null));
 
                                                               mtlTaskContextList.add(new MtlTaskContext(LogDependenciesTask.ConfigAction.class, null));
 
@@ -320,19 +323,19 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                                                               mtlTaskContextList.add(new MtlTaskContext(StandardizeLibManifestTask.ConfigAction.class, null));
 
-                                                              if (atlasExtension.isAppBundlesEnabled()){
-                                                                  mtlTaskContextList.add(new MtlTaskContext(MtlFeatureSetmetadataWriterTask.ConfigAction.class,null));
-                                                                  mtlTaskContextList.add(new MtlTaskContext(MtlModuleMetadataWriterTask.CreationAction.class,null));
-                                                                  mtlTaskContextList.add(new MtlTaskContext(FeaturesParallelTask.CreationManifestsAction.class,null));
+                                                              if (atlasExtension.isAppBundlesEnabled()) {
+                                                                  mtlTaskContextList.add(new MtlTaskContext(MtlFeatureSetmetadataWriterTask.ConfigAction.class, null));
+                                                                  mtlTaskContextList.add(new MtlTaskContext(MtlModuleMetadataWriterTask.CreationAction.class, null));
+                                                                  mtlTaskContextList.add(new MtlTaskContext(FeaturesParallelTask.CreationManifestsAction.class, null));
 
                                                               }
 
                                                               mtlTaskContextList.add(new MtlTaskContext(MergeSourceSetFolders.class));
 
 
-                                                              if (atlasExtension.isAppBundlesEnabled()){
-                                                                  mtlTaskContextList.add(new MtlTaskContext(FeaturesParallelTask.CreationAssetsAction.class,null));
-                                                                  mtlTaskContextList.add(new MtlTaskContext(FeaturesParallelTask.MergeResourceAction.class,null));
+                                                              if (atlasExtension.isAppBundlesEnabled()) {
+                                                                  mtlTaskContextList.add(new MtlTaskContext(FeaturesParallelTask.CreationAssetsAction.class, null));
+                                                                  mtlTaskContextList.add(new MtlTaskContext(FeaturesParallelTask.MergeResourceAction.class, null));
 
                                                               }
 
@@ -356,7 +359,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                                                               mtlTaskContextList.add(new MtlTaskContext(ProcessApplicationManifest.class));
 
-                                                              if (atlasExtension.isAppBundlesEnabled()){
+                                                              if (atlasExtension.isAppBundlesEnabled()) {
                                                                   mtlTaskContextList.add(new MtlTaskContext(LinkAndroidResForBundleTask.class));
 
 
@@ -371,18 +374,15 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                                                               if (atlasExtension.isAppBundlesEnabled()) {
                                                                   mtlTaskContextList.add(new MtlTaskContext(AndroidJavaCompile.class));
                                                                   mtlTaskContextList.add(new MtlTaskContext(ProcessJavaResTask.class));
-                                                                  mtlTaskContextList.add(new MtlTaskContext(FeaturesParallelTask.CreationBundleResourceAction.class,null));
-                                                                  mtlTaskContextList.add(new MtlTaskContext(FeaturesParallelTask.CreationProcessResourceAction.class,null));
-                                                                  mtlTaskContextList.add(new MtlTaskContext(FeaturesParallelTask.CreationFeatureCompileAction.class,null));
+                                                                  mtlTaskContextList.add(new MtlTaskContext(FeaturesParallelTask.CreationBundleResourceAction.class, null));
+                                                                  mtlTaskContextList.add(new MtlTaskContext(FeaturesParallelTask.CreationProcessResourceAction.class, null));
+                                                                  mtlTaskContextList.add(new MtlTaskContext(FeaturesParallelTask.CreationFeatureCompileAction.class, null));
 
                                                               }
 
 
-
                                                               ProcessAndroidResources processAndroidResources
                                                                       = appVariantContext.getScope().getTaskContainer().getProcessAndroidResTask().get();
-
-
 
 
 //                                                              if (processAndroidResources.isAapt2Enabled()) {
@@ -418,13 +418,13 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                                                                   mtlTaskContextList.add(new MtlTaskContext(FeaturesParallelTask.CreationPreBundleAction.class, null));
 
-                                                                  mtlTaskContextList.add(new MtlTaskContext(MtlPerModuleReportDependenciesTask.CreationAction.class,null));
+                                                                  mtlTaskContextList.add(new MtlTaskContext(MtlPerModuleReportDependenciesTask.CreationAction.class, null));
 
                                                                   mtlTaskContextList.add(new MtlTaskContext(FeaturesParallelTask.CreationBundleDepsAction.class, null));
 
                                                                   mtlTaskContextList.add(new MtlTaskContext(com.android.build.gradle.internal.tasks.BundleReportDependenciesTask.class));
 
-                                                                  mtlTaskContextList.add(new MtlTaskContext(MtlPackageBundleTask.CreationAction.class,null));
+                                                                  mtlTaskContextList.add(new MtlTaskContext(MtlPackageBundleTask.CreationAction.class, null));
 
                                                                   mtlTaskContextList.add(new MtlTaskContext(FinalizeBundleTask.class));
 
@@ -442,11 +442,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                                                               mtlTaskContextList.add(new MtlTaskContext(PackageApplication.class));
 
 
-
-
                                                               mtlTaskContextList.add(new MtlTaskContext(ApBuildTask.ConfigAction.class, null));
-
-
 
 
                                                               mtlTaskContextList.add(new MtlTaskContext("assemble"));
@@ -463,8 +459,8 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                                                                               new MtlTransformContext(DelegateMergeClassesTransform.class, R8Transform.class));
 
                                                                       mtlTransformContextList.add(
-                                                                              new MtlTransformContext(true,DelegateDexSplitterTransform.class, MergeJavaResourcesTransform.class));
-                                                                  }else {
+                                                                              new MtlTransformContext(true, DelegateDexSplitterTransform.class, MergeJavaResourcesTransform.class));
+                                                                  } else {
 
                                                                   }
 
@@ -478,12 +474,14 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                                                                                       @Override
                                                                                       public void accept(BaseVariantOutput o) {
                                                                                           try {
-                                                                                              Files.copy(variantScope.getArtifacts().getFinalArtifactFiles(InternalArtifactType.APKS_FROM_BUNDLE).get().getSingleFile().toPath(),appVariantContext.getAppVariantOutputContext(ApkDataUtils.get(o)).getApksOutputFile().toPath());
+                                                                                              Files.copy(variantScope.getArtifacts().getFinalArtifactFiles(InternalArtifactType.APKS_FROM_BUNDLE).get().getSingleFile().toPath(), appVariantContext.getAppVariantOutputContext(ApkDataUtils.get(o)).getApksOutputFile().toPath());
                                                                                           } catch (IOException e) {
                                                                                               e.printStackTrace();
                                                                                           }
 
-                                                                                      };
+                                                                                      }
+
+                                                                                      ;
                                                                                   });
 
                                                                               }
@@ -495,14 +493,31 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                                                               }
 
 
-                                                                  if (variantScope.getInstantRunBuildContext().isInInstantRunMode() && appVariantContext.getVariantConfiguration().getBuildType().isMinifyEnabled()){
+                                                              if (variantScope.getInstantRunBuildContext().isInInstantRunMode() && appVariantContext.getVariantConfiguration().getBuildType().isMinifyEnabled()) {
                                                                   mtlTransformContextList.add(
                                                                           new MtlTransformContext(DelegateProguardTransform.class, ExtractJarsTransform.class,
                                                                                   InstantRunTransform.class));
 
+                                                                  if (variantScope.getVariantConfiguration().getBuildType().isShrinkResources()) {
+                                                                      mtlTransformContextList.add(
+                                                                              new MtlTransformContext(DelegateReourceShrinkTransform.class, InstantRunDependenciesApkBuilder.class));
+                                                                      MergeResources mergeResources = appVariantContext.getVariantData().getTaskContainer().getMergeResourcesTask().get();
+                                                                      File mergedNotCompiledDir = new File(
+                                                                              variantScope.getGlobalScope().getIntermediatesDir()
+                                                                                      + "/merged-not-compiled-resources/"
+                                                                                      + variantScope.getVariantConfiguration().getDirName());
+                                                                      ReflectUtils.updateField(mergeResources, "mergedNotCompiledResourcesOutputDirectory", mergedNotCompiledDir);
+                                                                      variantScope.getArtifacts()
+                                                                              .appendArtifact(
+                                                                                      InternalArtifactType.MERGED_NOT_COMPILED_RES,
+                                                                                      ImmutableList.of(mergedNotCompiledDir),
+                                                                                      mergeResources.getName());
+
+                                                                  }
+
                                                               }
 
-                                                              if (variantScope.getInstantRunBuildContext().isInInstantRunMode()){
+                                                              if (variantScope.getInstantRunBuildContext().isInInstantRunMode()) {
                                                                   variantScope.getTaskContainer().getGenerateBuildConfigTask().get().doFirst(new Action<Task>() {
                                                                       @Override
                                                                       public void execute(Task task) {
@@ -521,8 +536,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                                                               }
 
 
-
-                                                                  if (!mtlTransformContextList.isEmpty()) {
+                                                              if (!mtlTransformContextList.isEmpty()) {
                                                                   new MtlTransformInjector(appVariantContext).injectTasks(mtlTransformContextList);
                                                               }
                                                               Collection<BaseVariantOutput> baseVariantOutputDataList = appVariantContext.getVariantOutputData();
@@ -541,7 +555,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                                                                   if (!variantScope.getInstantRunBuildContext().isInInstantRunMode() && variantScope.getVariantConfiguration().getBuildType().isMinifyEnabled()) {
                                                                       if (variantScope.getCodeShrinker() == CodeShrinker.R8) {
                                                                           transformReplacer.replaceR8Transform(vod);
-                                                                      }else {
+                                                                      } else {
                                                                           transformReplacer.replaceProguardTransform(vod);
 
                                                                       }
@@ -576,7 +590,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                                                                       kotlinCompile.doLast(new Action<Task>() {
                                                                           @Override
                                                                           public void execute(Task task) {
-                                                                              AtlasBuildContext.atlasMainDexHelperMap.get(appVariantContext.getVariantName()).getInputDirs().add(((KotlinCompile)task).getDestinationDir());
+                                                                              AtlasBuildContext.atlasMainDexHelperMap.get(appVariantContext.getVariantName()).getInputDirs().add(((KotlinCompile) task).getDestinationDir());
 
                                                                           }
                                                                       });
@@ -605,7 +619,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                                                                   });
                                                               }
 
-                                                              TaskCollection<ExtractTryWithResourcesSupportJar>taskCollection = appVariantContext.getProject().getTasks().withType(ExtractTryWithResourcesSupportJar.class);
+                                                              TaskCollection<ExtractTryWithResourcesSupportJar> taskCollection = appVariantContext.getProject().getTasks().withType(ExtractTryWithResourcesSupportJar.class);
                                                               for (ExtractTryWithResourcesSupportJar task : taskCollection) {
                                                                   task.doLast(new Action<Task>() {
                                                                       @Override
@@ -625,10 +639,6 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                                                       }
         );
     }
-
-
-
-
 
 
     private void repalceAndroidBuilder(ApplicationVariant applicationVariant) {

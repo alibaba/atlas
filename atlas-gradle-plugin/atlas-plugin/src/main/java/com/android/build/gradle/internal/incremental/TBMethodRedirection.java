@@ -16,10 +16,13 @@ import java.util.List;
  */
 public class TBMethodRedirection extends MethodRedirection {
     private String name;
+    private String code;
+
 
     TBMethodRedirection(LabelNode label, String name, List<Type> types, Type type) {
         super(label, name, types, type);
         this.name = name;
+        this.code = Integer.toHexString((name).hashCode());
     }
 
     @Override
@@ -27,9 +30,8 @@ public class TBMethodRedirection extends MethodRedirection {
 
 
         Label l0 = new Label();
-        mv.loadLocal(change);
-        mv.visitJumpInsn(Opcodes.IFNULL, l0);
-
+//        mv.loadLocal(change);
+//        mv.visitJumpInsn(Opcodes.IFNULL, l0);
         mv.loadLocal(change);
         mv.visitTypeInsn(Opcodes.INSTANCEOF, TBIncrementalVisitor.ALI_CHANGE_TYPE.getInternalName());
         mv.visitJumpInsn(Opcodes.IFEQ, l0);
@@ -52,7 +54,7 @@ public class TBMethodRedirection extends MethodRedirection {
     protected void doRedirect(GeneratorAdapter mv, int change) {
         // Push the three arguments
         mv.loadLocal(change);
-        mv.push(name);
+        mv.push(code);
         ByteCodeUtils.newVariableArray(mv, ByteCodeUtils.toLocalVariables(types));
 
         // now invoke the generic dispatch method.

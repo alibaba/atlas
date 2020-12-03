@@ -1028,7 +1028,11 @@ public class TBIncrementalChangeVisitor extends TBIncrementalVisitor {
             if (!isAccessCompatibleWithInstantRun(methodNode.access)) {
                 continue;
             }
-            methods.put(methodNode.name + "." + methodNode.desc, methodNode);
+
+            String hexString = Integer.toHexString((methodNode.name + "." + methodNode.desc).hashCode());
+//            methods.put(methodNode.name + "." + methodNode.desc, methodNode);
+            methods.put(hexString, methodNode);
+
         }
 
         new TBStringSwitch() {
