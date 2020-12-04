@@ -164,7 +164,7 @@ public class DelegateProguardTransform extends MtlInjectTransform {
 
         defaultProguardFiles.forEach(file -> builder.putFile(file.getName(), file, FileCache.FileProperties.HASH));
 
-        FileCache fileCache = getUserIntermediatesCache();
+        FileCache fileCache = getUserCache();
         FileCache.Inputs inputs = builder.build();
         FileCache.QueryResult queryResult= null;
         try {
@@ -534,10 +534,10 @@ public class DelegateProguardTransform extends MtlInjectTransform {
     }
 
     @Nullable
-    private FileCache getUserIntermediatesCache() {
+    private FileCache getUserCache() {
         if (appVariantContext.getScope().getGlobalScope()
                 .getProjectOptions()
-                .get(BooleanOption.ENABLE_INTERMEDIATE_ARTIFACTS_CACHE)) {
+                .get(BooleanOption.ENABLE_BUILD_CACHE)) {
             return appVariantContext.getScope().getGlobalScope().getBuildCache();
         } else {
             return null;
