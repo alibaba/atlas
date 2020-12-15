@@ -235,6 +235,10 @@ public class DelegateProguardTransform extends MtlInjectTransform {
             defaultProguardFiles.add(bundleRKeepFile);
         }
 
+        if (appVariantContext.getBuildType().getPatchConfig().isCreateIPatch()){
+            collectPatchInfo(transformInvocation.getInputs());
+
+        }
         //apply bundle Inout
         applyBundleInOutConfigration(appVariantContext);
 
@@ -252,10 +256,7 @@ public class DelegateProguardTransform extends MtlInjectTransform {
 
         Collection<TransformInput>transformInputs= getAllInput();
 
-        if (appVariantContext.getBuildType().getPatchConfig().isCreateIPatch()){
-            collectPatchInfo(transformInputs);
 
-        }
 
         configuration.ignoreWarnings = true;
         //set output
@@ -457,6 +458,47 @@ public class DelegateProguardTransform extends MtlInjectTransform {
             }
 
         }));
+        getAppVariantOutputContext().getAwbTransformMap().values().forEach(new Consumer<AwbTransform>() {
+            @Override
+            public void accept(AwbTransform awbTransform) {
+                System.err.println("findCodechange:"+awbTransform.getAwbBundle().getName());
+                awbTransform.getInputFiles().forEach(new Consumer<File>() {
+                    @Override
+                    public void accept(File jarInput) {
+                        System.err.println("findCodechange jar:"+jarInput.getAbsolutePath());
+
+                        Collection<ModifyClassFinder.CodeChange> changes = new ArrayList<>();
+                        try {
+                            if (modifyClassFinder.parseJarPolicies(jarInput,changes)){
+                                codeChanges.addAll(changes);
+                                changeJarFiles.add(jarInput);
+                            }
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                });
+                awbTransform.getInputLibraries().forEach(new Consumer<File>() {
+                    @Override
+                    public void accept(File jarInput) {
+                        System.err.println("findCodechange jar:"+jarInput.getAbsolutePath());
+                        Collection<ModifyClassFinder.CodeChange> changes = new ArrayList<>();
+                        try {
+                            if (modifyClassFinder.parseJarPolicies(jarInput,changes)){
+                                codeChanges.addAll(changes);
+                                changeJarFiles.add(jarInput);
+                            }
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                });
+
+
+
+
+            }
+        });
         codeChanges.forEach(codeChange -> System.err.println("codeChange:"+codeChange.toString()));
         if (codeChanges.size() > 0){
             System.setProperty(CHANGE_CLASS_KEY,new Gson().toJson(codeChanges.stream().map(codeChange -> codeChange.getCode()).collect(Collectors.toList())));
