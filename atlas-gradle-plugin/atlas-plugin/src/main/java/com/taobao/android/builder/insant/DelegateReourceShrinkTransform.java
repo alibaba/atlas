@@ -236,7 +236,7 @@ public class DelegateReourceShrinkTransform extends MtlInjectTransform {
             DelegateReourceShrinkTransform.SplitterParams params = (DelegateReourceShrinkTransform.SplitterParams) getParams();
             File reportFile = null;
             if (params.mappingFile != null) {
-                File logDir = params.mappingFile.getParentFile();
+                File logDir = params.mappingFile.getParentFile().getParentFile().getParentFile().getParentFile();
                 if (logDir != null) {
                     reportFile = new File(logDir, "resources.txt");
                 }
@@ -280,6 +280,7 @@ public class DelegateReourceShrinkTransform extends MtlInjectTransform {
                 try {
                     analyzer.rewriteResourceZip(
                             params.uncompressedResourceFile, params.compressedResourceFile);
+
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
