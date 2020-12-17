@@ -417,7 +417,7 @@ tasks.findByName("test")?.enabled = false
 dependencies {
     implementation(localGroovy())
     implementation(gradleApi())
-    implementation("com.android.tools.build:gradle:3.4.2")
+    implementation("com.android.tools.build:gradle:4.1.0")
     implementation("org.apache.commons:commons-lang3:3.4")
     compileOnly("org.jetbrains.kotlin:kotlin-gradle-plugin:1.3.50")
     implementation("commons-lang:commons-lang:2.6")
