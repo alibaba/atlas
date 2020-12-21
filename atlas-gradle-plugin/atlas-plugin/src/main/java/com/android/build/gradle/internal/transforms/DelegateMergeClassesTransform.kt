@@ -55,7 +55,7 @@ class DelegateMergeClassesTransform(
         return TransformManager.SCOPE_FULL_PROJECT
     }
 
-    override fun transform(invocation: TransformInvocation) {
+    override fun doTransform(invocation: TransformInvocation) {
         // Filter out everything but the .class and .kotlin_module files.
         val classFilter: (className: String) -> Boolean =
                 { it -> CLASS_PATTERN.matcher(it).matches() || KOTLIN_MODULE_PATTERN.matcher(it).matches() }

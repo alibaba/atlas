@@ -27,6 +27,7 @@ import com.google.common.collect.*;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.tasks.manager.transform.MtlInjectTransform;
 import com.taobao.android.builder.tools.ReflectUtils;
+import org.gradle.api.Action;
 import org.gradle.api.file.Directory;
 import org.gradle.api.logging.LogLevel;
 import org.gradle.api.logging.Logger;
@@ -69,8 +70,14 @@ public class DelegateReourceShrinkTransform extends MtlInjectTransform {
 
     @NonNull private final File compressedResources;
 
+    private static AppVariantContext context;
+
+
+
+
     public DelegateReourceShrinkTransform(AppVariantContext appVariantContext, ApkData apkData) {
         super(appVariantContext, apkData);
+        context = appVariantContext;
         VariantScope variantScope = appVariantContext.getVariantData().getScope();
         GlobalScope globalScope = variantScope.getGlobalScope();
         GradleVariantConfiguration variantConfig = appVariantContext.getVariantData().getVariantConfiguration();
@@ -181,7 +188,7 @@ public class DelegateReourceShrinkTransform extends MtlInjectTransform {
     }
 
     @Override
-    public void transform(TransformInvocation invocation) throws TransformException, InterruptedException, IOException {
+    public void doTransform(TransformInvocation invocation) {
         Collection<TransformInput> inputs = invocation.getInputs();
         List<File> classes = new ArrayList<>();
 
@@ -236,9 +243,9 @@ public class DelegateReourceShrinkTransform extends MtlInjectTransform {
             DelegateReourceShrinkTransform.SplitterParams params = (DelegateReourceShrinkTransform.SplitterParams) getParams();
             File reportFile = null;
             if (params.mappingFile != null) {
-                File logDir = params.mappingFile.getParentFile().getParentFile().getParentFile().getParentFile();
+                File logDir = params.mappingFile.getParentFile();
                 if (logDir != null) {
-                    reportFile = new File(logDir, "resources.txt");
+                    reportFile = new File(logDir, "res-shrink-mapping.txt");
                 }
             }
 
@@ -280,6 +287,10 @@ public class DelegateReourceShrinkTransform extends MtlInjectTransform {
                 try {
                     analyzer.rewriteResourceZip(
                             params.uncompressedResourceFile, params.compressedResourceFile);
+
+                    ResourcesOptimizer resourcesOptimizer = new ResourcesOptimizer(params.compressedResourceFile,new File(params.compressedResourceFile.getParentFile(),"opt_resources.ap_"),context.getBuildType());
+                    resourcesOptimizer.optimize(context.getScope());
+                    FileUtils.renameTo(new File(params.compressedResourceFile.getParentFile(),"opt_resources.ap_"),params.compressedResourceFile);
 
                 } catch (IOException e) {
                     throw new RuntimeException(e);

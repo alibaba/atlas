@@ -271,15 +271,15 @@ public class TBuildType {
 
     private EnhanceConfig enhanceConfig;
 
-    public DexConfig getDexConfig() {
-        return dexConfig;
+    public boolean isObfucateStringPool() {
+        return obfucateStringPool;
     }
 
-    public void setDexConfig(DexConfig dexConfig) {
-        this.dexConfig = dexConfig;
+    public void setObfucateStringPool(boolean obfucateStringPool) {
+        this.obfucateStringPool = obfucateStringPool;
     }
 
-    private DexConfig dexConfig;
+    private boolean obfucateStringPool;
 
     private MultiDexConfig multiDexConfig;
 

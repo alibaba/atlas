@@ -63,7 +63,7 @@ class DelegateDexSplitterTransform(
         return mutableListOf(outputDir)
     }
 
-    override fun transform(transformInvocation: TransformInvocation) {
+    override fun doTransform(transformInvocation: TransformInvocation) {
         val mappingFile =
                 if (mappingFileSrc?.singleFile()?.exists() == true
                         && !mappingFileSrc!!.singleFile().isDirectory) {

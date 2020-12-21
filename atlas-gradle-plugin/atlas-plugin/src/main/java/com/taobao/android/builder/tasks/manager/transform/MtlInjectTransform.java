@@ -209,11 +209,7 @@
 
 package com.taobao.android.builder.tasks.manager.transform;
 
-import com.android.build.api.transform.Format;
-import com.android.build.api.transform.JarInput;
-import com.android.build.api.transform.QualifiedContent;
-import com.android.build.api.transform.Transform;
-import com.android.build.api.transform.TransformOutputProvider;
+import com.android.build.api.transform.*;
 import com.android.build.gradle.internal.InternalScope;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
@@ -227,10 +223,13 @@ import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.tasks.app.BuildAtlasEnvTask;
 import com.taobao.android.builder.tools.FileNameUtils;
 
+import org.gradle.api.Action;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -243,6 +242,31 @@ public abstract class MtlInjectTransform extends InjectTransform {
 
     protected VariantScope scope;
     protected AppVariantContext appVariantContext;
+
+    private List<Action<MtlInjectTransform>> beforeActions = new ArrayList<>();
+
+    private List<Action<MtlInjectTransform>> afterActions = new ArrayList<>();
+
+
+
+    public void addBeforeAction(Action<MtlInjectTransform> action){
+        beforeActions.add(action);
+    }
+
+
+    public void addAfterAction(Action<MtlInjectTransform> action){
+        afterActions.add(action);
+    }
+
+    public void removeAfterAction(Action<MtlInjectTransform> action){
+        afterActions.remove(action);
+    }
+
+
+    public void removeBeforeAction(Action<MtlInjectTransform> action){
+        beforeActions.remove(action);
+    }
+
     protected ApkData apkData;
 
     public MtlInjectTransform(AppVariantContext appVariantContext, ApkData apkData) {
@@ -317,4 +341,21 @@ public abstract class MtlInjectTransform extends InjectTransform {
     }
 
 
+    @Override
+    public void transform(TransformInvocation transformInvocation) throws TransformException, InterruptedException, IOException {
+        if (beforeActions.size() > 0){
+            for (Action action:beforeActions){
+                action.execute(this);
+            }
+        }
+        doTransform(transformInvocation);
+
+        if (afterActions.size() > 0){
+            for (Action action:afterActions){
+                action.execute(this);
+            }
+        }
+    }
+
+    protected abstract void doTransform(TransformInvocation transformInvocation) throws TransformException, InterruptedException, IOException;
 }

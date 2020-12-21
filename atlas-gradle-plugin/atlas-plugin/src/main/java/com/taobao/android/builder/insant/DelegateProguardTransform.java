@@ -142,10 +142,7 @@ public class DelegateProguardTransform extends MtlInjectTransform {
     }
 
     @Override
-    public void transform(TransformInvocation transformInvocation) throws TransformException, InterruptedException, IOException {
-        super.transform(transformInvocation);
-
-
+    public void doTransform(TransformInvocation transformInvocation) throws InterruptedException {
         System.getProperties().setProperty(WHERE_NOTE_KEY, new File(appVariantContext.getScope().getGlobalScope().getOutputsDir(),"warning-classnotfound-note.properties").getPath());
 
         PostprocessingFeatures postprocessingFeatures = scope.getPostprocessingFeatures();
@@ -170,6 +167,8 @@ public class DelegateProguardTransform extends MtlInjectTransform {
         try {
              queryResult = fileCache.createFileInCacheIfAbsent(inputs, cacheFile -> cacheFile.createNewFile());
         } catch (ExecutionException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
             e.printStackTrace();
         }
         if (queryResult != null && queryResult.getQueryEvent().equals(FileCache.QueryEvent.HIT)
