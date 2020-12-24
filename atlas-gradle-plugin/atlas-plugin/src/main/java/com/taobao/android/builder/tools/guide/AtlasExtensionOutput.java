@@ -249,12 +249,9 @@ public class AtlasExtensionOutput extends AtlasExtension {
         tBuildType.setBaseApFile(mtlBuildTypeValue.getBaseApFile());
         tBuildType.setSigningConfig(new DefaultSigningConfig(name));
         tBuildType.setPatchConfig(new PatchConfig(name));
-        tBuildType.setDexConfig(new DexConfig(name));
         tBuildType.setMultiDexConfig(new MultiDexConfig(name));
-
         copyProps(tBuildType.getSigningConfig(), mtlBuildTypeValue.getSigningConfig());
         copyProps(tBuildType.getPatchConfig(), mtlBuildTypeValue.getPatchConfig());
-        copyProps(tBuildType.getDexConfig(), mtlBuildTypeValue.getDexConfig());
         copyProps(tBuildType.getMultiDexConfig(), mtlBuildTypeValue.getMultiDexConfig());
     }
 
