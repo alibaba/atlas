@@ -41,12 +41,12 @@ public class ResourcesOptimizer {
             if (tBuildType.isObfucateStringPool()){
                 results = invokeAapt(aapt2File,"optimize", inputFile.getPath(),"--enable-resource-path-shortening",
                     "--enable-resource-obfuscation",
-                        "--enable-sparse-encoding",
+//                        "--enable-sparse-encoding",
                         "--resource-path-shortening-map",resMapFile.getPath(),
                         "-o", outFile.getPath());
             }else {
                 results = invokeAapt(aapt2File,"optimize", inputFile.getPath(),"--enable-resource-path-shortening",
-                        "--enable-sparse-encoding",
+//                        "--enable-sparse-encoding",
                         "--resource-path-shortening-map",resMapFile.getPath(),
                         "-o", outFile.getPath());
             }
