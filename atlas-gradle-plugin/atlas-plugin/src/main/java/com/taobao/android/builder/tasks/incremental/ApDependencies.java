@@ -230,6 +230,11 @@ import com.google.common.collect.Table;
 import com.taobao.android.builder.dependency.output.DependencyJson;
 import com.taobao.android.builder.extension.TBuildType;
 
+import com.taobao.android.builder.tools.ReflectUtils;
+import com.taobao.android.builder.tools.zip.Better7Zip;
+import org.apache.commons.compress.archivers.sevenz.SevenZArchiveEntry;
+import org.apache.commons.compress.archivers.sevenz.SevenZFile;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.comparator.LastModifiedFileComparator;
 import org.gradle.api.Project;
@@ -317,7 +322,21 @@ public class ApDependencies /*extends BaseTask*/ {
         dependencies = project.getDependencies();
 
         //获取baseAp文件
-        apDependencyJson = getDependencyJson(baseApFile);
+        if (new File(project.getBuildDir(),"ap").exists()){
+            try {
+                FileUtils.deleteDirectory(new File(project.getBuildDir(),"ap"));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        new File(project.getBuildDir(),"ap").mkdirs();
+        try {
+            Better7Zip.unzipDirectory(baseApFile,new File(project.getBuildDir(),"ap"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        apDependencyJson = getDependencyJson(new File(project.getBuildDir(),"ap"));
 
         //mainDex
         for (String mainDex : apDependencyJson.getMainDex()) {
@@ -443,37 +462,26 @@ public class ApDependencies /*extends BaseTask*/ {
     }
 
 
-    private DependencyJson getDependencyJson(File apBaseFile) {
-        DependencyJson apDependencyJson;
-        try (ZipFile zip = new ZipFile(apBaseFile)) {
-            apDependencyJson = getJson(apBaseFile, zip, DEPENDENCIES_FILENAME,
+    private DependencyJson getDependencyJson(File apFolder) {
+        DependencyJson apDependencyJson = null;
+        try {
+            apDependencyJson = getJson(apFolder, DEPENDENCIES_FILENAME,
                     DependencyJson.class);
-            try {
-                mMuppBundleInfos = getJson(apBaseFile, zip, MUPP_BUNDLE_INFO_FILENAME, type);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        } catch (IOException e) {
-            apBaseFile.delete();
-
-            throw new RuntimeException(
-                    "Unable to read dependencies.txt from " + apBaseFile.getAbsolutePath(), e);
+            mMuppBundleInfos = getJson(apFolder, MUPP_BUNDLE_INFO_FILENAME, type);
+        }catch (Exception e){
+            e.printStackTrace();
         }
+
+
         return apDependencyJson;
     }
 
-    private <T> T getJson(File apBaseFile, ZipFile zip, String name, Type jsonClass)
+    private <T> T getJson(File apBaseFile, String name, Type jsonClass)
             throws IOException {
         T apDependencyJson;
-        ZipEntry entry = zip.getEntry(name);
-        if (entry == null) {
-            throw new IllegalStateException(
-                    "dependencies.txt is missing from location: " + apBaseFile);
-        }
-        try (InputStream in = zip.getInputStream(entry)) {
-            apDependencyJson = JSON.parseObject(IOUtils.toString(in, StandardCharsets.UTF_8),
+        File file = new File(apBaseFile,name);
+        apDependencyJson = JSON.parseObject(FileUtils.readFileToString(file),
                     jsonClass);
-        }
         return apDependencyJson;
     }
 

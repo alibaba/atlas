@@ -227,6 +227,7 @@ sourceSets {
 dependencies {
     compile localGroovy()
     compile gradleApi()
+    compile "org.tukaani:xz:1.5"
     compile "com.android.tools.build:gradle:2.3.1"
     compile "org.apache.commons:commons-lang3:3.4"
     compile "commons-lang:commons-lang:2.6"
