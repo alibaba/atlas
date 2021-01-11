@@ -17,7 +17,7 @@ buildscript {
         resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
     }
     dependencies {
-        classpath "com.taobao.android:atlasplugin:3.4.2-rc33-SNAPSHOT"
+        classpath "com.taobao.android:atlasplugin:3.4.2-rc56"
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
     }
 }

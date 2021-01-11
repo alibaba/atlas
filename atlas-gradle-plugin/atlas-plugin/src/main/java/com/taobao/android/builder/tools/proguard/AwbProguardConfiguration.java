@@ -272,6 +272,9 @@ public class AwbProguardConfiguration {
         //awbProguard for no lib, convenient for predex
         for (AwbTransform awbTransform : awbTransforms) {
             if (!awbTransform.getAwbBundle().dynamicFeature && appVariantOutputContext.getVariantContext().getAtlasExtension().isAppBundlesEnabled()){
+               awbTransform.getInputDirs().clear();
+               awbTransform.getInputFiles().clear();
+               awbTransform.getInputLibraries().clear();
                 continue;
             }
             List<File> inputLibraries = Lists.newArrayList();

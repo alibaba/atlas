@@ -22,7 +22,7 @@ repositories {
 }
 
 android {
-    compileSdkVersion "android-R"
+    compileSdkVersion 30
     defaultConfig {
         applicationId appId
         minSdkVersion minVersion
@@ -88,11 +88,12 @@ android {
 atlas {
     instantAppEnabled false
     atlasEnabled false
-    appBundlesEnabled true
+    appBundlesEnabled false
     tBuildConfig {
 //        preLaunch = 'com.taobao.demo.DemoPreLaunch'
         aaptConstantId true
 	    title 'title_home'
+abortIfAddProvider false
         featureConfigFile project.file('1.txt')
         allBundlesToMdex  true
         dynamicFeatures=['secondbundle']

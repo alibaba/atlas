@@ -402,5 +402,13 @@ public class TransformReplacer {
         });
     }
 
+    public void replaceShrinkResourceTransform(BaseVariantOutput vod){
+        List<TransformTask> transforms = TransformManagerDelegate.findTransformTaskByTransformType(
+                variantContext, ShrinkResourcesTransform.class);
+        transforms.forEach(transformTask -> {
+            ReflectUtils.updateField(transformTask, "transform", new DelegateReourceShrinkTransform(variantContext, ApkDataUtils.get(vod)));
+        });
+    }
+
 
 }
