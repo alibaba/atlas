@@ -38,7 +38,7 @@ public class ModifyClassFinder {
         try {
             inputStream = new BufferedInputStream(new FileInputStream(file));
             ClassReader classReader = new ClassReader(inputStream);
-            classReader.accept(new ModifyClassVisitor(Opcodes.ASM5, codeChange), ClassReader.SKIP_CODE);
+            classReader.accept(new ModifyClassVisitor(Opcodes.ASM6, codeChange), ClassReader.SKIP_CODE);
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
@@ -67,7 +67,7 @@ public class ModifyClassFinder {
                 CodeChange codeChange = new CodeChange();
                 InputStream inputStream = jarFile.getInputStream(jarEntry);
                 ClassReader classReader = new ClassReader(inputStream);
-                classReader.accept(new ModifyClassVisitor(Opcodes.ASM5, codeChange), ClassReader.SKIP_CODE);
+                classReader.accept(new ModifyClassVisitor(Opcodes.ASM6, codeChange), ClassReader.SKIP_CODE);
                 if (variantContext!= null && !variantContext.getBuildType().getPatchConfig().isCreateIPatch()) {
                     codeChange.py = PatchPolicy.NONE;
                     return false;

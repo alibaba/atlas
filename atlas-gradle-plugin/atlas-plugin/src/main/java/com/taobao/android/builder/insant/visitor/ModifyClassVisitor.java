@@ -16,6 +16,8 @@ public class ModifyClassVisitor extends ClassVisitor {
 
     private ModifyClassFinder.CodeChange codeChange;
 
+    private String className;
+
 
     public ModifyClassVisitor(int asm5, ModifyClassFinder.CodeChange codeChange) {
         super(asm5);
@@ -27,6 +29,7 @@ public class ModifyClassVisitor extends ClassVisitor {
     @Override
         public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
             codeChange.setCode(name);
+            this.className = name;
             codeChange.setAnnotation((access&Opcodes.ACC_ANNOTATION)!=0);
             super.visit(version, access, name, signature, superName, interfaces);
         }
@@ -36,7 +39,15 @@ public class ModifyClassVisitor extends ClassVisitor {
             super.visitSource(source, debug);
         }
 
-        @Override
+    @Override
+    public ModuleVisitor visitModule(String name, int access, String version) {
+        System.err.println("i am not intresting module:"+name + " in "+className);
+
+        return null;
+//        return super.visitModule(name, access, version);
+    }
+
+    @Override
         public void visitOuterClass(String owner, String name, String desc) {
             super.visitOuterClass(owner, name, desc);
         }
