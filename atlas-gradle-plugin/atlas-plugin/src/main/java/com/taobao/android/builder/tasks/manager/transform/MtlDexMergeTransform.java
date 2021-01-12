@@ -106,7 +106,7 @@ public class MtlDexMergeTransform extends Transform {
         this.duplicateClassesCheck = duplicateClassesCheck;
         this.dexMerger = dexMerger;
         this.minSdkVersion = minSdkVersion;
-        this.isDebuggable = false;
+        this.isDebuggable = isDebuggable;
         Preconditions.checkState(
                 (dexingType == DexingType.LEGACY_MULTIDEX) == (mainDexListFile != null),
                 "Main dex list must only be set when in legacy multidex");
