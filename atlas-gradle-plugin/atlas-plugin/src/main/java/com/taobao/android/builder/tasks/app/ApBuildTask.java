@@ -323,8 +323,9 @@ public class ApBuildTask extends ConventionTask implements VariantAwareTask {
                         .getParentFile()
                         .getParentFile(), "jar-shrink.log");
 
-                File injectFailedFile = new File(appVariantContext.getProject().getBuildDir(), "outputs/warning-instrument-inject-error.properties");
+                File injectFailedFile = new File(appVariantContext.getScope().getGlobalScope().getOutputsDir(), "warning-instrument-inject-error.properties");
 
+                File classNotFound = new File(appVariantContext.getScope().getGlobalScope().getOutputsDir(),"warning-classnotfound-note.properties");
 
                 File proguardOut = new File(String.valueOf(appVariantContext.getScope()
                         .getGlobalScope()
@@ -357,6 +358,7 @@ public class ApBuildTask extends ConventionTask implements VariantAwareTask {
                 addDirAndFile(appVariantContext.getScope().getTaskContainer().javacTask.get().getDestinationDir());
                 addFile(appBuildInfo.getPackageIdFile());
                 addFile(injectFailedFile);
+                addFile(classNotFound);
 //        if (baseVariantOutputData.getProcessResourcesProvider().get().isEnabled()) {
 //            File resourceFile = FileUtils.listFiles(appVariantContext.getScope().getArtifacts().getFinalArtifactFiles(InternalArtifactType.PROCESSED_RES).getFiles().iterator().next(), new String[]{"ap_"}, true).iterator().next();
 //            addFile(resourceFile);
