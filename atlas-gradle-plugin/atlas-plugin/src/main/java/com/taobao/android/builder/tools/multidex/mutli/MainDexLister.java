@@ -294,26 +294,13 @@ public class MainDexLister {
         } catch (NotFoundException e) {
             throw new GradleException(e.getMessage(), e);
         }
-
-        TBuildConfig tBuildConfig = appVariantContext.getAtlasExtension().getTBuildConfig();
-
+        
         Set<String> headClasses = new LinkedHashSet<>();
 
         headClasses.add(applicationName);
         headClasses.addAll(getAllReal(multiDexConfig.getFirstDexClasses()));
         List<String> maindexListClazz = new ArrayList<String>();
 
-        String preLaunchStr = tBuildConfig.getPreLaunch();
-        if (!org.apache.commons.lang3.StringUtils.isEmpty(preLaunchStr)) {
-            String[] launchArray = preLaunchStr.split("\\|");
-            if (launchArray.length > 0) {
-                for (String launchItem : launchArray) {
-                    String[] launchInfo = launchItem.split(":");
-                    String clazzName = launchInfo[0];
-                    headClasses.add(clazzName);
-                }
-            }
-        }
 
         for (String clazz:headClasses){
             clazz = clazz.replaceAll("\\.", "/") + ".class";
