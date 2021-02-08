@@ -224,6 +224,7 @@ import com.taobao.android.builder.dependency.parser.ResolvedDependencyInfo;
 import org.apache.commons.lang.StringUtils;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.ModuleVersionIdentifier;
+import org.gradle.api.artifacts.ResolveException;
 import org.gradle.api.artifacts.ResolvedArtifact;
 import org.gradle.api.artifacts.component.ComponentIdentifier;
 import org.gradle.api.artifacts.component.ProjectComponentIdentifier;
@@ -336,9 +337,9 @@ public class DependencyResolver {
 //            "com.android.support")) {
 //            configDependencies.setAnnotationsPresent(true);
 //        }
-        if (!ids.contains(moduleVersion.getGroup()+":"+moduleVersion.getName())){
-            artifacts.put(moduleVersion,Lists.newArrayList((DependencyGroup.bundleCompileId.get(moduleVersion))));
-        }
+//        if (!ids.contains(moduleVersion.getGroup()+":"+moduleVersion.getName())){
+//            artifacts.put(moduleVersion,Lists.newArrayList((DependencyGroup.bundleCompileId.get(moduleVersion))));
+//        }
         // now loop on all the artifact for this modules.
         List<ResolvedArtifact> moduleArtifacts = artifacts.get(moduleVersion);
 
@@ -376,7 +377,7 @@ public class DependencyResolver {
                         e.printStackTrace();
                         continue;
                     }else {
-                        throw  e;
+                        throw e;
                     }
                 }
 
@@ -454,6 +455,8 @@ public class DependencyResolver {
 
                 addDependencyInfo(resolvedDependencyInfo, null, dependenciesMap);
             }
+        }else{
+            throw new ResolveException("no resolvedArtifact for dependency:"+resolvedComponentResult.getModuleVersion().toString() +" from "+ parent.getDependencyName(), new RuntimeException());
         }
 
     }
