@@ -1,5 +1,6 @@
 package com.taobao.android.builder.tasks.app;
 
+import com.alibaba.fastjson.JSON;
 import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
@@ -18,6 +19,7 @@ import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.extension.TBuildConfig;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
+import com.taobao.android.builder.tools.FileNameUtils;
 import com.taobao.android.builder.tools.MD5Util;
 
 import javafx.util.Pair;
@@ -27,6 +29,7 @@ import jxl.write.WritableSheet;
 import jxl.write.WritableWorkbook;
 import jxl.write.WriteException;
 
+import org.apache.commons.compress.compressors.FileNameUtil;
 import org.apache.commons.io.FileUtils;
 import org.gradle.api.artifacts.ArtifactCollection;
 import org.gradle.api.artifacts.result.ResolvedArtifactResult;
@@ -40,6 +43,7 @@ import java.lang.reflect.Field;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
 /**
  * ScanDupResTask
@@ -57,7 +61,7 @@ public class ScanDupResTask extends AndroidBuilderTask {
 
 
     @TaskAction
-    void generate() {
+    void generate() throws IOException {
 
 
         AtlasDependencyTree atlasDependencyTree = AtlasBuildContext.androidDependencyTrees.get(
@@ -94,6 +98,7 @@ public class ScanDupResTask extends AndroidBuilderTask {
 
 
         Map<String, File> map = new HashMap<>();
+        Map<String,List<String>> resFiles = new HashMap<>();
         Map<String, Pair<String, File>> valuesMap = new HashMap<>();
         ResourceMerger resourceMerger = new ResourceMerger(14);
         if (res != null) {
@@ -110,6 +115,15 @@ public class ScanDupResTask extends AndroidBuilderTask {
                                 true);
                 resourceSet.setFromDependency(true);
                 resourceSet.addSource(artifact.getFile());
+                Collection<File>files = FileUtils.listFiles(artifact.getFile(),new String[]{"png","xml","webp","jpg"},true);
+                List<String> fileNames = new ArrayList<String>();
+                files.forEach(new Consumer<File>() {
+                    @Override
+                    public void accept(File file) {
+                        fileNames.add("res"+file.getAbsolutePath().substring(artifact.getFile().getAbsolutePath().length()));
+                    }
+                });
+                resFiles.put(ProcessApplicationManifest.getArtifactName(artifact),fileNames);
                 depsMap.put(artifact.getFile().getPath(), ProcessApplicationManifest.getArtifactName(artifact));
                 // add to 0 always, since we need to reverse the order.
                 resourceSetList.add(0, resourceSet);
@@ -372,6 +386,7 @@ public class ScanDupResTask extends AndroidBuilderTask {
             }
         }
 
+        FileUtils.write(new File(appVariantContext.getProject().getBuildDir(),"res.json"), JSON.toJSONString(resFiles));
 
     }
 

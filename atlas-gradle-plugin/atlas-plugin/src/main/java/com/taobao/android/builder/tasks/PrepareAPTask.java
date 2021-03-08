@@ -364,7 +364,9 @@ public class PrepareAPTask extends ConventionVariantAwareTask {
                 explodedDir = getExplodedDir();
                 SevenZip.decompress(apBaseFile.getAbsolutePath(), explodedDir.getAbsolutePath());
                 apContext.setApExploredFolder(explodedDir);
-                AtlasBuildContext.atlasMainDexHelperMap.get(variantName).getInputDirs().add(apContext.getCompileDir());
+                if (apBaseFile.getName().contains("taobao-android")) {
+                    AtlasBuildContext.atlasMainDexHelperMap.get(variantName).getInputDirs().add(apContext.getCompileDir());
+                }
                 File resFile = apContext.getResApFile(baseVariantOutput);
                 BuildOutput buildOutput = new BuildOutput(InternalArtifactType.PROCESSED_RES, ApkDataUtils.get(baseVariantOutput), resFile);
                 appendOutput(buildOutput, apContext.getApExploredFolder());

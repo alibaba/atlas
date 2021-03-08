@@ -138,7 +138,7 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
         } else {
             if (patchEachMethod && methodNodes.size() > 0) {
                 methodNodes.forEach(methodNode -> TBIncrementalSupportVisitor.super.visitField(fieldAccess, "$ipChange$" + Integer.toHexString((methodNode.name + "." + methodNode.desc).hashCode()), getRuntimeTypeName(ALI_CHANGE_TYPE), null, null));
-            } else {
+            } else if(methodNodes.size() > 0){
                 super.visitField(fieldAccess, "$ipChange", getRuntimeTypeName(ALI_CHANGE_TYPE), null, null);
             }
         }
@@ -784,7 +784,7 @@ public class TBIncrementalSupportVisitor extends TBIncrementalVisitor {
     @Override
     public void visitEnd() {
 
-        if (!visitedSuperName.equals("java/lang/Object")) {
+        if (!visitedSuperName.equals("java/lang/Object") && methodNodes.size() > 0) {
             createAccessSuper();
         }
 

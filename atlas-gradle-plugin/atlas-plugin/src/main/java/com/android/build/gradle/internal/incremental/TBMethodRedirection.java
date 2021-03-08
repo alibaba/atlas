@@ -30,8 +30,8 @@ public class TBMethodRedirection extends MethodRedirection {
 
 
         Label l0 = new Label();
-        mv.loadLocal(change);
-        mv.visitJumpInsn(Opcodes.IFNULL, l0);
+//        mv.loadLocal(change);
+//        mv.visitJumpInsn(Opcodes.IFNULL, l0);
         mv.loadLocal(change);
         mv.visitTypeInsn(Opcodes.INSTANCEOF, TBIncrementalVisitor.ALI_CHANGE_TYPE.getInternalName());
         mv.visitJumpInsn(Opcodes.IFEQ, l0);
