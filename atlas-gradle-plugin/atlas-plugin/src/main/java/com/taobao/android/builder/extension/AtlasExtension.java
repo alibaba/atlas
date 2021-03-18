@@ -285,6 +285,17 @@ public class AtlasExtension<T extends TBuildType, Z extends TBuildConfig> {
 
     private boolean appBundlesEnabled;
 
+
+    public boolean isRemotePluginEnabled() {
+        return remotePluginEnabled;
+    }
+
+    public void setRemotePluginEnabled(boolean remotePluginEnabled) {
+        this.remotePluginEnabled = remotePluginEnabled;
+    }
+
+    private boolean remotePluginEnabled;
+
     protected Logger logger;
 
     public AtlasExtension() {

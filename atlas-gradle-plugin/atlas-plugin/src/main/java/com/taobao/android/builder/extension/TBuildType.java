@@ -237,6 +237,26 @@ public class TBuildType {
 
     private boolean realign;
 
+    public boolean isInlineFinalField() {
+        return inlineFinalField;
+    }
+
+    public void setInlineFinalField(boolean inlineFinalField) {
+        this.inlineFinalField = inlineFinalField;
+    }
+
+    private boolean inlineFinalField = false;
+
+    public boolean isShrinkResources() {
+        return shrinkResources;
+    }
+
+    public void setShrinkResources(boolean shrinkResources) {
+        this.shrinkResources = shrinkResources;
+    }
+
+    private boolean shrinkResources;
+
     public boolean isDebuggable() {
         return debuggable;
     }
@@ -260,6 +280,11 @@ public class TBuildType {
 
     private PatchConfig patchConfig;
 
+    public boolean isShorteningResName() {
+        return shorteningResName;
+    }
+
+    private boolean shorteningResName;
 
     public EnhanceConfig getEnhanceConfig() {
         return enhanceConfig;
@@ -353,5 +378,8 @@ public class TBuildType {
     }
 
 
+    public void setShorteningResName(boolean shorteningResName) {
+        this.shorteningResName = shorteningResName;
+    }
 
 }

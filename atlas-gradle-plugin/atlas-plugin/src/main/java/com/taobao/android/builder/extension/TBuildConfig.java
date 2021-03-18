@@ -277,6 +277,18 @@ public class TBuildConfig {
     private boolean abortIfAddProvider = true;
 
 
+    public boolean isSingleApk() {
+        return singleApk;
+    }
+
+    public void setSingleApk(boolean singleApk) {
+        this.singleApk = singleApk;
+    }
+
+    private boolean singleApk = true;
+
+
+
     public Set<String> getAgreedProviders() {
         return agreedProviders;
     }
@@ -822,6 +834,7 @@ public class TBuildConfig {
 
     private boolean supportAddCallSuper = false;
 
+    private String pluginBundleVersion = "1.0.0";
 
 
     public boolean isSupportAddCallSuper() {
@@ -837,4 +850,11 @@ public class TBuildConfig {
         this.duplicateResList = duplicateResList;
     }
 
+    public void setPluginBundleVersion(String pluginBundleVersion) {
+        this.pluginBundleVersion = pluginBundleVersion;
+    }
+
+    public String getPluginBundleVersion() {
+        return pluginBundleVersion;
+    }
 }

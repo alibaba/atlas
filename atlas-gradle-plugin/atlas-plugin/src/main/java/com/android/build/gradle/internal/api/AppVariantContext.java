@@ -351,6 +351,10 @@ public class AppVariantContext<T extends BaseVariantImpl, Z extends BaseExtensio
                         awbBundle.getName());
     }
 
+    public AwbBundle getPluginBundle() {
+        return AtlasBuildContext.androidDependencyTrees.get(getVariantName()).getPluginBundle();
+    }
+
     public File getAwbClassOutputForDataBinding(AwbBundle awbBundle) {
         return new File(scope.getGlobalScope().getGeneratedDir(),
                 "source/awb-dataBinding/" +
@@ -413,6 +417,11 @@ public class AppVariantContext<T extends BaseVariantImpl, Z extends BaseExtensio
     public File getAwbApkOutputDir() {
         return new File(scope.getGlobalScope().getIntermediatesDir(),
                 "/awb-apks/" + getVariantConfiguration().getDirName() + "/");
+    }
+
+    public File getPluginApkOutputDir() {
+        return new File(scope.getGlobalScope().getIntermediatesDir(),
+                "/plugin-apk/" + getVariantConfiguration().getDirName() + "/");
     }
 
     public File getModifyManifestDir() {

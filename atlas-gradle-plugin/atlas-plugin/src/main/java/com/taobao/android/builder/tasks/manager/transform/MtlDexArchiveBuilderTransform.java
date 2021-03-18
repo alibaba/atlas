@@ -412,7 +412,7 @@ public class MtlDexArchiveBuilderTransform extends Transform {
                 }
             }
 
-            if (variantOutputContext.getVariantContext().getAtlasExtension().isAppBundlesEnabled() && variantOutputContext.getVariantContext().getAtlasExtension().getTBuildConfig().getDynamicFeatures().size() > 0){
+            if ((variantOutputContext.getVariantContext().getAtlasExtension().isAppBundlesEnabled()||variantOutputContext.getVariantContext().getAtlasExtension().isRemotePluginEnabled()) && variantOutputContext.getVariantContext().getAtlasExtension().getTBuildConfig().getDynamicFeatures().size() > 0){
 
                 ClasspathServiceKey finalBootclasspathServiceKey = bootclasspathServiceKey;
                 ClasspathServiceKey finalClasspathServiceKey = classpathServiceKey;

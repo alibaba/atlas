@@ -54,25 +54,32 @@ public class DelegateReourceShrinkTransform extends MtlInjectTransform {
     @NonNull
     private final BaseVariantData variantData;
 
-    @NonNull private final Logger logger;
+    @NonNull
+    private final Logger logger;
 
-    @NonNull private final BuildableArtifact sourceDir;
-    @NonNull private final BuildableArtifact resourceDir;
+    @NonNull
+    private final BuildableArtifact sourceDir;
+    @NonNull
+    private final BuildableArtifact resourceDir;
     @Nullable
     private BuildableArtifact mappingFileSrc;
-    @NonNull private final Provider<Directory> mergedManifests;
-    @NonNull private final BuildableArtifact uncompressedResources;
+    @NonNull
+    private final Provider<Directory> mergedManifests;
+    @NonNull
+    private final BuildableArtifact uncompressedResources;
 
-    @NonNull private final AaptOptions aaptOptions;
-    @NonNull private final VariantType variantType;
+    @NonNull
+    private final AaptOptions aaptOptions;
+    @NonNull
+    private final VariantType variantType;
     private final boolean isDebuggableBuildType;
-    @NonNull private final MultiOutputPolicy multiOutputPolicy;
+    @NonNull
+    private final MultiOutputPolicy multiOutputPolicy;
 
-    @NonNull private final File compressedResources;
+    @NonNull
+    private final File compressedResources;
 
     private static AppVariantContext context;
-
-
 
 
     public DelegateReourceShrinkTransform(AppVariantContext appVariantContext, ApkData apkData) {
@@ -98,10 +105,11 @@ public class DelegateReourceShrinkTransform extends MtlInjectTransform {
         this.isDebuggableBuildType = variantConfig.getBuildType().isDebuggable();
         this.multiOutputPolicy = variantData.getMultiOutputPolicy();
 
-        this.compressedResources =  FileUtils.join(
+        this.compressedResources = FileUtils.join(
                 globalScope.getIntermediatesDir(),
                 "res_stripped",
-                scope.getVariantConfiguration().getDirName());;
+                scope.getVariantConfiguration().getDirName());
+        ;
     }
 
     @Override
@@ -193,7 +201,7 @@ public class DelegateReourceShrinkTransform extends MtlInjectTransform {
         List<File> classes = new ArrayList<>();
 
         File folder = (File) ReflectUtils.getField(invocation.getInputs().iterator().next(), "optionalRootLocation");
-        classes.addAll(org.apache.commons.io.FileUtils.listFiles(folder,new String[]{"dex"},true));
+        classes.addAll(org.apache.commons.io.FileUtils.listFiles(folder, new String[]{"dex"}, true));
 
         BuildElements mergedManifestsOutputs =
                 ExistingBuildElements.from(InternalArtifactType.MERGED_MANIFESTS, mergedManifests);
@@ -226,8 +234,8 @@ public class DelegateReourceShrinkTransform extends MtlInjectTransform {
                         getName());
 
         PackageAndroidArtifact packageAndroidArtifact = appVariantContext.getVariantData().getTaskContainer().getPackageAndroidTask().get();
-        ReflectUtils.updateField(packageAndroidArtifact,"resourceFiles",appVariantContext.getScope().getArtifacts().getFinalArtifactFiles(InternalArtifactType.SHRUNK_PROCESSED_RES));
-        ReflectUtils.updateField(packageAndroidArtifact,"taskInputType",InternalArtifactType.SHRUNK_PROCESSED_RES);
+        ReflectUtils.updateField(packageAndroidArtifact, "resourceFiles", appVariantContext.getScope().getArtifacts().getFinalArtifactFiles(InternalArtifactType.SHRUNK_PROCESSED_RES));
+        ReflectUtils.updateField(packageAndroidArtifact, "taskInputType", InternalArtifactType.SHRUNK_PROCESSED_RES);
 
     }
 
@@ -264,17 +272,16 @@ public class DelegateReourceShrinkTransform extends MtlInjectTransform {
                 return;
             }
 
-            // Analyze resources and usages and strip out unused
-            ResourceUsageAnalyzer analyzer =
-                    new ResourceUsageAnalyzer(
-                            params.sourceDir,
-                            params.classes,
-                            params.mergedManifest.getOutputFile(),
-                            params.mappingFile,
-                            params.resourceDir,
-                            reportFile,
-                            ResourceUsageAnalyzer.ApkFormat.BINARY);
-            try {
+            if (context.getBuildType().isShrinkResources()) {
+                ResourceUsageAnalyzer analyzer =
+                        new ResourceUsageAnalyzer(
+                                params.sourceDir,
+                                params.classes,
+                                params.mergedManifest.getOutputFile(),
+                                params.mappingFile,
+                                params.resourceDir,
+                                reportFile,
+                                ResourceUsageAnalyzer.ApkFormat.BINARY);
                 analyzer.setVerbose(params.isInfoLoggingEnabled);
                 analyzer.setDebug(params.isDebugLoggingEnabled);
                 try {
@@ -282,70 +289,87 @@ public class DelegateReourceShrinkTransform extends MtlInjectTransform {
                 } catch (IOException | ParserConfigurationException | SAXException e) {
                     throw new RuntimeException(e);
                 }
-
-                // Just rewrite the .ap_ file to strip out the res/ files for unused resources
                 try {
                     analyzer.rewriteResourceZip(
                             params.uncompressedResourceFile, params.compressedResourceFile);
+                    int unused = analyzer.getUnusedResourceCount();
+                    if (unused > 0) {
+                        StringBuilder sb = new StringBuilder(200);
+                        sb.append("Removed unused resources");
+                        long before = params.uncompressedResourceFile.length();
+                        long after = params.compressedResourceFile.length();
+                        long percent = (int) ((before - after) * 100 / before);
+                        sb.append(": Binary resource data reduced from ")
+                                .append(toKbString(before))
+                                .append("KB to ")
+                                .append(toKbString(after))
+                                .append("KB: Removed ")
+                                .append(percent)
+                                .append("%");
+                        if (!ourWarned) {
+                            ourWarned = true;
+                            sb.append("\n")
+                                    .append(
+                                            "Note: If necessary, you can disable resource shrinking by adding\n")
+                                    .append("android {\n")
+                                    .append("    buildTypes {\n")
+                                    .append("        ")
+                                    .append(params.buildTypeName)
+                                    .append(" {\n")
+                                    .append("            shrinkResources false\n")
+                                    .append("        }\n")
+                                    .append("    }\n")
+                                    .append("}");
+                        }
 
-                    ResourcesOptimizer resourcesOptimizer = new ResourcesOptimizer(params.compressedResourceFile,new File(params.compressedResourceFile.getParentFile(),"opt_resources.ap_"),context.getBuildType());
-                    resourcesOptimizer.optimize(context.getScope());
-                    FileUtils.renameTo(new File(params.compressedResourceFile.getParentFile(),"opt_resources.ap_"),params.compressedResourceFile);
-
+                        System.out.println(sb.toString());
+                    }
                 } catch (IOException e) {
                     throw new RuntimeException(e);
+                } finally {
+                    analyzer.dispose();
                 }
-
-                // Dump some stats
-                int unused = analyzer.getUnusedResourceCount();
-                if (unused > 0) {
-                    StringBuilder sb = new StringBuilder(200);
-                    sb.append("Removed unused resources");
-
-                    // This is a bit misleading until we can strip out all resource types:
-                    //int total = analyzer.getTotalResourceCount()
-                    //sb.append("(" + unused + "/" + total + ")")
-
-                    long before = params.uncompressedResourceFile.length();
-                    long after = params.compressedResourceFile.length();
-                    long percent = (int) ((before - after) * 100 / before);
-                    sb.append(": Binary resource data reduced from ")
-                            .append(toKbString(before))
-                            .append("KB to ")
-                            .append(toKbString(after))
-                            .append("KB: Removed ")
-                            .append(percent)
-                            .append("%");
-                    if (!ourWarned) {
-                        ourWarned = true;
-                        sb.append("\n")
-                                .append(
-                                        "Note: If necessary, you can disable resource shrinking by adding\n")
-                                .append("android {\n")
-                                .append("    buildTypes {\n")
-                                .append("        ")
-                                .append(params.buildTypeName)
-                                .append(" {\n")
-                                .append("            shrinkResources false\n")
-                                .append("        }\n")
-                                .append("    }\n")
-                                .append("}");
-                    }
-
-                    System.out.println(sb.toString());
+            } else {
+                try {
+                    FileUtils.copyFile(
+                            params.uncompressedResourceFile, params.compressedResourceFile);
+                } catch (IOException e) {
+                    Logging.getLogger(ShrinkResourcesTransform.class)
+                            .error("Failed to copy uncompressed resource file :", e);
+                    throw new RuntimeException("Failed to copy uncompressed resource file", e);
                 }
-            } finally {
-                analyzer.dispose();
             }
+
+            // Analyze resources and usages and strip out unused
+
+
+            try {
+                ResourcesOptimizer resourcesOptimizer = new ResourcesOptimizer(params.compressedResourceFile, new File(params.compressedResourceFile.getParentFile(), "opt_resources.ap_"), context.getBuildType());
+                resourcesOptimizer.optimize(context.getScope());
+                FileUtils.renameTo(new File(params.compressedResourceFile.getParentFile(), "opt_resources.ap_"), params.compressedResourceFile);
+
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to optimize resource file", e);
+
+            }
+
+            // Dump some stats
+
         }
     }
 
+
     private static class SplitterParams extends BuildElementsTransformParams {
-        @NonNull private final File uncompressedResourceFile;
-        @NonNull private final File compressedResourceFile;
-        @Nullable private final BuildOutput mergedManifest;
-        @NonNull private final List<File> classes;
-        @Nullable private final File mappingFile;
+        @NonNull
+        private final File uncompressedResourceFile;
+        @NonNull
+        private final File compressedResourceFile;
+        @Nullable
+        private final BuildOutput mergedManifest;
+        @NonNull
+        private final List<File> classes;
+        @Nullable
+        private final File mappingFile;
         private final String buildTypeName;
         private final File sourceDir;
         private final File resourceDir;
@@ -385,7 +409,7 @@ public class DelegateReourceShrinkTransform extends MtlInjectTransform {
     }
 
     private static String toKbString(long size) {
-        return Integer.toString((int)size/1024);
+        return Integer.toString((int) size / 1024);
     }
 }
 

@@ -312,6 +312,33 @@ public class BuildAtlasEnvTask extends AndroidBuilderTask {
 
         }
 
+        if (appVariantContext.getAtlasExtension().isRemotePluginEnabled()){
+            appVariantOutputContext.getAwbTransformMap().clear();
+            androidDependencyTree.getPluginBundle().setFeatureName("com_taobao_plugin");
+            androidDependencyTree.getPluginBundle().setWrapperPackageName("com.taobao.plugin");
+
+            Iterator it = androidDependencyTree.getAwbBundles().iterator();
+            while(it.hasNext()){
+                    AwbBundle awb = (AwbBundle) it.next();
+                if (!isMBundle(appVariantContext,awb)){
+                    if (androidDependencyTree.getPluginBundle().getAndroidLibrary() == null) {
+                        androidDependencyTree.getPluginBundle().setAndroidLibrary(awb.getAndroidLibrary());
+                        androidDependencyTree.getPluginBundle().getAndroidLibraries().addAll(awb.getAndroidLibraries());
+                    }else{
+                        androidDependencyTree.getPluginBundle().getAndroidLibraries().addAll(awb.getAllLibraryAars());
+                    }
+                    androidDependencyTree.getPluginBundle().getJavaLibraries().addAll(awb.getJavaLibraries());
+                    androidDependencyTree.getPluginBundle().getSoLibraries().addAll(awb.getSoLibraries());
+                    androidDependencyTree.getPluginBundle().dynamicFeature = true;
+                    androidDependencyTree.getPluginBundle().bundleInfo.setDynamicFeature(true);
+
+                    it.remove();
+                }
+            }
+            androidDependencyTree.getAwbBundles().add(androidDependencyTree.getPluginBundle());
+        }
+
+
 
         if (appVariantContext.getAtlasExtension().isAppBundlesEnabled()) {
 
@@ -343,7 +370,6 @@ public class BuildAtlasEnvTask extends AndroidBuilderTask {
                     });
                 }
             });
-
         }
 
 
@@ -877,14 +903,14 @@ public class BuildAtlasEnvTask extends AndroidBuilderTask {
     private boolean isMBundle(AppVariantContext appVariantContext, AwbBundle awbBundle) {
 
 
-        if (appVariantContext.getAtlasExtension().isAppBundlesEnabled() && appVariantContext.getAtlasExtension().getTBuildConfig().getDynamicFeatures().contains(awbBundle.getResolvedCoordinates().getArtifactId())) {
+        if ((appVariantContext.getAtlasExtension().isAppBundlesEnabled()||appVariantContext.getAtlasExtension().isRemotePluginEnabled()) && appVariantContext.getAtlasExtension().getTBuildConfig().getDynamicFeatures().contains(awbBundle.getResolvedCoordinates().getArtifactId())) {
 
             awbBundle.dynamicFeature = true;
             awbBundle.bundleInfo.setDynamicFeature(true);
             return false;
         }
 
-        return appVariantContext.getAtlasExtension().getTBuildConfig().getAllBundlesToMdex() || appVariantContext.getAtlasExtension().getTBuildConfig().getBundleToMdex().contains(awbBundle.getPackageName());
+        return true;
 
     }
 

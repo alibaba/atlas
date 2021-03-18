@@ -373,7 +373,7 @@ public class TaobaoInstantRunTransform extends Transform {
         //when we finish instantruntransform update
 
 
-        if (!variantContext.getBuildType().getPatchConfig().isCreateIPatch()) {
+        if (!variantContext.getBuildType().getPatchConfig().isCreateIPatch() && !variantContext.getAtlasExtension().isRemotePluginEnabled()) {
 
             TransformManagerDelegate.findTransformTaskByTransformType(variantContext, MtlDexArchiveBuilderTransform.class).forEach(new Consumer<TransformTask>() {
                 @Override

@@ -97,10 +97,13 @@ public class DelegateProguardTransform extends MtlInjectTransform {
 
     private static final String CHANGE_CLASS_KEY = "instantpatch_change_classes";
 
-
     private static final String CHANGE_CFG_KEY = "proguard_cfg_changed";
 
     private static final String WHERE_NOTE_KEY = "class_not_found_note";
+
+    public static final String BLACK_LIST = "r_shrink_blackList";
+
+
 
 
     private ProGuardTransform proGuardTransform;
@@ -261,6 +264,10 @@ public class DelegateProguardTransform extends MtlInjectTransform {
 
 
         configuration.ignoreWarnings = true;
+        if (appVariantContext.getBuildType().isInlineFinalField()){
+            configuration.optimizations = new ArrayList();
+            configuration.optimizations.add("field/propagation/value");
+        }
         //set output
         File proguardOutFile = new File(appVariantContext.getProject().getBuildDir(), "outputs/proguard.cfg");
         proGuardTransform.printconfiguration(proguardOutFile);

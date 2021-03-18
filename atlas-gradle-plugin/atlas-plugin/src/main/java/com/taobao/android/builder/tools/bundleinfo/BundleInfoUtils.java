@@ -290,10 +290,15 @@ public class BundleInfoUtils {
         }
 
 
-        bundleInfo.setVersion(baseVersion + "@" + awbBundle.getResolvedCoordinates().getVersion());
+        if (awbBundle.dynamicFeature && awbBundle.getName().equals("pluginbundle")){
+            bundleInfo.setVersion(baseVersion + "@" + appVariantContext.getAtlasExtension().getTBuildConfig().getPluginBundleVersion());
+        }else {
+            bundleInfo.setVersion(baseVersion + "@" + awbBundle.getResolvedCoordinates().getVersion());
+        }
         bundleInfo.setPkgName(awbBundle.getPackageName());
         if (awbBundle.dynamicFeature) {
             bundleInfo.setFeatureName(awbBundle.getFeatureName());
+            bundleInfo.setName("淘宝动态组件");
         }
 
         String applicationName = ManifestFileUtils.getApplicationName(awbBundle.getManifest());

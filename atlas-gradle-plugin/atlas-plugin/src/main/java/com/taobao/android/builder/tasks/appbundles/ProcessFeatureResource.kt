@@ -16,6 +16,7 @@ import com.android.build.gradle.internal.dsl.convert
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext
 import com.android.build.gradle.internal.incremental.InstantRunPatchingPolicy
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
+import com.android.build.gradle.internal.res.LinkApplicationAndroidResourcesTask
 import com.android.build.gradle.internal.res.getAapt2FromMaven
 import com.android.build.gradle.internal.res.namespaced.Aapt2ServiceKey
 import com.android.build.gradle.internal.res.namespaced.getAaptDaemon
@@ -87,6 +88,8 @@ import kotlin.collections.HashMap
 open class ProcessFeatureResource @Inject constructor(workerExecutor: WorkerExecutor) :
         ProcessAndroidResources() {
 
+
+    private var featureName: String? = null
 
     public var textSymbolOutputDir: Supplier<File?> = Supplier { null }
 
@@ -233,6 +236,19 @@ open class ProcessFeatureResource @Inject constructor(workerExecutor: WorkerExec
 
         }
 
+        val apkData = ApkData.of(VariantOutput.OutputType.MAIN, ImmutableList.of(), variantScope.variantConfiguration.versionCode, variantScope.variantConfiguration.versionName, null, featureName, scope?.variantConfiguration!!.fullName, scope!!.variantConfiguration.fullName, true)
+
+        val output = BuildOutput(
+                InternalArtifactType.PROCESSED_RES,
+                apkData,
+                getOutputBaseNameFile(apkData,resPackageOutputFolder)
+                )
+        val buildOutputs = java.util.ArrayList(
+                ExistingBuildElements.from(resPackageOutputFolder).elements
+        )
+        buildOutputs.add(output)
+        BuildElements(buildOutputs).save(resPackageOutputFolder)
+
     }
 
 
@@ -282,6 +298,8 @@ open class ProcessFeatureResource @Inject constructor(workerExecutor: WorkerExec
 
             task.resPackageOutputFolder = resPackageOutputFolder
             task.aapt2FromMaven = getAapt2FromMaven(variantScope.globalScope)
+
+            task.featureName = awbBundle.name
 
             task.applicationId = TaskInputHelper.memoize { awbBundle.packageName }
 
@@ -755,5 +773,13 @@ open class ProcessFeatureResource @Inject constructor(workerExecutor: WorkerExec
     private fun unMangleSplitName(splitWithOptionalSuffix: String): String {
         val mangledName = splitWithOptionalSuffix.replace("_".toRegex(), ",")
         return if (mangledName.contains("-r")) mangledName else mangledName.replace("-", "-r")
+    }
+
+
+    private fun getOutputBaseNameFile(apkData: ApkData, resPackageOutputFolder: File): File {
+        return File(
+                resPackageOutputFolder,
+                SdkConstants.FN_RES_BASE + SdkConstants.RES_QUALIFIER_SEP + apkData.fullName + SdkConstants.DOT_RES
+        )
     }
 }

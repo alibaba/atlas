@@ -245,6 +245,18 @@ public class AtlasDependencyTree {
      */
     private List<AwbBundle> awbBundles = Lists.newArrayList();
 
+
+    public AwbBundle getPluginBundle() {
+        return pluginBundle;
+    }
+
+    public void setPluginBundle(AwbBundle pluginBundle) {
+        this.pluginBundle = pluginBundle;
+    }
+
+    private AwbBundle pluginBundle = new AwbBundle("pluginbundle");
+
+
     private DependencyJson dependencyJson;
 
     private List<AndroidLibrary> allAndroidLibrarys;

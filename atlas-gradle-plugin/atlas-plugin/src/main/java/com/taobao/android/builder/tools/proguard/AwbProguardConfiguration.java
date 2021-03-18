@@ -211,11 +211,10 @@ package com.taobao.android.builder.tools.proguard;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.lang.reflect.Type;
+import java.util.*;
 
+import com.alibaba.fastjson.JSON;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.api.AppVariantOutputContext;
@@ -224,8 +223,12 @@ import com.android.build.gradle.internal.transforms.ProGuardTransform;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Lists;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+import com.taobao.android.builder.insant.DelegateProguardTransform;
 import com.taobao.android.builder.tools.ReflectUtils;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 import proguard.ClassPath;
 import proguard.ClassPathEntry;
 import proguard.Configuration;
@@ -241,8 +244,8 @@ public class AwbProguardConfiguration {
     public static final String OBUSCATED_JAR = "obfuscated.jar";
 
 
-    public static final String INJARS_OPTION       = "-injars";
-    public static final String OUTJARS_OPTION      = "-outjars";
+    public static final String INJARS_OPTION = "-injars";
+    public static final String OUTJARS_OPTION = "-outjars";
 
     private final Collection<AwbTransform> awbTransforms;
 
@@ -271,15 +274,28 @@ public class AwbProguardConfiguration {
         List<String> configs = Lists.newArrayList();
         //awbProguard for no lib, convenient for predex
         for (AwbTransform awbTransform : awbTransforms) {
-            if (!awbTransform.getAwbBundle().dynamicFeature && appVariantOutputContext.getVariantContext().getAtlasExtension().isAppBundlesEnabled()){
-               awbTransform.getInputDirs().clear();
-               awbTransform.getInputFiles().clear();
-               awbTransform.getInputLibraries().clear();
+            if (!awbTransform.getAwbBundle().dynamicFeature
+                    && appVariantOutputContext.getVariantContext().getAtlasExtension().isAppBundlesEnabled()) {
+                awbTransform.getInputDirs().clear();
+                awbTransform.getInputFiles().clear();
+                awbTransform.getInputLibraries().clear();
                 continue;
+            }
+
+            if (awbTransform.getAwbBundle().dynamicFeature && appVariantOutputContext.getVariantContext().getAtlasExtension().isRemotePluginEnabled()) {
+                if (StringUtils.isEmpty(System.getProperty(DelegateProguardTransform.BLACK_LIST))) {
+                    System.getProperties().setProperty(DelegateProguardTransform.BLACK_LIST, new Gson().toJson(awbTransform.getAwbBundle().getPackageNames()));
+                }else{
+                    Type type = new TypeToken<ArrayList<String>>() {}.getType();
+                    List<String>pkgs = new Gson().fromJson(System.getProperty(DelegateProguardTransform.BLACK_LIST),type);
+                    pkgs.addAll(awbTransform.getAwbBundle().getPackageNames());
+                    System.getProperties().setProperty(DelegateProguardTransform.BLACK_LIST, new Gson().toJson(pkgs));
+                }
             }
             List<File> inputLibraries = Lists.newArrayList();
 
             String name = awbTransform.getAwbBundle().getName();
+
             File obuscateDir = new File(awbObfuscatedDir, awbTransform.getAwbBundle().getName());
             obuscateDir.mkdirs();
 
@@ -287,7 +303,7 @@ public class AwbProguardConfiguration {
             if (null != awbTransform.getInputDirs() && awbTransform.getInputDirs().size() > 0) {
                 for (File dir : awbTransform.getInputDirs()) {
                     if (dir.exists()) {
-                        configs.add(INJARS_OPTION + " " + dir.getAbsolutePath()+"(**.class)");
+                        configs.add(INJARS_OPTION + " " + dir.getAbsolutePath() + "(**.class)");
 
                         File obsJar = new File(obuscateDir, "inputdir_" + OBUSCATED_JAR);
                         inputLibraries.add(obsJar);
@@ -300,7 +316,7 @@ public class AwbProguardConfiguration {
 
             Set<String> classNames = new HashSet<>();
             for (File inputLibrary : awbTransform.getInputLibraries()) {
-                configs.add(INJARS_OPTION + " " + inputLibrary.getAbsolutePath()+"(**.class)");
+                configs.add(INJARS_OPTION + " " + inputLibrary.getAbsolutePath() + "(**.class)");
 
                 String fileName = inputLibrary.getName();
 
@@ -326,7 +342,6 @@ public class AwbProguardConfiguration {
 
         FileUtils.writeLines(outConfigFile, configs);
     }
-
 
 
 }

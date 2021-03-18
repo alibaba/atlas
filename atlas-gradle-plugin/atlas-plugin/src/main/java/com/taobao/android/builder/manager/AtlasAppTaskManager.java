@@ -209,7 +209,6 @@
 
 package com.taobao.android.builder.manager;
 
-import com.android.build.api.transform.QualifiedContent;
 import com.android.build.gradle.AppExtension;
 import com.android.build.gradle.api.ApplicationVariant;
 import com.android.build.gradle.api.BaseVariantOutput;
@@ -218,7 +217,6 @@ import com.android.build.gradle.internal.api.AppVariantContext;
 import com.android.build.gradle.internal.api.ApplicationVariantImpl;
 import com.android.build.gradle.internal.api.BaseVariantOutputImpl;
 import com.android.build.gradle.internal.incremental.InstantRunPatchingPolicy;
-import com.android.build.gradle.internal.pipeline.TransformStream;
 import com.android.build.gradle.internal.pipeline.TransformTask;
 import com.android.build.gradle.internal.res.LinkAndroidResForBundleTask;
 import com.android.build.gradle.internal.scope.ApkData;
@@ -227,7 +225,6 @@ import com.android.build.gradle.internal.scope.GlobalScope;
 import com.android.build.gradle.internal.scope.InternalArtifactType;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.*;
-import com.android.build.gradle.internal.tasks.featuresplit.FeatureSetMetadataWriterTask;
 import com.android.build.gradle.internal.transforms.*;
 import com.android.build.gradle.tasks.*;
 import com.android.builder.core.AtlasBuilder;
@@ -244,12 +241,10 @@ import com.taobao.android.builder.tasks.PrepareAPTask;
 import com.taobao.android.builder.tasks.app.*;
 import com.taobao.android.builder.tasks.app.BuildAtlasEnvTask;
 import com.taobao.android.builder.tasks.app.manifest.StandardizeLibManifestTask;
-import com.taobao.android.builder.tasks.app.merge.*;
 import com.taobao.android.builder.tasks.app.prepare.PrepareAaptTask;
 import com.taobao.android.builder.tasks.app.prepare.PrepareBundleInfoTask;
 import com.taobao.android.builder.tasks.app.prepare.PreparePackageIdsTask;
 import com.taobao.android.builder.tasks.appbundles.*;
-import com.taobao.android.builder.tasks.instantapp.AtlasBundleInstantApp;
 import com.taobao.android.builder.tasks.manager.MtlTaskContext;
 import com.taobao.android.builder.tasks.manager.MtlTaskInjector;
 import com.taobao.android.builder.tasks.manager.transform.MtlTransformContext;
@@ -257,7 +252,6 @@ import com.taobao.android.builder.tasks.manager.transform.MtlTransformInjector;
 import com.taobao.android.builder.tasks.transform.TransformReplacer;
 import com.taobao.android.builder.tools.ReflectUtils;
 
-import org.apache.commons.io.FileUtils;
 import org.gradle.api.Action;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
@@ -275,10 +269,7 @@ import java.nio.file.Files;
 import java.util.*;
 import java.util.function.Consumer;
 
-/**
- * MTLThe plug-in compiles apk's task management
- * Created by shenghua.nish on 2016-05-09 3:55 in the afternoon.
- */
+
 @SuppressWarnings("ALL")
 public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
@@ -323,7 +314,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                                                               mtlTaskContextList.add(new MtlTaskContext(StandardizeLibManifestTask.ConfigAction.class, null));
 
-                                                              if (atlasExtension.isAppBundlesEnabled()) {
+                                                              if (atlasExtension.isAppBundlesEnabled()||atlasExtension.isRemotePluginEnabled()) {
                                                                   mtlTaskContextList.add(new MtlTaskContext(MtlFeatureSetmetadataWriterTask.ConfigAction.class, null));
                                                                   mtlTaskContextList.add(new MtlTaskContext(MtlModuleMetadataWriterTask.CreationAction.class, null));
                                                                   mtlTaskContextList.add(new MtlTaskContext(FeaturesParallelTask.CreationManifestsAction.class, null));
@@ -333,7 +324,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                                                               mtlTaskContextList.add(new MtlTaskContext(MergeSourceSetFolders.class));
 
 
-                                                              if (atlasExtension.isAppBundlesEnabled()) {
+                                                              if (atlasExtension.isAppBundlesEnabled()||atlasExtension.isRemotePluginEnabled()) {
                                                                   mtlTaskContextList.add(new MtlTaskContext(FeaturesParallelTask.CreationAssetsAction.class, null));
                                                                   mtlTaskContextList.add(new MtlTaskContext(FeaturesParallelTask.MergeResourceAction.class, null));
 
@@ -371,7 +362,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                                                               mtlTaskContextList.add(new MtlTaskContext(ProcessAndroidResources.class));
 
 
-                                                              if (atlasExtension.isAppBundlesEnabled()) {
+                                                              if (atlasExtension.isAppBundlesEnabled() || atlasExtension.isRemotePluginEnabled()) {
                                                                   mtlTaskContextList.add(new MtlTaskContext(AndroidJavaCompile.class));
                                                                   mtlTaskContextList.add(new MtlTaskContext(ProcessJavaResTask.class));
                                                                   mtlTaskContextList.add(new MtlTaskContext(FeaturesParallelTask.CreationBundleResourceAction.class, null));
@@ -415,7 +406,6 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                                                                   mtlTaskContextList.add(new MtlTaskContext(com.android.build.gradle.internal.tasks.PerModuleBundleTask.class));
 
-
                                                                   mtlTaskContextList.add(new MtlTaskContext(FeaturesParallelTask.CreationPreBundleAction.class, null));
 
                                                                   mtlTaskContextList.add(new MtlTaskContext(MtlPerModuleReportDependenciesTask.CreationAction.class, null));
@@ -439,6 +429,11 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                                                               }
 
 
+                                                              if (atlasExtension.isRemotePluginEnabled()){
+                                                                  mtlTaskContextList.add(new MtlTaskContext(PluginPackageApplication.StandardCreationAction.class, null));
+                                                              }
+
+
                                                               mtlTaskContextList.add(new MtlTaskContext(PackageApplication.class));
 
 
@@ -452,7 +447,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                                                               List<MtlTransformContext> mtlTransformContextList = new ArrayList<MtlTransformContext>();
 
 
-                                                              if (atlasExtension.isAppBundlesEnabled() && atlasExtension.getTBuildConfig().getDynamicFeatures().size() > 0 && variantScope.getVariantConfiguration().getBuildType().isMinifyEnabled()) {
+                                                              if ((atlasExtension.isAppBundlesEnabled()||atlasExtension.isRemotePluginEnabled()) && atlasExtension.getTBuildConfig().getDynamicFeatures().size() > 0 && variantScope.getVariantConfiguration().getBuildType().isMinifyEnabled()) {
 
                                                                   if (variantScope.getCodeShrinker() == CodeShrinker.R8) {
                                                                       mtlTransformContextList.add(

@@ -5,11 +5,13 @@ import com.android.build.gradle.internal.res.Aapt2MavenUtils;
 import com.android.build.gradle.internal.scope.InternalArtifactType;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.ide.common.process.*;
+import com.android.utils.FileUtils;
 import com.android.utils.LineCollector;
 import com.android.utils.StdLogger;
 import com.taobao.android.builder.extension.TBuildType;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -44,15 +46,19 @@ public class ResourcesOptimizer {
 //                        "--enable-sparse-encoding",
                         "--resource-path-shortening-map",resMapFile.getPath(),
                         "-o", outFile.getPath());
-            }else {
+            }else if (tBuildType.isShorteningResName()){
                 results = invokeAapt(aapt2File,"optimize", inputFile.getPath(),"--enable-resource-path-shortening",
 //                        "--enable-sparse-encoding",
                         "--resource-path-shortening-map",resMapFile.getPath(),
                         "-o", outFile.getPath());
+            }else{
+                FileUtils.renameTo(inputFile,outFile);
             }
 
             System.err.println(results.toString());
         } catch (ProcessException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }

@@ -97,18 +97,21 @@ public class MtlFeatureSetmetadataWriterTask extends AndroidVariantTask {
 
         @Override
         public void run() {
+
+
             List<FeatureSplitDeclaration> features = new ArrayList<>();
             FeatureSetMetadata featureSetMetadata = new FeatureSetMetadata(params.maxNumberOfFeaturesBeforeOreo);
 
-            for (AwbBundle awbBundle : params.featureBundles) {
-                features.add(new FeatureSplitDeclaration(awbBundle.getFeatureName(), awbBundle.getPackageName()));
+                for (AwbBundle awbBundle : params.featureBundles) {
+                    features.add(new FeatureSplitDeclaration(awbBundle.getFeatureName(), awbBundle.getPackageName()));
 
-            }
+                }
 
-            for (AwbBundle awbBundle : params.featureBundles) {
-                featureSetMetadata.addFeatureSplit(
-                        params.minSdkVersion, awbBundle.getName(), awbBundle.getFeatureName());
-            }
+                for (AwbBundle awbBundle : params.featureBundles) {
+                    featureSetMetadata.addFeatureSplit(
+                            params.minSdkVersion, awbBundle.getName(), awbBundle.getFeatureName());
+                }
+
 
 
             // save the list.

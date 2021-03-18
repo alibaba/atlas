@@ -217,7 +217,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Callable;
 
+import com.android.build.api.artifact.BuildableArtifact;
+import com.android.build.gradle.internal.api.artifact.BuildableArtifactImpl;
 import com.android.utils.StringHelper;
 import com.taobao.android.object.ArtifactBundleInfo;
 import com.android.build.api.transform.JarInput;
@@ -234,6 +237,7 @@ import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.tasks.transform.AtlasMergeJavaResourcesTransform;
 import org.gradle.api.file.Directory;
+import org.gradle.api.file.FileCollection;
 import org.gradle.api.file.RegularFile;
 import org.gradle.api.provider.Provider;
 import org.gradle.api.tasks.compile.JavaCompile;
@@ -317,7 +321,7 @@ public class AppVariantOutputContext {
 
     public File getFeatureManifestOutputDir(GradleVariantConfiguration config, AwbBundle awbBundle) {
         return new File(variantScope.getGlobalScope().getIntermediatesDir(),
-                "feature-manifest/" + config.getDirName() + "/" + awbBundle.getName()+"/metadata-feature");
+                "feature-manifest/" + config.getDirName() + "/" + awbBundle.getName() + "/metadata-feature");
     }
 
     public File getFeatureModuleBundleOutputDir(GradleVariantConfiguration config, AwbBundle awbBundle) {
@@ -328,12 +332,12 @@ public class AppVariantOutputContext {
 
     public File getBundleManifestOutputDir(GradleVariantConfiguration config, AwbBundle awbBundle) {
         return new File(variantScope.getGlobalScope().getIntermediatesDir(),
-                "feature-bundle-manifest/" + config.getDirName() + "/" + awbBundle.getName()+"/bundle-manifest");
+                "feature-bundle-manifest/" + config.getDirName() + "/" + awbBundle.getName() + "/bundle-manifest");
     }
 
     public File geteBundledResFile(GradleVariantConfiguration config, AwbBundle awbBundle) {
         return new File(variantScope.getGlobalScope().getIntermediatesDir(),
-                "bundle-res/" + config.getDirName() + "/" + awbBundle.getName()+"/bundled-res.ap_");
+                "bundle-res/" + config.getDirName() + "/" + awbBundle.getName() + "/bundled-res.ap_");
     }
 
     public File getAwbApplicationInjectClassOutputDir(GradleVariantConfiguration config, AwbBundle awbBundle) {
@@ -351,7 +355,7 @@ public class AppVariantOutputContext {
         return FileUtils.join(
                 variantScope.getGlobalScope().getIntermediatesDir(),
                 StringHelper.toStrings(
-                        "feature-blame", "res", config.getDirectorySegments(),awbBundle.getName()));
+                        "feature-blame", "res", config.getDirectorySegments(), awbBundle.getName()));
     }
 
     public File getFeatureProcessResourcePackageOutputFile(AwbBundle awbBundle) {
@@ -386,7 +390,7 @@ public class AppVariantOutputContext {
                 "/feature-merge-classes/" +
                         variantData.getVariantConfiguration().getDirName() +
                         "/" +
-                        awbBundle.getName()+"/"+awbBundle.getFeatureName()+".jar");
+                        awbBundle.getName() + "/" + awbBundle.getFeatureName() + ".jar");
     }
 
 
@@ -412,7 +416,7 @@ public class AppVariantOutputContext {
                 "/symbol-with-packageName/" +
                         variantData.getVariantConfiguration().getDirName() +
                         "/" +
-                        packageName+"/"+"symbol-with-package.txt");
+                        packageName + "/" + "symbol-with-package.txt");
     }
 
     public File getFeatureSymbols(AwbBundle awbBundle) {
@@ -426,10 +430,10 @@ public class AppVariantOutputContext {
 
     public File getSymbolsWithPackageNameOutputFile(AwbBundle awbBundle) {
         return new File(variantScope.getGlobalScope().getIntermediatesDir(),
-                "/feature-res/" +"symbol-table-with-package/"+
+                "/feature-res/" + "symbol-table-with-package/" +
                         variantData.getVariantConfiguration().getDirName() +
                         "/" +
-                        awbBundle.getName()+"/"+ "package-aware-r.txt");
+                        awbBundle.getName() + "/" + "package-aware-r.txt");
     }
 
     public synchronized Map<String, AwbTransform> getAwbTransformMap() {
@@ -546,8 +550,8 @@ public class AppVariantOutputContext {
     }
 
 
-    public File getApksOutputFile(){
-        File file =  FileUtils.join(variantScope.getGlobalScope().getBuildDir(),
+    public File getApksOutputFile() {
+        File file = FileUtils.join(variantScope.getGlobalScope().getBuildDir(),
                 FD_OUTPUTS,
                 "apks",
                 variantScope.getDirName(),
@@ -580,7 +584,7 @@ public class AppVariantOutputContext {
                             ".apk");
             if (file.exists()) {
                 try {
-                    if (!apkFile.getParentFile().exists()){
+                    if (!apkFile.getParentFile().exists()) {
                         apkFile.getParentFile().mkdirs();
                     }
                     FileUtils.copyFile(file, apkFile);
@@ -719,39 +723,39 @@ public class AppVariantOutputContext {
                         awbBundle.getName());
     }
 
-    public File getIncrementalDir(String name,AwbBundle awbBundle) {
+    public File getIncrementalDir(String name, AwbBundle awbBundle) {
         return FileUtils.join(
                 variantScope.getGlobalScope().getIntermediatesDir(),
                 "incremental",
-                name,awbBundle.getName());
+                name, awbBundle.getName());
     }
 
     public File getFeatureDataBindingLayoutFolder(AwbBundle awbBundle) {
         return FileUtils.join(
                 variantScope.getGlobalScope().getIntermediatesDir(),
                 "databinding-layout",
-                name,awbBundle.getName());
+                name, awbBundle.getName());
     }
 
     public File getFeatureMergeAssetsFolder(GradleVariantConfiguration variantConfiguration, AwbBundle awbBundle) {
         return FileUtils.join(
                 variantScope.getGlobalScope().getIntermediatesDir(),
                 "feature-merge-assets",
-                variantConfiguration.getDirName(),awbBundle.getName());
+                variantConfiguration.getDirName(), awbBundle.getName());
     }
 
     public File getFeatureDexArchiveFolder(AwbBundle awbBundle, String bucketId) {
         return FileUtils.join(
                 variantScope.getGlobalScope().getIntermediatesDir(),
                 "feature-dex-archive",
-                variantContext.getVariantConfiguration().getDirName(),awbBundle.getName(), String.valueOf(bucketId));
+                variantContext.getVariantConfiguration().getDirName(), awbBundle.getName(), String.valueOf(bucketId));
     }
 
     public File getFeatureFinalDexFolder(AwbBundle awbBundle) {
         return FileUtils.join(
                 variantScope.getGlobalScope().getIntermediatesDir(),
                 "feature-dex",
-                variantContext.getVariantConfiguration().getDirName(),awbBundle.getName());
+                variantContext.getVariantConfiguration().getDirName(), awbBundle.getName());
     }
 
     @NotNull
@@ -759,7 +763,47 @@ public class AppVariantOutputContext {
         return () -> FileUtils.join(
                 variantScope.getGlobalScope().getIntermediatesDir(),
                 "feature-deps",
-                variantContext.getVariantConfiguration().getDirName(),awbBundle.getName(),"dependencies.pb");
+                variantContext.getVariantConfiguration().getDirName(), awbBundle.getName(), "dependencies.pb");
+    }
+
+    public BuildableArtifact getPluginResourceFiles(AwbBundle pluginBundle) {
+
+        return new BuildableArtifactImpl(variantContext.getProject().files(getFeatureProcessResourcePackageOutputFile(pluginBundle).getParentFile()));
+    }
+
+
+    public Provider<Directory> getPluginManifest() {
+        return variantScope.getArtifacts().getFinalProduct(variantScope.getManifestArtifactType());
+//        variantContext.getProject().provider(new Callable<Directory>() {
+//            @Override
+//            public Directory call() throws Exception {
+//                return variantContext.getProject().(getBundleManifestOutputDir(variantScope.getVariantConfiguration(),awbBundle));
+//            }
+//        }
+    }
+
+    public FileCollection getPluginDexFolders(AwbBundle awbBundle) {
+        return variantContext.getProject().files(getFeatureFinalDexFolder(awbBundle));
+
+    }
+
+    public FileCollection getPluginJavaResourceFiles(AwbBundle pluginBundle) {
+
+        return variantContext.getProject().files(getAwbJavaResFolder(pluginBundle));
+    }
+
+    public BuildableArtifact getPluginAssets(AwbBundle pluginBundle) {
+
+        return new BuildableArtifactImpl(variantContext.getProject().files(getFeatureMergeAssetsFolder(variantContext.getVariantConfiguration(), pluginBundle)));
+
+    }
+
+    public FileCollection getPluginJniFolders(AwbBundle pluginBundle) {
+        if (!getAwbJniFolder(pluginBundle).exists()){
+            getAwbJniFolder(pluginBundle).mkdirs();
+        }
+        return variantContext.getProject().files(getAwbJniFolder(pluginBundle));
+
     }
 
 

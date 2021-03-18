@@ -241,9 +241,12 @@ public class AwbBundle {
 
     private String name;
 
-    private String variantName;
 
     private boolean dataBindEnabled;
+
+    public void setAndroidLibrary(AndroidLibrary androidLibrary) {
+        this.androidLibrary = androidLibrary;
+    }
 
     //The current module itself, The main bundle is empty, Otherwise it's awb itself
     private AndroidLibrary androidLibrary;
@@ -306,6 +309,7 @@ public class AwbBundle {
 
     private String featureName;
 
+    private String wrapperPackageName;
     public AwbBundle() {
         mainBundle = true;
         this.name = "mainbundle";
@@ -320,7 +324,6 @@ public class AwbBundle {
         this.androidLibrary = androidLibrary;
         this.featureName = resolvedDependencyInfo.getName().replace("-","_");
         this.name = resolvedDependencyInfo.getGroup() + "-" + resolvedDependencyInfo.getName();
-        this.variantName = resolvedDependencyInfo.getVariantName();
     }
 
     public AndroidLibrary getAndroidLibrary() {
@@ -389,6 +392,10 @@ public class AwbBundle {
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
     public File outputBundleFile;
+
+    public void setPackageName(String packageName) {
+        this.packageName = packageName;
+    }
 
     private String packageName;
 
@@ -497,8 +504,8 @@ public class AwbBundle {
 
     public List<String> getAllDependencies() {
         List<String> list = new ArrayList<>();
-        for (AndroidLibrary androidL : getAllLibraryAars()) {
-            list.add(androidL.getResolvedCoordinates().toString());
+        for (AndroidLibrary android : getAllLibraryAars()) {
+            list.add(android.getResolvedCoordinates().toString());
         }
         for (JavaLibrary javaLibrary : getJavaLibraries()) {
             list.add(javaLibrary.getResolvedCoordinates().toString());
@@ -516,5 +523,24 @@ public class AwbBundle {
 
     public void setBaseAwbDependencies(Map<ModuleIdentifier, String> baseAwbDependencies) {
         this.baseAwbDependencies = baseAwbDependencies;
+    }
+
+    public String getWrapperPackageName() {
+        return wrapperPackageName;
+    }
+
+    public void setWrapperPackageName(String s) {
+        this.wrapperPackageName = s;
+    }
+
+    public List<String> getPackageNames() {
+        List<String>names = new ArrayList<String>();
+        for (AndroidLibrary androidLibrary:getAllLibraryAars()){
+             File manifest = androidLibrary.getManifest();
+             if (manifest != null && manifest.exists()){
+                 names.add(ManifestFileUtils.getPackage(manifest));
+             }
+        }
+        return names;
     }
 }
