@@ -474,7 +474,7 @@ public class AppVariantOutputContext {
 
         String file = null;
         if (libSoNames.isEmpty() || libSoNames.contains(awbOutputName)) {
-            file = "lib/armeabi" + File.separator + awbOutputName;
+            file = "lib/arm64-v8a" + File.separator + awbOutputName;
         } else {
             file = FD_ASSETS + File.separator + awbOutputName;
         }
@@ -486,28 +486,21 @@ public class AppVariantOutputContext {
         return file;
     }
 
-    public File getAwbPackageOutputFile(AwbBundle awbBundle) {
+
+    public String getPluginOutputFilePath(AwbBundle awbBundle) {
         String awbOutputName = awbBundle.getAwbSoName();
 
-        Set<String> libSoNames = variantContext.getAtlasExtension().getTBuildConfig().getKeepInLibSoNames();
+        String file = "lib/arm64-v8a" + File.separator + awbOutputName;
+        return file;
+    }
+
+    public File getPluginPackageOutputFile(AwbBundle awbBundle) {
+        String awbOutputName = awbBundle.getAwbSoName();
 
         File file = null;
 
-        file = new File(variantContext.getAwbApkOutputDir(), "lib/armeabi" + File.separator + awbOutputName);
+        file = new File(variantContext.getPluginApkOutputDir(), getPluginOutputFilePath(awbBundle));
         file.getParentFile().mkdirs();
-        // }else {
-        //     file = new File(variantContext.getVariantData().mergeAssetsTask.getOutputDir(), awbOutputName);
-        // }
-        //
-        // Set<String> assetsSoNames = variantContext.getAtlasExtension().getTBuildConfig().getKeepInAssetsSoNames();
-        // if (!assetsSoNames.isEmpty() && assetsSoNames.contains(awbOutputName)) {
-        //     file = new File(variantContext.getVariantData().mergeAssetsTask.getOutputDir(), awbOutputName);
-        // }
-
-        Set<String> assetsSoNames = variantContext.getAtlasExtension().getTBuildConfig().getKeepInAssetsSoNames();
-        if (!assetsSoNames.isEmpty() && assetsSoNames.contains(awbOutputName)) {
-            file = new File(variantContext.getVariantData().getTaskContainer().getMergeAssetsTask().get().getOutputDir().get().getAsFile(), awbOutputName);
-        }
 
         awbBundle.outputBundleFile = file;
         return file;
@@ -799,9 +792,7 @@ public class AppVariantOutputContext {
     }
 
     public FileCollection getPluginJniFolders(AwbBundle pluginBundle) {
-        if (!getAwbJniFolder(pluginBundle).exists()){
-            getAwbJniFolder(pluginBundle).mkdirs();
-        }
+
         return variantContext.getProject().files(getAwbJniFolder(pluginBundle));
 
     }

@@ -4,12 +4,15 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.api.AppVariantContext;
+import com.android.build.gradle.internal.api.AppVariantOutputContext;
 import com.android.build.gradle.internal.api.VariantContext;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.dsl.AbiSplitOptions;
 import com.android.build.gradle.internal.dsl.DslAdaptersKt;
 import com.android.build.gradle.internal.incremental.FileType;
 import com.android.build.gradle.internal.packaging.IncrementalPackagerBuilder;
+import com.android.build.gradle.internal.pipeline.StreamFilter;
+import com.android.build.gradle.internal.scope.ApkData;
 import com.android.build.gradle.internal.scope.GlobalScope;
 import com.android.build.gradle.internal.scope.InternalArtifactType;
 import com.android.build.gradle.internal.scope.VariantScope;
@@ -46,6 +49,9 @@ public class PluginPackageApplication extends PackageAndroidArtifact {
     InternalArtifactType expectedOutputType;
 
 
+    private AppVariantOutputContext appVariantOutputContext;
+
+
     @Inject
     public PluginPackageApplication(WorkerExecutor workerExecutor) {
         super(Workers.INSTANCE.getWorker(workerExecutor));
@@ -55,6 +61,21 @@ public class PluginPackageApplication extends PackageAndroidArtifact {
     @Internal
     protected InternalArtifactType getInternalArtifactType() {
         return expectedOutputType;
+    }
+
+    @Override
+    protected void doFullTaskAction() {
+         if (!appVariantOutputContext.getAwbJniFolder(appVariantOutputContext.getVariantContext().getPluginBundle()).exists()){
+             jniFolders = appVariantOutputContext.getVariantContext().getProject().files();
+         }else{
+             jniFolders = appVariantOutputContext.getPluginJniFolders(appVariantOutputContext.getVariantContext().getPluginBundle());
+         }
+        super.doFullTaskAction();
+
+        appVariantOutputContext.getScope().getTaskContainer().getPackageAndroidTask().get().jniFolders = appVariantOutputContext.getScope().
+                getTransformManager()
+                .getPipelineOutputAsFileCollection(StreamFilter.NATIVE_LIBS).plus(appVariantOutputContext.getVariantContext().getProject().files(appVariantOutputContext.getVariantContext().getPluginApkOutputDir()));
+
     }
 
     @Override
@@ -107,6 +128,8 @@ public class PluginPackageApplication extends PackageAndroidArtifact {
 
         private AppVariantContext variantContext;
 
+        private File outputDirectory;
+
 
         public StandardCreationAction(VariantContext variantContext, BaseVariantOutput baseVariantOutput) {
             super(variantContext, baseVariantOutput);
@@ -117,6 +140,7 @@ public class PluginPackageApplication extends PackageAndroidArtifact {
         @Override
         public void configure(PluginPackageApplication packageAndroidArtifact) {
             super.configure(packageAndroidArtifact);
+            packageAndroidArtifact.appVariantOutputContext = getAppVariantOutputContext();
             VariantScope variantScope = getVariantScope();
             GlobalScope globalScope = variantScope.getGlobalScope();
             GradleVariantConfiguration variantConfiguration =
@@ -135,6 +159,7 @@ public class PluginPackageApplication extends PackageAndroidArtifact {
 
             packageAndroidArtifact.resourceFiles = getAppVariantOutputContext().getPluginResourceFiles(variantContext.getPluginBundle());
             packageAndroidArtifact.outputDirectory = variantContext.getPluginApkOutputDir();
+            this.outputDirectory = variantContext.getPluginApkOutputDir();
             packageAndroidArtifact.setIncrementalFolder(
                     new File(
                             variantScope.getIncrementalDir(packageAndroidArtifact.getName()),
@@ -221,12 +246,13 @@ public class PluginPackageApplication extends PackageAndroidArtifact {
 
         protected void finalConfigure(PluginPackageApplication task) {
             task.expectedOutputType = expectedOutputType;
+            task.outputFileProvider = apkData -> getAppVariantOutputContext().getPluginPackageOutputFile(variantContext.getPluginBundle());
 
-            Set<String> filters =
-                    AbiSplitOptions.getAbiFilters(
-                            variantContext.getScope().getGlobalScope().getExtension().getSplits().getAbiFilters());
+//            Set<String> filters =
+//                    AbiSplitOptions.getAbiFilters(
+//                            variantContext.getScope().getGlobalScope().getExtension().getSplits().getAbiFilters());
 
-            task.jniFolders = filters.isEmpty() ? getAppVariantOutputContext().getPluginJniFolders(variantContext.getPluginBundle()) : variantContext.getProject().files();
+//            task.jniFolders =  getAppVariantOutputContext().getPluginJniFolders(variantContext.getPluginBundle());
         }
     }
 }

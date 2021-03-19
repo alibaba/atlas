@@ -422,7 +422,10 @@ public class AwbBundle {
     }
 
     public String getAwbSoName() {
-        if (org.apache.commons.lang3.StringUtils.isEmpty(soFileName)) {
+        if (dynamicFeature){
+            soFileName = "libcom_taobao_plugin.so";
+
+        }else if (org.apache.commons.lang3.StringUtils.isEmpty(soFileName)) {
             String packageName = getPackageName();
             if (packageName == null) {
                 return null;
