@@ -373,7 +373,7 @@ public class TaobaoInstantRunTransform extends Transform {
         //when we finish instantruntransform update
 
 
-        if (!variantContext.getBuildType().getPatchConfig().isCreateIPatch() && !variantContext.getAtlasExtension().isRemotePluginEnabled()) {
+        if (!variantContext.getBuildType().getPatchConfig().isCreateIPatch() ) {
 
             TransformManagerDelegate.findTransformTaskByTransformType(variantContext, MtlDexArchiveBuilderTransform.class).forEach(new Consumer<TransformTask>() {
                 @Override
@@ -403,7 +403,11 @@ public class TaobaoInstantRunTransform extends Transform {
                     awbTransform.getInputDirs().clear();
                     awbTransform.getInputFiles().add(outJar);
                     org.apache.commons.io.FileUtils.deleteDirectory(awbBundleFileMap.get(awbTransform.getAwbBundle()));
-                    awbBundleFileMap.put(awbTransform.getAwbBundle(), outJar);
+                    if(!awbTransform.getAwbBundle().dynamicFeature) {
+                        awbBundleFileMap.put(awbTransform.getAwbBundle(), outJar);
+                    }else{
+                        awbBundleFileMap.remove(awbTransform.getAwbBundle());
+                    }
                 } catch (Exception e) {
 
                 }

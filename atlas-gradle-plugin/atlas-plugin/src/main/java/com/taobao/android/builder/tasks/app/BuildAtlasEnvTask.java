@@ -313,7 +313,6 @@ public class BuildAtlasEnvTask extends AndroidBuilderTask {
         }
 
         if (appVariantContext.getAtlasExtension().isRemotePluginEnabled()){
-            appVariantOutputContext.getAwbTransformMap().clear();
             androidDependencyTree.getPluginBundle().setFeatureName("com_taobao_plugin");
             androidDependencyTree.getPluginBundle().setWrapperPackageName("com.taobao.plugin");
 
@@ -331,6 +330,20 @@ public class BuildAtlasEnvTask extends AndroidBuilderTask {
                     androidDependencyTree.getPluginBundle().getSoLibraries().addAll(awb.getSoLibraries());
                     androidDependencyTree.getPluginBundle().dynamicFeature = true;
                     androidDependencyTree.getPluginBundle().bundleInfo.setDynamicFeature(true);
+                    AwbTransform awbTransform = appVariantOutputContext.getAwbTransformMap().remove(awb.getName());
+                    if(appVariantOutputContext.getAwbTransformMap().containsKey(androidDependencyTree.getPluginBundle().getName())){
+                        AwbTransform pluginTrasform = appVariantOutputContext.getAwbTransformMap().get(androidDependencyTree.getPluginBundle().getName());
+                        pluginTrasform.getInputLibraries().addAll(awb.getLibraryJars());
+                        pluginTrasform.getLibraryJniLibsInputDir().addAll(awbTransform.getLibraryJniLibsInputDir());
+                        pluginTrasform.getLibraryResourcesInutDir().addAll(awbTransform.getLibraryResourcesInutDir());
+                    }else{
+                        AwbTransform pluginTrasform = new AwbTransform(androidDependencyTree.getPluginBundle());
+                        pluginTrasform.getInputLibraries().addAll(awb.getLibraryJars());
+                        pluginTrasform.getLibraryJniLibsInputDir().addAll(awbTransform.getLibraryJniLibsInputDir());
+                        pluginTrasform.getLibraryResourcesInutDir().addAll(awbTransform.getLibraryResourcesInutDir());
+                        appVariantOutputContext.getAwbTransformMap().put(androidDependencyTree.getPluginBundle().getName(), pluginTrasform);
+
+                    }
 
                     it.remove();
                 }

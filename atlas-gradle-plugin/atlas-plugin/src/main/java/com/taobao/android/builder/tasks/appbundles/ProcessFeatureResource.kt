@@ -212,9 +212,9 @@ open class ProcessFeatureResource @Inject constructor(workerExecutor: WorkerExec
             // by the full splits asynchronous processing below.
 
             val properties = HashMap<String, String>()
-            properties.put("packageId", scope?.variantConfiguration?.applicationId!!)
-            properties.put("split", "")
-            properties.put("minSdkVersion", scope?.variantConfiguration!!.minSdkVersion.toString())
+            properties["packageId"] = scope?.variantConfiguration?.applicationId!!
+            properties["split"] = ""
+            properties["minSdkVersion"] = scope?.variantConfiguration!!.minSdkVersion.toString()
             val mainOutput = BuildOutput(InternalArtifactType.MERGED_MANIFESTS,
                     ApkData.of(VariantOutput.OutputType.MAIN, ImmutableList.of(), -1, null, null, null, scope?.variantConfiguration!!.fullName, scope!!.variantConfiguration.fullName, true),
                     mergedManifest,
@@ -301,7 +301,12 @@ open class ProcessFeatureResource @Inject constructor(workerExecutor: WorkerExec
 
             task.featureName = awbBundle.name
 
-            task.applicationId = TaskInputHelper.memoize { awbBundle.packageName }
+            if (variantContext.atlasExtension.isRemotePluginEnabled) {
+                task.applicationId = TaskInputHelper.memoize { awbBundle.packageName }
+            }else{
+                task.applicationId = TaskInputHelper.memoize { awbBundle.packageName }
+
+            }
 
             task.incrementalFolder = appVariantOutputContext.getIncrementalDir(name, awbBundle)
 //        if (variantData.type.canHaveSplits) {
@@ -334,7 +339,13 @@ open class ProcessFeatureResource @Inject constructor(workerExecutor: WorkerExec
             task.variantScope = variantScope
 
             ReflectUtils.updateField(task, "outputScope", variantData.outputScope)
-            task.originalApplicationId = TaskInputHelper.memoize { awbBundle.packageName }
+
+            if (variantContext.atlasExtension.isRemotePluginEnabled) {
+                task.originalApplicationId = TaskInputHelper.memoize { awbBundle.packageName }
+            }else{
+                task.originalApplicationId = TaskInputHelper.memoize { awbBundle.packageName }
+
+            }
 
 //        val aaptFriendlyManifestsFilePresent = variantScope
 //                .artifacts
@@ -407,6 +418,7 @@ open class ProcessFeatureResource @Inject constructor(workerExecutor: WorkerExec
             task.mergedManifest = File(appVariantOutputContext.getFeatureManifestOutputDir(variantScope.variantConfiguration, awbBundle),"AndroidManifest.xml")
             task.setSourceOutputDir(sourceOutputDir)
 
+
             val symbles = ArrayList<File>()
             awbBundle.androidLibraries.forEach {
                 val packageName = ManifestFileUtils.getPackage(it.manifest)
@@ -414,6 +426,14 @@ open class ProcessFeatureResource @Inject constructor(workerExecutor: WorkerExec
                 out.parentFile.mkdirs()
                 symbles.add(out)
                SymbolIo.writeSymbolListWithPackageName(it.symbolFile.toPath(),packageName,out.toPath())
+            }
+            if (variantContext.atlasExtension.isRemotePluginEnabled){
+                val packageName = awbBundle.packageName
+                val out = appVariantOutputContext.getLibrarySymbolWithPackageName(packageName)
+                out.parentFile.mkdirs()
+                symbles.add(out)
+                SymbolIo.writeSymbolListWithPackageName(awbBundle.androidLibrary.symbolFile.toPath(),awbBundle.packageName,out.toPath())
+
             }
 
             if (symbles.size == 0){

@@ -617,12 +617,18 @@ public class ProcessFeatureManifestTask extends ManifestProcessorTask {
             task.setReportFile(reportFile);
             task.optionalFeatures =
                     TaskInputHelper.memoize(
-                            () -> getOptionalFeatures(variantScope, isAdvancedProfilingOn));
+                            () -> getOptionalFeatures(variantScope, isAdvancedProfilingOn,variantContext.getAtlasExtension().isRemotePluginEnabled()));
 
-            task.featureNameSupplier = () -> awbBundle.getFeatureName();
+//            if (!variantContext.getAtlasExtension().isRemotePluginEnabled()) {
+                task.featureNameSupplier = () -> awbBundle.getFeatureName();
+
+//            }else{
+//
+//            }
 
             task.packageManifest = variantContext.getProject().files(new File(variantContext.getScope().getGlobalScope().getIntermediatesDir(),
                     "application-meta/application-metadata.json"));
+
 
 //            }
         }
@@ -673,11 +679,13 @@ public class ProcessFeatureManifestTask extends ManifestProcessorTask {
     }
 
     private static EnumSet<ManifestMerger2.Invoker.Feature> getOptionalFeatures(
-            VariantScope variantScope, boolean isAdvancedProfilingOn) {
+            VariantScope variantScope, boolean isAdvancedProfilingOn,boolean isRemotePluginEnabled) {
         List<ManifestMerger2.Invoker.Feature> features = new ArrayList<>();
 
 
-        features.add(ManifestMerger2.Invoker.Feature.ADD_FEATURE_SPLIT_ATTRIBUTE);
+//        if (!isRemotePluginEnabled) {
+            features.add(ManifestMerger2.Invoker.Feature.ADD_FEATURE_SPLIT_ATTRIBUTE);
+//        }
         features.add(ManifestMerger2.Invoker.Feature.CREATE_FEATURE_MANIFEST);
         features.add(ManifestMerger2.Invoker.Feature.STRIP_MIN_SDK_FROM_FEATURE_MANIFEST);
 
