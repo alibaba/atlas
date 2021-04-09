@@ -103,6 +103,9 @@ public class DelegateProguardTransform extends MtlInjectTransform {
 
     public static final String BLACK_LIST = "r_shrink_blackList";
 
+    public static final String NEW_MAPPER_LIST = "new_mapper_list";
+
+
 
 
 

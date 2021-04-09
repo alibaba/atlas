@@ -283,13 +283,13 @@ public class AwbProguardConfiguration {
             }
 
             if (awbTransform.getAwbBundle().dynamicFeature && appVariantOutputContext.getVariantContext().getAtlasExtension().isRemotePluginEnabled()) {
-                if (StringUtils.isEmpty(System.getProperty(DelegateProguardTransform.BLACK_LIST))) {
-                    System.getProperties().setProperty(DelegateProguardTransform.BLACK_LIST, new Gson().toJson(awbTransform.getAwbBundle().getPackageNames()));
+                if (StringUtils.isEmpty(System.getProperty(DelegateProguardTransform.NEW_MAPPER_LIST))) {
+                    System.getProperties().setProperty(DelegateProguardTransform.NEW_MAPPER_LIST, new Gson().toJson(awbTransform.getAwbBundle().getPackageNames()));
                 }else{
                     Type type = new TypeToken<ArrayList<String>>() {}.getType();
-                    List<String>pkgs = new Gson().fromJson(System.getProperty(DelegateProguardTransform.BLACK_LIST),type);
+                    List<String>pkgs = new Gson().fromJson(System.getProperty(DelegateProguardTransform.NEW_MAPPER_LIST),type);
                     pkgs.addAll(awbTransform.getAwbBundle().getPackageNames());
-                    System.getProperties().setProperty(DelegateProguardTransform.BLACK_LIST, new Gson().toJson(pkgs));
+                    System.getProperties().setProperty(DelegateProguardTransform.NEW_MAPPER_LIST, new Gson().toJson(pkgs));
                 }
             }
             List<File> inputLibraries = Lists.newArrayList();
