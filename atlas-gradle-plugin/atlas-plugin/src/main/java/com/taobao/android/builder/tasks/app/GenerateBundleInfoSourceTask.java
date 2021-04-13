@@ -58,7 +58,7 @@ public class GenerateBundleInfoSourceTask extends AndroidBuilderTask {
         InjectParam injectParam = getInput();
         List<BasicBundleInfo> info = JSON.parseArray(injectParam.bundleInfo,BasicBundleInfo.class);
         File outputSourceGeneratorFile = new File(outputDir,"com/android/tools/bundleInfo/BundleInfoGenerator.java");
-        StringBuffer infoGeneratorSourceStr = new BundleInfoSourceCreator().createBundleInfoSourceStr(info);
+        StringBuffer infoGeneratorSourceStr = new BundleInfoSourceCreator().createBundleInfoSourceStr(info,appVariantContext.getAtlasExtension().isAppBundlesEnabled(),appVariantContext.getAtlasExtension().isRemotePluginEnabled());
         outputSourceGeneratorFile.getParentFile().mkdirs();
         getLogger().info(infoGeneratorSourceStr.toString());
         try {
