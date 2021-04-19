@@ -146,8 +146,12 @@ public class AtlasMergeJavaResourcesTransform extends MergeJavaResourcesTransfor
     @Override
     public void transform(TransformInvocation invocation) throws IOException {
         // only custom process native lib
-        if (mergedType == QualifiedContent.DefaultContentType.RESOURCES) {
-            super.transform(invocation);
+        if (mergedType.contains(QualifiedContent.DefaultContentType.RESOURCES)) {
+            try {
+                super.transform(invocation);
+            } catch (Exception e) {
+                throw new IOException("transform failed", e);
+            }
             return;
         }
         waitableExecutor.execute(new Callable<Void>() {
