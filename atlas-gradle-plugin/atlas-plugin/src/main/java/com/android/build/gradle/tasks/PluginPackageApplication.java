@@ -12,10 +12,7 @@ import com.android.build.gradle.internal.dsl.DslAdaptersKt;
 import com.android.build.gradle.internal.incremental.FileType;
 import com.android.build.gradle.internal.packaging.IncrementalPackagerBuilder;
 import com.android.build.gradle.internal.pipeline.StreamFilter;
-import com.android.build.gradle.internal.scope.ApkData;
-import com.android.build.gradle.internal.scope.GlobalScope;
-import com.android.build.gradle.internal.scope.InternalArtifactType;
-import com.android.build.gradle.internal.scope.VariantScope;
+import com.android.build.gradle.internal.scope.*;
 import com.android.build.gradle.internal.tasks.TaskInputHelper;
 import com.android.build.gradle.internal.tasks.Workers;
 import com.android.build.gradle.internal.variant.MultiOutputPolicy;
@@ -33,7 +30,11 @@ import org.gradle.workers.WorkerExecutor;
 import javax.inject.Inject;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Set;
+
+import static com.android.build.gradle.internal.scope.InternalArtifactType.MERGED_ASSETS;
 
 /**
  * \* Created with IntelliJ IDEA.
@@ -72,9 +73,17 @@ public class PluginPackageApplication extends PackageAndroidArtifact {
          }
         super.doFullTaskAction();
 
-        appVariantOutputContext.getScope().getTaskContainer().getPackageAndroidTask().get().jniFolders = appVariantOutputContext.getScope().
-                getTransformManager()
-                .getPipelineOutputAsFileCollection(StreamFilter.NATIVE_LIBS).plus(appVariantOutputContext.getVariantContext().getProject().files(appVariantOutputContext.getVariantContext().getPluginApkOutputDir()));
+        appVariantOutputContext.getScope().
+                getArtifacts().createBuildableArtifact(MERGED_ASSETS, BuildArtifactsHolder.OperationType.APPEND,appVariantOutputContext.getVariantContext().getPluginApkOutputDir(),getName());
+
+        Collection<String>options = appVariantOutputContext.getScope().getTaskContainer().getPackageAndroidTask().get().aaptOptionsNoCompress;
+         if (options == null){
+             appVariantOutputContext.getScope().getTaskContainer().getPackageAndroidTask().get().aaptOptionsNoCompress = new ArrayList();
+         }
+             appVariantOutputContext.getScope().getTaskContainer().getPackageAndroidTask().get().aaptOptionsNoCompress.add(appVariantOutputContext.getPluginPackageOutputFile(appVariantOutputContext.getVariantContext().getPluginBundle()).getName());
+//
+//
+//              appVariantOutputContext.getVariantContext().getProject().files(appVariantOutputContext.getVariantContext().getPluginApkOutputDir()));
 
     }
 

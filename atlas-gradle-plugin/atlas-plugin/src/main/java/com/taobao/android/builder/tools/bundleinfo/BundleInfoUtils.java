@@ -290,7 +290,7 @@ public class BundleInfoUtils {
         }
 
 
-        if (awbBundle.dynamicFeature && awbBundle.getName().equals("pluginbundle")){
+        if (awbBundle.isPluginBundle()){
             bundleInfo.setVersion(baseVersion + "@" + appVariantContext.getAtlasExtension().getTBuildConfig().getPluginBundleVersion());
         }else {
             bundleInfo.setVersion(baseVersion + "@" + awbBundle.getResolvedCoordinates().getVersion());

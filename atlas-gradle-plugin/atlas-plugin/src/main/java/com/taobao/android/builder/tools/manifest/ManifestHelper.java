@@ -316,6 +316,8 @@ public class ManifestHelper {
 
         }
 
+        dependencyTree.getMainBundle().bundleInfo = mainBundleInfo;
+
         if (errors.isEmpty()) {
             return true;
         }
@@ -349,8 +351,6 @@ public class ManifestHelper {
     public static File getModifyManifestFile(File manifest, AppVariantContext appVariantContext) {
 
         File modifyManifest = (File)appVariantContext.manifestMap.get(manifest.getAbsolutePath());
-
-        //sLogger.error("get file : " + manifest.getAbsolutePath() + "->" + modifyManifest);
 
         if (null == modifyManifest || !modifyManifest.exists()) {
             return manifest;

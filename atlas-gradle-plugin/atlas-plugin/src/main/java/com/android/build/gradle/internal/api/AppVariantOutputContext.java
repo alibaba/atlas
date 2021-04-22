@@ -490,7 +490,7 @@ public class AppVariantOutputContext {
     public String getPluginOutputFilePath(AwbBundle awbBundle) {
         String awbOutputName = awbBundle.getAwbSoName();
 
-        String file = "lib/arm64-v8a" + File.separator + awbOutputName;
+        String file = awbOutputName;
         return file;
     }
 

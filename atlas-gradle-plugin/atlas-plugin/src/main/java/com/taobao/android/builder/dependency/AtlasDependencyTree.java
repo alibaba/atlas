@@ -254,7 +254,7 @@ public class AtlasDependencyTree {
         this.pluginBundle = pluginBundle;
     }
 
-    private AwbBundle pluginBundle = new AwbBundle("pluginbundle");
+    private AwbBundle pluginBundle = new AwbBundle(AwbBundle.PLUGIN_BUNDLE);
 
 
     private DependencyJson dependencyJson;

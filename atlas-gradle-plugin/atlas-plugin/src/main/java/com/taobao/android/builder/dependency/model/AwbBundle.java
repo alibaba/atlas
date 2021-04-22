@@ -210,11 +210,7 @@
 package com.taobao.android.builder.dependency.model;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import com.android.builder.model.AndroidLibrary;
 import com.android.builder.model.JavaLibrary;
@@ -236,6 +232,13 @@ import org.jetbrains.annotations.TestOnly;
  * for atlas bundle
  */
 public class AwbBundle {
+
+    public static final String MAIN_BUNDLE = "mainbundle";
+
+
+
+    public static final String PLUGIN_BUNDLE = "pluginbundle";
+
 
     private boolean mainBundle;
 
@@ -312,7 +315,7 @@ public class AwbBundle {
     private String wrapperPackageName;
     public AwbBundle() {
         mainBundle = true;
-        this.name = "mainbundle";
+        this.name = MAIN_BUNDLE;
     }
 
     public AwbBundle(String name) {
@@ -337,6 +340,7 @@ public class AwbBundle {
     public List<AndroidLibrary> getAndroidLibraries() {
         return androidLibraries;
     }
+
 
     public List<JavaLibrary> getJavaLibraries() {
         return javaLibraries;
@@ -504,6 +508,11 @@ public class AwbBundle {
     public boolean isMainBundle() {
         return mainBundle;
     }
+
+    public boolean isPluginBundle() {
+        return name.equals(PLUGIN_BUNDLE);
+    }
+
 
     public List<String> getAllDependencies() {
         List<String> list = new ArrayList<>();
