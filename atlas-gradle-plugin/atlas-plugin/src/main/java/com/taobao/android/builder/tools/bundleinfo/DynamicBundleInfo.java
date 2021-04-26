@@ -12,6 +12,8 @@ public class DynamicBundleInfo {
 
     public String name;
 
+    public String featureName;
+
     public String url;
 
     public Long size;

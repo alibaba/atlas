@@ -92,6 +92,7 @@ public interface ApkProcessor {
                 dynamicBundleInfo.md5 = awbBundle.bundleInfo.getMd5();
                 dynamicBundleInfo.size = awbBundle.bundleInfo.getSize();
                 dynamicBundleInfo.name = awbBundle.getWrapperPackageName();
+                dynamicBundleInfo.featureName = awbBundle.getFeatureName();
                 dynamicBundleInfo.url = awbBundle.bundleInfo.getUrl();
                 bundleInfoList.add(dynamicBundleInfo);
 

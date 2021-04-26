@@ -23,6 +23,7 @@ public class BundleInfoSourceCreator {
                 "public class BundleInfoGenerator {\n" +
                 "public static Boolean appBundleEnabled = "+appBundleEnabled+";\n"+
                 "public static Boolean pluginApkEnabled = "+pluginApkEnabled+";\n"+
+
                 "    public static BundleListing generateBundleInfo(){\n" +
                 "        LinkedHashMap<String,BundleListing.BundleInfo> bundleInfos = new LinkedHashMap<>();\n" +
                 "        HashMap<String,Boolean> activities;\n" +
