@@ -487,19 +487,19 @@ public class AppVariantOutputContext {
     }
 
 
-    public String getPluginOutputFilePath(AwbBundle awbBundle) {
+    public String getFeatureOutputFilePath(AwbBundle awbBundle) {
         String awbOutputName = awbBundle.getAwbSoName();
 
         String file = awbOutputName;
         return file;
     }
 
-    public File getPluginPackageOutputFile(AwbBundle awbBundle) {
+    public File getFeaturePackageOutputFile(AwbBundle awbBundle) {
         String awbOutputName = awbBundle.getAwbSoName();
 
         File file = null;
 
-        file = new File(variantContext.getPluginApkOutputDir(), getPluginOutputFilePath(awbBundle));
+        file = new File(getFeatureApkOutputDir(awbBundle), getFeatureOutputFilePath(awbBundle));
         file.getParentFile().mkdirs();
 
         awbBundle.outputBundleFile = file;
@@ -759,13 +759,18 @@ public class AppVariantOutputContext {
                 variantContext.getVariantConfiguration().getDirName(), awbBundle.getName(), "dependencies.pb");
     }
 
-    public BuildableArtifact getPluginResourceFiles(AwbBundle pluginBundle) {
+    public File getFeatureApkOutputDir(AwbBundle awbBundle) {
+        return new File(variantContext.getScope().getGlobalScope().getIntermediatesDir(),
+                "/features-apk/" + awbBundle.getName()+"/"+variantContext.getVariantConfiguration().getDirName() + "/");
+    }
+
+    public BuildableArtifact getFeatureResourceFiles(AwbBundle pluginBundle) {
 
         return new BuildableArtifactImpl(variantContext.getProject().files(getFeatureProcessResourcePackageOutputFile(pluginBundle).getParentFile()));
     }
 
 
-    public Provider<Directory> getPluginManifest() {
+    public Provider<Directory> getFeatureManifest() {
         return variantScope.getArtifacts().getFinalProduct(variantScope.getManifestArtifactType());
 //        variantContext.getProject().provider(new Callable<Directory>() {
 //            @Override
@@ -775,23 +780,23 @@ public class AppVariantOutputContext {
 //        }
     }
 
-    public FileCollection getPluginDexFolders(AwbBundle awbBundle) {
+    public FileCollection getFeatureDexFolders(AwbBundle awbBundle) {
         return variantContext.getProject().files(getFeatureFinalDexFolder(awbBundle));
 
     }
 
-    public FileCollection getPluginJavaResourceFiles(AwbBundle pluginBundle) {
+    public FileCollection getFeatureJavaResourceFiles(AwbBundle pluginBundle) {
 
         return variantContext.getProject().files(getAwbJavaResFolder(pluginBundle));
     }
 
-    public BuildableArtifact getPluginAssets(AwbBundle pluginBundle) {
+    public BuildableArtifact getFeatureAssets(AwbBundle pluginBundle) {
 
         return new BuildableArtifactImpl(variantContext.getProject().files(getFeatureMergeAssetsFolder(variantContext.getVariantConfiguration(), pluginBundle)));
 
     }
 
-    public FileCollection getPluginJniFolders(AwbBundle pluginBundle) {
+    public FileCollection getFeatureJniFolders(AwbBundle pluginBundle) {
 
         return variantContext.getProject().files(getAwbJniFolder(pluginBundle));
 

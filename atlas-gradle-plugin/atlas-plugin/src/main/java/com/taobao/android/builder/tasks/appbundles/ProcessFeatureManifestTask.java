@@ -617,7 +617,7 @@ public class ProcessFeatureManifestTask extends ManifestProcessorTask {
             task.setReportFile(reportFile);
             task.optionalFeatures =
                     TaskInputHelper.memoize(
-                            () -> getOptionalFeatures(variantScope, isAdvancedProfilingOn,variantContext.getAtlasExtension().isRemotePluginEnabled()));
+                            () -> getOptionalFeatures(variantScope, isAdvancedProfilingOn,variantContext.getAtlasExtension().isFlexaEnabled()));
 
 //            if (!variantContext.getAtlasExtension().isRemotePluginEnabled()) {
                 task.featureNameSupplier = () -> awbBundle.getFeatureName();

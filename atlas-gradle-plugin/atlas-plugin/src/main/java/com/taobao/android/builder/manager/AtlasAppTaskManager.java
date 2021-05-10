@@ -314,7 +314,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                                                               mtlTaskContextList.add(new MtlTaskContext(StandardizeLibManifestTask.ConfigAction.class, null));
 
-                                                              if (atlasExtension.isAppBundlesEnabled()||atlasExtension.isRemotePluginEnabled()) {
+                                                              if (atlasExtension.isAppBundlesEnabled()||atlasExtension.isFlexaEnabled()) {
                                                                   mtlTaskContextList.add(new MtlTaskContext(MtlFeatureSetmetadataWriterTask.ConfigAction.class, null));
                                                                   mtlTaskContextList.add(new MtlTaskContext(MtlModuleMetadataWriterTask.CreationAction.class, null));
                                                                   mtlTaskContextList.add(new MtlTaskContext(FeaturesParallelTask.CreationManifestsAction.class, null));
@@ -324,7 +324,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                                                               mtlTaskContextList.add(new MtlTaskContext(MergeSourceSetFolders.class));
 
 
-                                                              if (atlasExtension.isAppBundlesEnabled()||atlasExtension.isRemotePluginEnabled()) {
+                                                              if (atlasExtension.isAppBundlesEnabled()||atlasExtension.isFlexaEnabled()) {
                                                                   mtlTaskContextList.add(new MtlTaskContext(FeaturesParallelTask.CreationAssetsAction.class, null));
                                                                   mtlTaskContextList.add(new MtlTaskContext(FeaturesParallelTask.MergeResourceAction.class, null));
 
@@ -362,7 +362,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                                                               mtlTaskContextList.add(new MtlTaskContext(ProcessAndroidResources.class));
 
 
-                                                              if (atlasExtension.isAppBundlesEnabled() || atlasExtension.isRemotePluginEnabled()) {
+                                                              if (atlasExtension.isAppBundlesEnabled() || atlasExtension.isFlexaEnabled()) {
                                                                   mtlTaskContextList.add(new MtlTaskContext(AndroidJavaCompile.class));
                                                                   mtlTaskContextList.add(new MtlTaskContext(ProcessJavaResTask.class));
                                                                   mtlTaskContextList.add(new MtlTaskContext(FeaturesParallelTask.CreationBundleResourceAction.class, null));
@@ -429,8 +429,11 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                                                               }
 
 
-                                                              if (atlasExtension.isRemotePluginEnabled()){
-                                                                  mtlTaskContextList.add(new MtlTaskContext(PluginPackageApplication.StandardCreationAction.class, null));
+                                                              if (atlasExtension.isFlexaEnabled() && atlasExtension.isFeaturesMergeInOneEnabled()){
+                                                                  mtlTaskContextList.add(new MtlTaskContext(FeaturePackageApplication.StandardCreationAction.class, null));
+                                                              }else{
+                                                                  mtlTaskContextList.add(new MtlTaskContext(FeaturesParallelTask.CreationFeatureApplicationAction.class, null));
+
                                                               }
 
 
@@ -447,7 +450,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                                                               List<MtlTransformContext> mtlTransformContextList = new ArrayList<MtlTransformContext>();
 
 
-                                                              if ((atlasExtension.isAppBundlesEnabled()||atlasExtension.isRemotePluginEnabled()) && atlasExtension.getTBuildConfig().getDynamicFeatures().size() > 0 && variantScope.getVariantConfiguration().getBuildType().isMinifyEnabled()) {
+                                                              if ((atlasExtension.isAppBundlesEnabled()||atlasExtension.isFlexaEnabled()) && atlasExtension.getTBuildConfig().getDynamicFeatures().size() > 0 && variantScope.getVariantConfiguration().getBuildType().isMinifyEnabled()) {
 
                                                                   if (variantScope.getCodeShrinker() == CodeShrinker.R8) {
                                                                       mtlTransformContextList.add(

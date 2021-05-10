@@ -10,7 +10,7 @@ import java.util.Map;
 
 public class BundleInfoSourceCreator {
 
-    public StringBuffer createBundleInfoSourceStr(List<BasicBundleInfo> basicBundleInfos, boolean appBundleEnabled, boolean pluginApkEnabled) {
+    public StringBuffer createBundleInfoSourceStr(List<BasicBundleInfo> basicBundleInfos, boolean appBundleEnabled, boolean flexaEnabled) {
         StringBuffer buffer = new StringBuffer();
         buffer.append("package com.android.tools.bundleInfo;\n" +
                 "\n" +
@@ -22,7 +22,7 @@ public class BundleInfoSourceCreator {
                 "\n" +
                 "public class BundleInfoGenerator {\n" +
                 "public static Boolean appBundleEnabled = "+appBundleEnabled+";\n"+
-                "public static Boolean pluginApkEnabled = "+pluginApkEnabled+";\n"+
+                "public static Boolean flexaEnabled = "+flexaEnabled+";\n"+
 
                 "    public static BundleListing generateBundleInfo(){\n" +
                 "        LinkedHashMap<String,BundleListing.BundleInfo> bundleInfos = new LinkedHashMap<>();\n" +

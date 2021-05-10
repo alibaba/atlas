@@ -213,7 +213,7 @@ public class MtlDexMergeTransform extends Transform {
             } else {
                 mergeTasks = mergeDex(transformInvocation.getInputs(), output, outputProvider);
             }
-            if ((variantOutputContext.getVariantContext().getAtlasExtension().isRemotePluginEnabled() || variantOutputContext.getVariantContext().getAtlasExtension().isAppBundlesEnabled()) && variantOutputContext.getVariantContext().getAtlasExtension().getTBuildConfig().getDynamicFeatures().size() > 0) {
+            if ((variantOutputContext.getVariantContext().getAtlasExtension().isFlexaEnabled() || variantOutputContext.getVariantContext().getAtlasExtension().isAppBundlesEnabled()) && variantOutputContext.getVariantContext().getAtlasExtension().getTBuildConfig().getDynamicFeatures().size() > 0) {
 
                 ProcessOutput finalOutput = output;
                 variantOutputContext.getAwbTransformMap().values().forEach(new Consumer<AwbTransform>() {

@@ -22,6 +22,7 @@ import com.android.build.gradle.options.StringOption;
 import com.android.build.gradle.tasks.PackageAndroidArtifact;
 import com.android.builder.profile.ProcessProfileWriter;
 import com.google.wireless.android.sdk.stats.GradleBuildProjectMetrics;
+import com.taobao.android.builder.dependency.model.AwbBundle;
 import com.taobao.android.builder.tasks.manager.MtlBaseTaskAction;
 import org.gradle.api.tasks.Internal;
 import org.gradle.api.tasks.TaskProvider;
@@ -44,7 +45,7 @@ import static com.android.build.gradle.internal.scope.InternalArtifactType.MERGE
  * \* Description:
  * \
  */
-public class PluginPackageApplication extends PackageAndroidArtifact {
+public class FeaturePackageApplication extends PackageAndroidArtifact {
 
 
     InternalArtifactType expectedOutputType;
@@ -52,9 +53,11 @@ public class PluginPackageApplication extends PackageAndroidArtifact {
 
     private AppVariantOutputContext appVariantOutputContext;
 
+    private AwbBundle awbBundle;
+
 
     @Inject
-    public PluginPackageApplication(WorkerExecutor workerExecutor) {
+    public FeaturePackageApplication(WorkerExecutor workerExecutor) {
         super(Workers.INSTANCE.getWorker(workerExecutor));
     }
 
@@ -65,22 +68,22 @@ public class PluginPackageApplication extends PackageAndroidArtifact {
     }
 
     @Override
-    protected void doFullTaskAction() {
-         if (!appVariantOutputContext.getAwbJniFolder(appVariantOutputContext.getVariantContext().getPluginBundle()).exists()){
+    public void doFullTaskAction() {
+         if (!appVariantOutputContext.getAwbJniFolder(awbBundle).exists()){
              jniFolders = appVariantOutputContext.getVariantContext().getProject().files();
          }else{
-             jniFolders = appVariantOutputContext.getPluginJniFolders(appVariantOutputContext.getVariantContext().getPluginBundle());
+             jniFolders = appVariantOutputContext.getFeatureJniFolders(awbBundle);
          }
         super.doFullTaskAction();
 
         appVariantOutputContext.getScope().
-                getArtifacts().createBuildableArtifact(MERGED_ASSETS, BuildArtifactsHolder.OperationType.APPEND,appVariantOutputContext.getVariantContext().getPluginApkOutputDir(),getName());
+                getArtifacts().createBuildableArtifact(MERGED_ASSETS, BuildArtifactsHolder.OperationType.APPEND,appVariantOutputContext.getFeatureApkOutputDir(awbBundle),getName());
 
         Collection<String>options = appVariantOutputContext.getScope().getTaskContainer().getPackageAndroidTask().get().aaptOptionsNoCompress;
          if (options == null){
              appVariantOutputContext.getScope().getTaskContainer().getPackageAndroidTask().get().aaptOptionsNoCompress = new ArrayList();
          }
-             appVariantOutputContext.getScope().getTaskContainer().getPackageAndroidTask().get().aaptOptionsNoCompress.add(appVariantOutputContext.getPluginPackageOutputFile(appVariantOutputContext.getVariantContext().getPluginBundle()).getName());
+             appVariantOutputContext.getScope().getTaskContainer().getPackageAndroidTask().get().aaptOptionsNoCompress.add(appVariantOutputContext.getFeaturePackageOutputFile(awbBundle).getName());
 //
 //
 //              appVariantOutputContext.getVariantContext().getProject().files(appVariantOutputContext.getVariantContext().getPluginApkOutputDir()));
@@ -131,9 +134,11 @@ public class PluginPackageApplication extends PackageAndroidArtifact {
      * Configures the task to perform the "standard" packaging, including all files that should end
      * up in the APK.
      */
-    public static class StandardCreationAction extends MtlBaseTaskAction<PluginPackageApplication> {
+    public static class StandardCreationAction extends MtlBaseTaskAction<FeaturePackageApplication> {
 
         private final InternalArtifactType expectedOutputType = InternalArtifactType.FULL_APK;
+
+        private final AwbBundle awbBundle;
 
         private AppVariantContext variantContext;
 
@@ -141,14 +146,21 @@ public class PluginPackageApplication extends PackageAndroidArtifact {
 
 
         public StandardCreationAction(VariantContext variantContext, BaseVariantOutput baseVariantOutput) {
+            this(((AppVariantContext) variantContext).getPluginBundle(),variantContext, baseVariantOutput);
+        }
+
+        public StandardCreationAction(AwbBundle awbBundle, VariantContext variantContext, BaseVariantOutput baseVariantOutput) {
             super(variantContext, baseVariantOutput);
             this.variantContext = (AppVariantContext) variantContext;
+            this.awbBundle = awbBundle;
+
 
         }
 
         @Override
-        public void configure(PluginPackageApplication packageAndroidArtifact) {
+        public void configure(FeaturePackageApplication packageAndroidArtifact) {
             super.configure(packageAndroidArtifact);
+            packageAndroidArtifact.awbBundle = awbBundle;
             packageAndroidArtifact.appVariantOutputContext = getAppVariantOutputContext();
             VariantScope variantScope = getVariantScope();
             GlobalScope globalScope = variantScope.getGlobalScope();
@@ -166,9 +178,9 @@ public class PluginPackageApplication extends PackageAndroidArtifact {
             packageAndroidArtifact.instantRunContext =
                     TaskInputHelper.memoize(variantScope::getInstantRunBuildContext);
 
-            packageAndroidArtifact.resourceFiles = getAppVariantOutputContext().getPluginResourceFiles(variantContext.getPluginBundle());
-            packageAndroidArtifact.outputDirectory = variantContext.getPluginApkOutputDir();
-            this.outputDirectory = variantContext.getPluginApkOutputDir();
+            packageAndroidArtifact.resourceFiles = getAppVariantOutputContext().getFeatureResourceFiles(awbBundle);
+            packageAndroidArtifact.outputDirectory = getAppVariantOutputContext().getFeatureApkOutputDir(awbBundle);
+            this.outputDirectory = getAppVariantOutputContext().getFeatureApkOutputDir(awbBundle);
             packageAndroidArtifact.setIncrementalFolder(
                     new File(
                             variantScope.getIncrementalDir(packageAndroidArtifact.getName()),
@@ -180,15 +192,15 @@ public class PluginPackageApplication extends PackageAndroidArtifact {
                     DslAdaptersKt.convert(globalScope.getExtension().getAaptOptions())
                             .getNoCompress();
 
-            packageAndroidArtifact.manifests = getAppVariantOutputContext().getPluginManifest();
+            packageAndroidArtifact.manifests = getAppVariantOutputContext().getFeatureManifest();
 
-            packageAndroidArtifact.dexFolders = getAppVariantOutputContext().getPluginDexFolders(variantContext.getPluginBundle());
+            packageAndroidArtifact.dexFolders = getAppVariantOutputContext().getFeatureDexFolders(awbBundle);
 //            packageAndroidArtifact.featureDexFolder = getFeatureDexFolder();
 
 
-            packageAndroidArtifact.javaResourceFiles = getAppVariantOutputContext().getPluginJavaResourceFiles(variantContext.getPluginBundle());
+            packageAndroidArtifact.javaResourceFiles = getAppVariantOutputContext().getFeatureJavaResourceFiles(awbBundle);
 
-            packageAndroidArtifact.assets = getAppVariantOutputContext().getPluginAssets(variantContext.getPluginBundle());
+            packageAndroidArtifact.assets = getAppVariantOutputContext().getFeatureAssets(awbBundle);
 
             packageAndroidArtifact.setAbiFilters(variantConfiguration.getSupportedAbis());
             packageAndroidArtifact.setJniDebugBuild(
@@ -229,13 +241,13 @@ public class PluginPackageApplication extends PackageAndroidArtifact {
         @NonNull
         @Override
         public String getName() {
-            return getVariantScope().getTaskName("package", "Plugin");
+            return getVariantScope().getTaskName("package"+ awbBundle.getName(),"Features");
         }
 
         @NonNull
         @Override
-        public Class<PluginPackageApplication> getType() {
-            return PluginPackageApplication.class;
+        public Class<FeaturePackageApplication> getType() {
+            return FeaturePackageApplication.class;
         }
 
         @Override
@@ -249,13 +261,13 @@ public class PluginPackageApplication extends PackageAndroidArtifact {
 
         @Override
         public void handleProvider(
-                @NonNull TaskProvider<? extends PluginPackageApplication> taskProvider) {
+                @NonNull TaskProvider<? extends FeaturePackageApplication> taskProvider) {
             super.handleProvider(taskProvider);
         }
 
-        protected void finalConfigure(PluginPackageApplication task) {
+        protected void finalConfigure(FeaturePackageApplication task) {
             task.expectedOutputType = expectedOutputType;
-            task.outputFileProvider = apkData -> getAppVariantOutputContext().getPluginPackageOutputFile(variantContext.getPluginBundle());
+            task.outputFileProvider = apkData -> getAppVariantOutputContext().getFeaturePackageOutputFile(awbBundle);
 
 //            Set<String> filters =
 //                    AbiSplitOptions.getAbiFilters(

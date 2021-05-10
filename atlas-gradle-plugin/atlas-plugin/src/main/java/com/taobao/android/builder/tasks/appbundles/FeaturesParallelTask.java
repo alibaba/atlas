@@ -4,6 +4,7 @@ import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.api.VariantContext;
 import com.android.build.gradle.internal.tasks.AndroidBuilderTask;
 import com.android.build.gradle.internal.tasks.factory.TaskFactoryImpl;
+import com.android.build.gradle.tasks.FeaturePackageApplication;
 import com.android.build.gradle.tasks.factory.FeatureAndroidJavaCompile;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.tasks.manager.FeatureBaseTaskAction;
@@ -148,7 +149,16 @@ public class FeaturesParallelTask extends AndroidBuilderTask {
                 break;
 
 
+            case FEATURE_APPLICATION:
 
+                AtlasBuildContext.androidDependencyTrees.get(variantName).getAwbBundles().stream().forEach(awbBundle -> {
+                    if (awbBundle.dynamicFeature) {
+                        TaskProvider<FeaturePackageApplication> provider = new TaskFactoryImpl(getProject().getTasks()).register(new FeaturePackageApplication.StandardCreationAction(awbBundle, variantContext, variantOutput));
+                        provider.get().doFullTaskAction();
+
+                    }
+                });
+                break;
         }
 
 
@@ -365,6 +375,26 @@ public class FeaturesParallelTask extends AndroidBuilderTask {
 
     }
 
+    public static class CreationFeatureApplicationAction extends FeaturesBaseAction {
+
+        public CreationFeatureApplicationAction(VariantContext variantContext, BaseVariantOutput baseVariantOutput) {
+            super(variantContext, baseVariantOutput);
+        }
+
+        @Override
+        public void configure(FeaturesParallelTask task) {
+            super.configure(task);
+            task.processType = ProcessType.FEATURE_APPLICATION;
+        }
+
+        @NotNull
+        @Override
+        public String getName() {
+            return scope.getTaskName("featuresApplication");
+        }
+
+    }
+
 
     enum ProcessType {
 
@@ -378,9 +408,11 @@ public class FeaturesParallelTask extends AndroidBuilderTask {
         MEGGE_LIBS,
         BUNDLE_RES,
         MERGE_RESOURCE,
-        PRE_BUNDLE
+        PRE_BUNDLE,
+        FEATURE_APPLICATION
 
-    }
+
+        }
 
 
 }

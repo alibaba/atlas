@@ -419,10 +419,7 @@ public class AppVariantContext<T extends BaseVariantImpl, Z extends BaseExtensio
                 "/awb-apks/" + getVariantConfiguration().getDirName() + "/");
     }
 
-    public File getPluginApkOutputDir() {
-        return new File(scope.getGlobalScope().getIntermediatesDir(),
-                "/plugin-apk/" + getVariantConfiguration().getDirName() + "/");
-    }
+
 
     public File getModifyManifestDir() {
         return new File(scope.getGlobalScope().getIntermediatesDir(),

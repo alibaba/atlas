@@ -301,7 +301,7 @@ open class ProcessFeatureResource @Inject constructor(workerExecutor: WorkerExec
 
             task.featureName = awbBundle.name
 
-            if (variantContext.atlasExtension.isRemotePluginEnabled) {
+            if (variantContext.atlasExtension.isFlexaEnabled) {
                 task.applicationId = TaskInputHelper.memoize { variantData.variantConfiguration.applicationId+"."+awbBundle.featureName }
             }else{
                 task.applicationId = TaskInputHelper.memoize { awbBundle.packageName }
@@ -340,7 +340,7 @@ open class ProcessFeatureResource @Inject constructor(workerExecutor: WorkerExec
 
             ReflectUtils.updateField(task, "outputScope", variantData.outputScope)
 
-            if (variantContext.atlasExtension.isRemotePluginEnabled) {
+            if (variantContext.atlasExtension.isFlexaEnabled) {
                 task.originalApplicationId = TaskInputHelper.memoize { variantData.variantConfiguration.applicationId+"."+awbBundle.featureName }
             }else{
                 task.originalApplicationId = TaskInputHelper.memoize { awbBundle.packageName }
@@ -427,7 +427,7 @@ open class ProcessFeatureResource @Inject constructor(workerExecutor: WorkerExec
                 symbles.add(out)
                SymbolIo.writeSymbolListWithPackageName(it.symbolFile.toPath(),packageName,out.toPath())
             }
-            if (variantContext.atlasExtension.isRemotePluginEnabled){
+            if (variantContext.atlasExtension.isFlexaEnabled){
                 val packageName = awbBundle.packageName
                 val out = appVariantOutputContext.getLibrarySymbolWithPackageName(packageName)
                 out.parentFile.mkdirs()

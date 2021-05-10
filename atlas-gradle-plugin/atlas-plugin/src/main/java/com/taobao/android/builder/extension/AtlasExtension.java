@@ -286,15 +286,27 @@ public class AtlasExtension<T extends TBuildType, Z extends TBuildConfig> {
     private boolean appBundlesEnabled;
 
 
-    public boolean isRemotePluginEnabled() {
-        return remotePluginEnabled;
+    public boolean isFlexaEnabled() {
+        return flexaEnabled;
     }
 
-    public void setRemotePluginEnabled(boolean remotePluginEnabled) {
-        this.remotePluginEnabled = remotePluginEnabled;
+    public void setFlexaEnabled(boolean flexaEnabled) {
+        this.flexaEnabled = flexaEnabled;
     }
 
-    private boolean remotePluginEnabled;
+    private boolean flexaEnabled;
+
+
+    public boolean isFeaturesMergeInOneEnabled() {
+        return featuresMergeInOneEnabled;
+    }
+
+    public void setFeaturesMergeInOneEnabled(boolean featuresMergeInOneEnabled) {
+        this.featuresMergeInOneEnabled = featuresMergeInOneEnabled;
+    }
+
+    private boolean featuresMergeInOneEnabled = true;
+
 
     protected Logger logger;
 

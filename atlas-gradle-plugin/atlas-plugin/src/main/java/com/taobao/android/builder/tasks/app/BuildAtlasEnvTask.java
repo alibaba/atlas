@@ -312,45 +312,44 @@ public class BuildAtlasEnvTask extends AndroidBuilderTask {
 
         }
 
-        if (appVariantContext.getAtlasExtension().isRemotePluginEnabled()){
+        if (appVariantContext.getAtlasExtension().isFlexaEnabled() && appVariantContext.getAtlasExtension().isFeaturesMergeInOneEnabled()) {
             androidDependencyTree.getPluginBundle().setFeatureName("com_taobao_plugin");
             androidDependencyTree.getPluginBundle().setWrapperPackageName("com.taobao.plugin");
-
-            Iterator it = androidDependencyTree.getAwbBundles().iterator();
-            while(it.hasNext()){
-                    AwbBundle awb = (AwbBundle) it.next();
-                if (!isMBundle(appVariantContext,awb)){
-                    if (androidDependencyTree.getPluginBundle().getAndroidLibrary() == null) {
-                        androidDependencyTree.getPluginBundle().setAndroidLibrary(awb.getAndroidLibrary());
-                        androidDependencyTree.getPluginBundle().getAndroidLibraries().addAll(awb.getAndroidLibraries());
-                    }else{
-                        androidDependencyTree.getPluginBundle().getAndroidLibraries().addAll(awb.getAllLibraryAars());
-                    }
-                    androidDependencyTree.getPluginBundle().getJavaLibraries().addAll(awb.getJavaLibraries());
-                    androidDependencyTree.getPluginBundle().getSoLibraries().addAll(awb.getSoLibraries());
-                    androidDependencyTree.getPluginBundle().dynamicFeature = true;
-                    androidDependencyTree.getPluginBundle().bundleInfo.setDynamicFeature(true);
-                    AwbTransform awbTransform = appVariantOutputContext.getAwbTransformMap().remove(awb.getName());
-                    if(appVariantOutputContext.getAwbTransformMap().containsKey(androidDependencyTree.getPluginBundle().getName())){
-                        AwbTransform pluginTrasform = appVariantOutputContext.getAwbTransformMap().get(androidDependencyTree.getPluginBundle().getName());
-                        pluginTrasform.getInputLibraries().addAll(awb.getLibraryJars());
-                        pluginTrasform.getLibraryJniLibsInputDir().addAll(awbTransform.getLibraryJniLibsInputDir());
-                        pluginTrasform.getLibraryResourcesInutDir().addAll(awbTransform.getLibraryResourcesInutDir());
-                    }else{
-                        AwbTransform pluginTrasform = new AwbTransform(androidDependencyTree.getPluginBundle());
-                        pluginTrasform.getInputLibraries().addAll(awb.getLibraryJars());
-                        pluginTrasform.getLibraryJniLibsInputDir().addAll(awbTransform.getLibraryJniLibsInputDir());
-                        pluginTrasform.getLibraryResourcesInutDir().addAll(awbTransform.getLibraryResourcesInutDir());
-                        appVariantOutputContext.getAwbTransformMap().put(androidDependencyTree.getPluginBundle().getName(), pluginTrasform);
-
-                    }
-
-                    it.remove();
-                }
-            }
             androidDependencyTree.getAwbBundles().add(androidDependencyTree.getPluginBundle());
         }
 
+        Iterator it = androidDependencyTree.getAwbBundles().iterator();
+        while (it.hasNext()) {
+            AwbBundle awb = (AwbBundle) it.next();
+            if (!isMBundle(appVariantContext, awb) && appVariantContext.getAtlasExtension().isFlexaEnabled() && appVariantContext.getAtlasExtension().isFeaturesMergeInOneEnabled()) {
+                if (androidDependencyTree.getPluginBundle().getAndroidLibrary() == null) {
+                    androidDependencyTree.getPluginBundle().setAndroidLibrary(awb.getAndroidLibrary());
+                    androidDependencyTree.getPluginBundle().getAndroidLibraries().addAll(awb.getAndroidLibraries());
+                } else {
+                    androidDependencyTree.getPluginBundle().getAndroidLibraries().addAll(awb.getAllLibraryAars());
+                }
+                androidDependencyTree.getPluginBundle().getJavaLibraries().addAll(awb.getJavaLibraries());
+                androidDependencyTree.getPluginBundle().getSoLibraries().addAll(awb.getSoLibraries());
+                androidDependencyTree.getPluginBundle().dynamicFeature = true;
+                androidDependencyTree.getPluginBundle().bundleInfo.setDynamicFeature(true);
+                AwbTransform awbTransform = appVariantOutputContext.getAwbTransformMap().remove(awb.getName());
+                if (appVariantOutputContext.getAwbTransformMap().containsKey(androidDependencyTree.getPluginBundle().getName())) {
+                    AwbTransform pluginTrasform = appVariantOutputContext.getAwbTransformMap().get(androidDependencyTree.getPluginBundle().getName());
+                    pluginTrasform.getInputLibraries().addAll(awb.getLibraryJars());
+                    pluginTrasform.getLibraryJniLibsInputDir().addAll(awbTransform.getLibraryJniLibsInputDir());
+                    pluginTrasform.getLibraryResourcesInutDir().addAll(awbTransform.getLibraryResourcesInutDir());
+                } else {
+                    AwbTransform pluginTrasform = new AwbTransform(androidDependencyTree.getPluginBundle());
+                    pluginTrasform.getInputLibraries().addAll(awb.getLibraryJars());
+                    pluginTrasform.getLibraryJniLibsInputDir().addAll(awbTransform.getLibraryJniLibsInputDir());
+                    pluginTrasform.getLibraryResourcesInutDir().addAll(awbTransform.getLibraryResourcesInutDir());
+                    appVariantOutputContext.getAwbTransformMap().put(androidDependencyTree.getPluginBundle().getName(), pluginTrasform);
+
+                }
+
+                it.remove();
+            }
+        }
 
 
         if (appVariantContext.getAtlasExtension().isAppBundlesEnabled()) {
@@ -378,13 +377,12 @@ public class BuildAtlasEnvTask extends AndroidBuilderTask {
                     perModuleBundleTask.doFirst(new Action<Task>() {
                         @Override
                         public void execute(Task task) {
-                            ReflectUtils.updateField(task,"javaResFiles",getProject().files(AtlasBuildContext.atlasMainDexHelperMap.get(variantName).getMainJavaRes()));
+                            ReflectUtils.updateField(task, "javaResFiles", getProject().files(AtlasBuildContext.atlasMainDexHelperMap.get(variantName).getMainJavaRes()));
                         }
                     });
                 }
             });
         }
-
 
 
         MergeResources mergeResources = appVariantContext.getScope().getTaskContainer().mergeResourcesTask.get();
@@ -464,9 +462,9 @@ public class BuildAtlasEnvTask extends AndroidBuilderTask {
                 filesNames.add(outFile);
 
                 try {
-                    SymbolIo.writeSymbolListWithPackageName(symbolFile.toPath(),packageName,outFile.toPath());
+                    SymbolIo.writeSymbolListWithPackageName(symbolFile.toPath(), packageName, outFile.toPath());
 
-                }catch (Exception e){
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
@@ -484,9 +482,9 @@ public class BuildAtlasEnvTask extends AndroidBuilderTask {
                         filesNames.add(outFile);
 
                         try {
-                            SymbolIo.writeSymbolListWithPackageName(symbolFile.toPath(),packageName,outFile.toPath());
+                            SymbolIo.writeSymbolListWithPackageName(symbolFile.toPath(), packageName, outFile.toPath());
 
-                        }catch (Exception e){
+                        } catch (Exception e) {
                             e.printStackTrace();
                         }
                     }
@@ -501,7 +499,7 @@ public class BuildAtlasEnvTask extends AndroidBuilderTask {
 
         if (appVariantContext.getAtlasExtension().isAppBundlesEnabled() && appVariantContext.getAtlasExtension().getTBuildConfig().getDynamicFeatures().size() > 0 && appVariantContext.getVariantConfiguration().getBuildType().isMinifyEnabled()) {
             List<TransformTask> tasks = TransformManagerDelegate.findTransformTaskByTransformType(appVariantContext, DelegateMergeClassesTransform.class);
-            if (tasks!= null && tasks.size() > 0){
+            if (tasks != null && tasks.size() > 0) {
                 tasks.forEach(new Consumer<TransformTask>() {
                     @Override
                     public void accept(TransformTask transformTask) {
@@ -516,54 +514,53 @@ public class BuildAtlasEnvTask extends AndroidBuilderTask {
         }
 
 
-    if (appVariantContext.getAtlasExtension().isAppBundlesEnabled() && appVariantContext.getAtlasExtension().getTBuildConfig().getDynamicFeatures().size() > 0 && appVariantContext.getVariantConfiguration().getBuildType().isMinifyEnabled()) {
-        List<TransformTask> tasks = TransformManagerDelegate.findTransformTaskByTransformType(appVariantContext, DelegateDexSplitterTransform.class);
-        if (tasks!= null && tasks.size() > 0){
-            tasks.forEach(new Consumer<TransformTask>() {
-                @Override
-                public void accept(TransformTask transformTask) {
-                    File dexSplitterOutput =
-                            com.android.utils.FileUtils.join(
-                                    appVariantContext.getScope().getGlobalScope().getIntermediatesDir(),
-                                    "dex-splitter",
-                                    appVariantContext.getScope().getVariantConfiguration().getDirName());
-                    DelegateDexSplitterTransform delegateDexSplitterTransform = (DelegateDexSplitterTransform) transformTask.getTransform();
-                    delegateDexSplitterTransform.setBaseJars(appVariantContext.getProject().files(AtlasBuildContext.androidDependencyTrees.get(variantName).getMainBundle().getMergeJarFile()));
-                    List<Supplier<File>>featureFiles = new ArrayList<>();
-                    androidDependencyTree.getAwbBundles().forEach(new Consumer<AwbBundle>() {
-                        @Override
-                        public void accept(AwbBundle awbBundle) {
-                            if (awbBundle.dynamicFeature)
-                            featureFiles.add(() -> awbBundle.getMergeJarFile());
-                        }
-                    });
-                    delegateDexSplitterTransform.setFeatureJars(featureFiles);
+        if (appVariantContext.getAtlasExtension().isAppBundlesEnabled() && appVariantContext.getAtlasExtension().getTBuildConfig().getDynamicFeatures().size() > 0 && appVariantContext.getVariantConfiguration().getBuildType().isMinifyEnabled()) {
+            List<TransformTask> tasks = TransformManagerDelegate.findTransformTaskByTransformType(appVariantContext, DelegateDexSplitterTransform.class);
+            if (tasks != null && tasks.size() > 0) {
+                tasks.forEach(new Consumer<TransformTask>() {
+                    @Override
+                    public void accept(TransformTask transformTask) {
+                        File dexSplitterOutput =
+                                com.android.utils.FileUtils.join(
+                                        appVariantContext.getScope().getGlobalScope().getIntermediatesDir(),
+                                        "dex-splitter",
+                                        appVariantContext.getScope().getVariantConfiguration().getDirName());
+                        DelegateDexSplitterTransform delegateDexSplitterTransform = (DelegateDexSplitterTransform) transformTask.getTransform();
+                        delegateDexSplitterTransform.setBaseJars(appVariantContext.getProject().files(AtlasBuildContext.androidDependencyTrees.get(variantName).getMainBundle().getMergeJarFile()));
+                        List<Supplier<File>> featureFiles = new ArrayList<>();
+                        androidDependencyTree.getAwbBundles().forEach(new Consumer<AwbBundle>() {
+                            @Override
+                            public void accept(AwbBundle awbBundle) {
+                                if (awbBundle.dynamicFeature)
+                                    featureFiles.add(() -> awbBundle.getMergeJarFile());
+                            }
+                        });
+                        delegateDexSplitterTransform.setFeatureJars(featureFiles);
 
-                    delegateDexSplitterTransform.setOutputDir(dexSplitterOutput);
-                    BuildableArtifact mappingFileSrc =
-                            appVariantContext.getScope().getArtifacts().hasArtifact(InternalArtifactType.APK_MAPPING)
-                                    ? appVariantContext.getScope()
-                                    .getArtifacts()
-                                    .getFinalArtifactFiles(InternalArtifactType.APK_MAPPING)
-                                    : null;
+                        delegateDexSplitterTransform.setOutputDir(dexSplitterOutput);
+                        BuildableArtifact mappingFileSrc =
+                                appVariantContext.getScope().getArtifacts().hasArtifact(InternalArtifactType.APK_MAPPING)
+                                        ? appVariantContext.getScope()
+                                        .getArtifacts()
+                                        .getFinalArtifactFiles(InternalArtifactType.APK_MAPPING)
+                                        : null;
 
-                    delegateDexSplitterTransform.setMappingFileSrc(mappingFileSrc);
+                        delegateDexSplitterTransform.setMappingFileSrc(mappingFileSrc);
 
 
-                }
-            });
+                    }
+                });
 
-            appVariantContext.getProject().getTasks().withType(PerModuleBundleTask.class).forEach(new Consumer<PerModuleBundleTask>() {
-                @Override
-                public void accept(PerModuleBundleTask perModuleBundleTask) {
-                    ReflectUtils.updateField(perModuleBundleTask,"dexFiles",appVariantContext.getScope().getTransformManager().getPipelineOutputAsFileCollection(
-                            StreamFilter.DEX));
-                }
-            });
+                appVariantContext.getProject().getTasks().withType(PerModuleBundleTask.class).forEach(new Consumer<PerModuleBundleTask>() {
+                    @Override
+                    public void accept(PerModuleBundleTask perModuleBundleTask) {
+                        ReflectUtils.updateField(perModuleBundleTask, "dexFiles", appVariantContext.getScope().getTransformManager().getPipelineOutputAsFileCollection(
+                                StreamFilter.DEX));
+                    }
+                });
+            }
+
         }
-
-    }
-
 
 
 //        FileCollection fs = appVariantContext.getScope().getArtifactFileCollection(AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH,AndroidArtifacts.ArtifactScope.ALL,AndroidArtifacts.ArtifactType.CLASSES);
@@ -825,7 +822,6 @@ public class BuildAtlasEnvTask extends AndroidBuilderTask {
             });
 
 
-
         }
 
 
@@ -916,7 +912,7 @@ public class BuildAtlasEnvTask extends AndroidBuilderTask {
     private boolean isMBundle(AppVariantContext appVariantContext, AwbBundle awbBundle) {
 
 
-        if ((appVariantContext.getAtlasExtension().isAppBundlesEnabled()||appVariantContext.getAtlasExtension().isRemotePluginEnabled()) && appVariantContext.getAtlasExtension().getTBuildConfig().getDynamicFeatures().contains(awbBundle.getResolvedCoordinates().getArtifactId())) {
+        if ((appVariantContext.getAtlasExtension().isAppBundlesEnabled() || appVariantContext.getAtlasExtension().isFlexaEnabled()) && appVariantContext.getAtlasExtension().getTBuildConfig().getDynamicFeatures().contains(awbBundle.getResolvedCoordinates().getArtifactId())) {
 
             awbBundle.dynamicFeature = true;
             awbBundle.bundleInfo.setDynamicFeature(true);
