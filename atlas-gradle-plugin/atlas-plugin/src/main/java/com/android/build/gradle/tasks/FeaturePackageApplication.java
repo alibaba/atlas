@@ -241,7 +241,7 @@ public class FeaturePackageApplication extends PackageAndroidArtifact {
         @NonNull
         @Override
         public String getName() {
-            return getVariantScope().getTaskName("package"+ awbBundle.getName(),"Features");
+            return getVariantScope().getTaskName("package"+ awbBundle.getName(),"Feature");
         }
 
         @NonNull

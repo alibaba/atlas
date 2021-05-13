@@ -459,9 +459,9 @@ public class AppVariantContext<T extends BaseVariantImpl, Z extends BaseExtensio
 
 
 
-    public File getAtlaSourceDir() {
+    public File getDynamicSourceDir() {
         return new File(scope.getGlobalScope().getGeneratedDir(),
-                "source/atlascore/" + getVariantConfiguration().getDirName());
+                "source/dynamic/" + getVariantConfiguration().getDirName());
     }
 
     public Map<String, String> getBaseUnitTagMap() throws IOException {

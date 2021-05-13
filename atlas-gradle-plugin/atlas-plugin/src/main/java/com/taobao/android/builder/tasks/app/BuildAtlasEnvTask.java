@@ -312,11 +312,6 @@ public class BuildAtlasEnvTask extends AndroidBuilderTask {
 
         }
 
-        if (appVariantContext.getAtlasExtension().isFlexaEnabled() && appVariantContext.getAtlasExtension().isFeaturesMergeInOneEnabled()) {
-            androidDependencyTree.getPluginBundle().setFeatureName("com_taobao_plugin");
-            androidDependencyTree.getPluginBundle().setWrapperPackageName("com.taobao.plugin");
-            androidDependencyTree.getAwbBundles().add(androidDependencyTree.getPluginBundle());
-        }
 
         Iterator it = androidDependencyTree.getAwbBundles().iterator();
         while (it.hasNext()) {
@@ -349,6 +344,12 @@ public class BuildAtlasEnvTask extends AndroidBuilderTask {
 
                 it.remove();
             }
+        }
+
+        if (appVariantContext.getAtlasExtension().isFlexaEnabled() && appVariantContext.getAtlasExtension().isFeaturesMergeInOneEnabled()) {
+            androidDependencyTree.getPluginBundle().setFeatureName("com_taobao_plugin");
+            androidDependencyTree.getPluginBundle().setWrapperPackageName("com.taobao.plugin");
+            androidDependencyTree.getAwbBundles().add(androidDependencyTree.getPluginBundle());
         }
 
 

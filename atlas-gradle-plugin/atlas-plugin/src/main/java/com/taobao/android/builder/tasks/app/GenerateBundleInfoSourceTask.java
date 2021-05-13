@@ -57,15 +57,17 @@ public class GenerateBundleInfoSourceTask extends AndroidBuilderTask {
 
         InjectParam injectParam = getInput();
         List<BasicBundleInfo> info = JSON.parseArray(injectParam.bundleInfo,BasicBundleInfo.class);
-        File outputSourceGeneratorFile = new File(outputDir,"com/android/tools/bundleInfo/BundleInfoGenerator.java");
-        StringBuffer infoGeneratorSourceStr = new BundleInfoSourceCreator().createBundleInfoSourceStr(info,appVariantContext.getAtlasExtension().isAppBundlesEnabled(),appVariantContext.getAtlasExtension().isFlexaEnabled());
-        outputSourceGeneratorFile.getParentFile().mkdirs();
-        getLogger().info(infoGeneratorSourceStr.toString());
-        try {
-            FileUtils.writeStringToFile(outputSourceGeneratorFile,infoGeneratorSourceStr.toString());
-        } catch (IOException e) {
-            throw new GradleException(e.getMessage(), e);
-        }
+        new BundleInfoSourceCreator().createBundleInfo(outputDir,info,appVariantContext.getAtlasExtension().isAppBundlesEnabled(),appVariantContext.getAtlasExtension().isFlexaEnabled());
+//        File outputSourceGeneratorFile = new File(outputDir,"com/android/tools/bundleInfo/BundleInfoGenerator.java");
+//        StringBuffer infoGeneratorSourceStr = new BundleInfoSourceCreator().createBundleInfoSourceStr(info,appVariantContext.getAtlasExtension().isAppBundlesEnabled(),appVariantContext.getAtlasExtension().isFlexaEnabled());
+//
+//        outputSourceGeneratorFile.getParentFile().mkdirs();
+//        getLogger().info(infoGeneratorSourceStr.toString());
+//        try {
+//            FileUtils.writeStringToFile(outputSourceGeneratorFile,infoGeneratorSourceStr.toString());
+//        } catch (IOException e) {
+//            throw new GradleException(e.getMessage(), e);
+//        }
 
 
     }
@@ -92,15 +94,15 @@ public class GenerateBundleInfoSourceTask extends AndroidBuilderTask {
         }
 
         @Override
-        public void configure(GenerateBundleInfoSourceTask atlasSourceTask) {
+        public void configure(GenerateBundleInfoSourceTask generateBundleInfoSourceTask) {
 
-            super.configure(atlasSourceTask);
+            super.configure(generateBundleInfoSourceTask);
 
-            File srcDir = appVariantContext.getAtlaSourceDir();
+            File srcDir = appVariantContext.getDynamicSourceDir();
             appVariantContext.getVariantData().getTaskContainer().getJavacTask().get().source(srcDir);
 
-            atlasSourceTask.outputDir = srcDir;
-            atlasSourceTask.appVariantContext = appVariantContext;
+            generateBundleInfoSourceTask.outputDir = srcDir;
+            generateBundleInfoSourceTask.appVariantContext = appVariantContext;
 
         }
     }
