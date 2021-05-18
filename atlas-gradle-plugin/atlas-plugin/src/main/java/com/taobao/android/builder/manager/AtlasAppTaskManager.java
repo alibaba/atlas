@@ -330,21 +330,23 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                                                               }
 
-                                                              mtlTaskContextList.add(new MtlTaskContext(RenderscriptCompile.class));
 
 
-                                                              mtlTaskContextList.add(new MtlTaskContext(PrepareBundleInfoTask.ConfigAction.class, null));
 
                                                               if (atlasExtension.isAtlasEnabled() && !appVariantContext.getBuildType().getPatchConfig().isCreateIPatch()) {
+                                                                  mtlTaskContextList.add(new MtlTaskContext(PrepareBundleInfoTask.ConfigAction.class, null));
                                                                   mtlTaskContextList.add(new MtlTaskContext(GenerateBundleInfoSourceTask.ConfigAction.class, null));
                                                               }
 
 
-                                                              mtlTaskContextList.add(new MtlTaskContext(PreparePackageIdsTask.ConfigAction.class, null));
+//                                                              mtlTaskContextList.add(new MtlTaskContext(PreparePackageIdsTask.ConfigAction.class, null));
 
-                                                              mtlTaskContextList.add(new MtlTaskContext(PrepareAaptTask.ConfigAction.class, null));
+//                                                              mtlTaskContextList.add(new MtlTaskContext(PrepareAaptTask.ConfigAction.class, null));
 
                                                               mtlTaskContextList.add(new MtlTaskContext(AidlCompile.class));
+
+                                                              mtlTaskContextList.add(new MtlTaskContext(RenderscriptCompile.class));
+
 
                                                               mtlTaskContextList.add(new MtlTaskContext(GenerateBuildConfig.class));
 
