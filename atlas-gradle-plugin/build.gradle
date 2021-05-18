@@ -213,7 +213,6 @@ buildscript {
 
         //本地库，local repository(${user.home}/.m2/repository)
         mavenLocal()
-
         jcenter()
         google()
     }
