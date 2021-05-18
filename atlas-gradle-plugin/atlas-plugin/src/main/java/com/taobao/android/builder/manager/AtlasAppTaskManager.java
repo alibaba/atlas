@@ -330,6 +330,9 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                                                               }
 
+                                                              mtlTaskContextList.add(new MtlTaskContext(RenderscriptCompile.class));
+
+
                                                               mtlTaskContextList.add(new MtlTaskContext(MergeSourceSetFolders.class));
 
 
@@ -354,10 +357,10 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                                                               mtlTaskContextList.add(new MtlTaskContext(AidlCompile.class));
 
-                                                              mtlTaskContextList.add(new MtlTaskContext(RenderscriptCompile.class));
 
 
                                                               mtlTaskContextList.add(new MtlTaskContext(GenerateBuildConfig.class));
+
 
                                                               mtlTaskContextList.add(new MtlTaskContext(ProcessApplicationManifest.class));
 
