@@ -282,7 +282,8 @@ public class AwbProguardConfiguration {
                 continue;
             }
 
-            if (awbTransform.getAwbBundle().dynamicFeature && appVariantOutputContext.getVariantContext().getAtlasExtension().isFlexaEnabled()) {
+            if (awbTransform.getAwbBundle().dynamicFeature && (appVariantOutputContext.getVariantContext().getAtlasExtension().isFlexaEnabled()
+                    ||appVariantOutputContext.getVariantContext().getAtlasExtension().isAppBundlesEnabled())) {
                 if (StringUtils.isEmpty(System.getProperty(DelegateProguardTransform.NEW_MAPPER_LIST))) {
                     System.getProperties().setProperty(DelegateProguardTransform.NEW_MAPPER_LIST, new Gson().toJson(awbTransform.getAwbBundle().getPackageNames()));
                 }else{
