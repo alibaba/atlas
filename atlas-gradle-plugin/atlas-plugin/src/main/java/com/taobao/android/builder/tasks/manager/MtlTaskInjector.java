@@ -256,9 +256,15 @@ public class MtlTaskInjector {
                     } else if (null != mtlTaskContext.getSysTaskClazz()) {
                         Class taskClazz = mtlTaskContext.getSysTaskClazz();
                         tasks.addAll(findTask(taskClazz, variantContext.getVariantName() ));
-                    } else {
+                    } else if (StringUtils.isNotEmpty(mtlTaskContext.getTaskName())){
                         Task task = project.getTasks().findByName(
                             variantContext.getBaseVariantData().getTaskName(mtlTaskContext.getTaskName(),""));
+                        if (null != task) {
+                            tasks.add(task);
+                        }
+                    }else{
+                        Task task = project.getTasks().findByName(
+                                variantContext.getBaseVariantData().getTaskName(mtlTaskContext.getTaskNamePrefix()[0],mtlTaskContext.getTaskNamePrefix()[1]));
                         if (null != task) {
                             tasks.add(task);
                         }

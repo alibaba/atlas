@@ -330,17 +330,28 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                                                               }
 
+
+                                                              mtlTaskContextList.add(new MtlTaskContext(ProcessApplicationManifest.class));
+
+
                                                               mtlTaskContextList.add(new MtlTaskContext(RenderscriptCompile.class));
 
 
-                                                              mtlTaskContextList.add(new MtlTaskContext(MergeSourceSetFolders.class));
 
+                                                              mtlTaskContextList.add(new MtlTaskContext(MergeResources.class));
+
+
+                                                              mtlTaskContextList.add(new MtlTaskContext("merge", "Shaders"));
+
+                                                              mtlTaskContextList.add(new MtlTaskContext("merge", "Assets"));
 
                                                               if (atlasExtension.isAppBundlesEnabled()) {
                                                                   mtlTaskContextList.add(new MtlTaskContext(FeaturesParallelTask.CreationAssetsAction.class, null));
                                                                   mtlTaskContextList.add(new MtlTaskContext(FeaturesParallelTask.MergeResourceAction.class, null));
 
                                                               }
+
+                                                              mtlTaskContextList.add(new MtlTaskContext(GenerateBuildConfig.class));
 
 
 
@@ -350,35 +361,42 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                                                                   mtlTaskContextList.add(new MtlTaskContext(GenerateBundleInfoSourceTask.ConfigAction.class, null));
                                                               }
 
+                                                              mtlTaskContextList.add(new MtlTaskContext(ProcessAndroidResources.class));
+
+
+
 
 //                                                              mtlTaskContextList.add(new MtlTaskContext(PreparePackageIdsTask.ConfigAction.class, null));
 
 //                                                              mtlTaskContextList.add(new MtlTaskContext(PrepareAaptTask.ConfigAction.class, null));
 
+                                                              if (atlasExtension.isAppBundlesEnabled()) {
+                                                                  mtlTaskContextList.add(new MtlTaskContext(LinkAndroidResForBundleTask.class));
+                                                              }
+
+                                                              mtlTaskContextList.add(new MtlTaskContext(ProcessJavaResTask.class));
+
                                                               mtlTaskContextList.add(new MtlTaskContext(AidlCompile.class));
 
 
 
-                                                              mtlTaskContextList.add(new MtlTaskContext(GenerateBuildConfig.class));
 
 
-                                                              mtlTaskContextList.add(new MtlTaskContext(ProcessApplicationManifest.class));
 
-                                                              if (atlasExtension.isAppBundlesEnabled()) {
-                                                                  mtlTaskContextList.add(new MtlTaskContext(LinkAndroidResForBundleTask.class));
-
-
-                                                              }
 
 
                                                               //mtlTaskContextList.add(new MtlTaskContext(MergeResV4Dir.ConfigAction.class, null));
 
-                                                              mtlTaskContextList.add(new MtlTaskContext(ProcessAndroidResources.class));
 
+                                                              mtlTaskContextList.add(new MtlTaskContext("merge", "JniLibFolders"));
+
+                                                              mtlTaskContextList.add(new MtlTaskContext(JavaPreCompileTask.class));
+
+
+                                                              mtlTaskContextList.add(new MtlTaskContext(AndroidJavaCompile.class));
 
                                                               if (atlasExtension.isAppBundlesEnabled()) {
-                                                                  mtlTaskContextList.add(new MtlTaskContext(AndroidJavaCompile.class));
-                                                                  mtlTaskContextList.add(new MtlTaskContext(ProcessJavaResTask.class));
+
                                                                   mtlTaskContextList.add(new MtlTaskContext(FeaturesParallelTask.CreationBundleResourceAction.class, null));
                                                                   mtlTaskContextList.add(new MtlTaskContext(FeaturesParallelTask.CreationProcessResourceAction.class, null));
                                                                   mtlTaskContextList.add(new MtlTaskContext(FeaturesParallelTask.CreationFeatureCompileAction.class, null));
