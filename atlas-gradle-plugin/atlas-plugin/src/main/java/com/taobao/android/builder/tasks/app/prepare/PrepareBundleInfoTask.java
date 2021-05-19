@@ -238,7 +238,7 @@ public class PrepareBundleInfoTask extends AndroidBuilderTask {
     AppVariantOutputContext appVariantOutputContext;
 
     @TaskAction
-    void run() throws ExecutionException, InterruptedException, IOException, DocumentException {
+    void run() throws IOException, DocumentException {
 
         AtlasBuildContext.awbBundleMap = collectBundleInfo(appVariantOutputContext);
 
