@@ -212,12 +212,9 @@ package com.taobao.android.builder.tasks.manager;
 import com.android.build.gradle.api.BaseVariantOutput;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
-
 import java.util.List;
 
-/**
- * Created by wuzhong on 16/6/24.
- */
+
 public class MtlTaskContext {
 
     private boolean isSystemTask;
@@ -229,6 +226,12 @@ public class MtlTaskContext {
     private Class<? extends MtlBaseTaskAction> taskActionClazz;
 
     private String taskName;
+
+    public String[] getTaskNamePrefix() {
+        return taskNamePrefix;
+    }
+
+    private String []taskNamePrefix = new String [2];
 
     private TaskFilter taskFilter;
 
@@ -245,6 +248,12 @@ public class MtlTaskContext {
 
     public MtlTaskContext(String taskName) {
         this.taskName = taskName;
+        this.isSystemTask = true;
+    }
+
+    public MtlTaskContext(String prefix1,String prefix2) {
+        this.taskNamePrefix[0] = prefix1;
+        this.taskNamePrefix[1] = prefix2;
         this.isSystemTask = true;
     }
 

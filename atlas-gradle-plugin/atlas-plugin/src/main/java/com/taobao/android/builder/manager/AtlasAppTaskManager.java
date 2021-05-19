@@ -314,23 +314,34 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                                                               mtlTaskContextList.add(new MtlTaskContext(StandardizeLibManifestTask.ConfigAction.class, null));
 
-                                                              if (atlasExtension.isAppBundlesEnabled()||atlasExtension.isFlexaEnabled()) {
+                                                              if (atlasExtension.isAppBundlesEnabled() || atlasExtension.isFlexaEnabled()) {
                                                                   mtlTaskContextList.add(new MtlTaskContext(MtlFeatureSetmetadataWriterTask.ConfigAction.class, null));
                                                                   mtlTaskContextList.add(new MtlTaskContext(MtlModuleMetadataWriterTask.CreationAction.class, null));
                                                                   mtlTaskContextList.add(new MtlTaskContext(FeaturesParallelTask.CreationManifestsAction.class, null));
 
                                                               }
 
-                                                              mtlTaskContextList.add(new MtlTaskContext(MergeSourceSetFolders.class));
+
+                                                              mtlTaskContextList.add(new MtlTaskContext(ProcessApplicationManifest.class));
 
 
-                                                              if (atlasExtension.isAppBundlesEnabled()||atlasExtension.isFlexaEnabled()) {
+                                                              mtlTaskContextList.add(new MtlTaskContext(RenderscriptCompile.class));
+
+
+                                                              mtlTaskContextList.add(new MtlTaskContext(MergeResources.class));
+
+
+                                                              mtlTaskContextList.add(new MtlTaskContext("merge", "Shaders"));
+
+                                                              mtlTaskContextList.add(new MtlTaskContext("merge", "Assets"));
+
+                                                              if (atlasExtension.isAppBundlesEnabled() || atlasExtension.isFlexaEnabled()) {
                                                                   mtlTaskContextList.add(new MtlTaskContext(FeaturesParallelTask.CreationAssetsAction.class, null));
                                                                   mtlTaskContextList.add(new MtlTaskContext(FeaturesParallelTask.MergeResourceAction.class, null));
 
                                                               }
 
-
+                                                              mtlTaskContextList.add(new MtlTaskContext(GenerateBuildConfig.class));
 
 
                                                               if (atlasExtension.isAtlasEnabled() && !appVariantContext.getBuildType().getPatchConfig().isCreateIPatch()) {
@@ -338,35 +349,35 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                                                                   mtlTaskContextList.add(new MtlTaskContext(GenerateBundleInfoSourceTask.ConfigAction.class, null));
                                                               }
 
+                                                              mtlTaskContextList.add(new MtlTaskContext(ProcessAndroidResources.class));
+
 
 //                                                              mtlTaskContextList.add(new MtlTaskContext(PreparePackageIdsTask.ConfigAction.class, null));
 
 //                                                              mtlTaskContextList.add(new MtlTaskContext(PrepareAaptTask.ConfigAction.class, null));
 
-                                                              mtlTaskContextList.add(new MtlTaskContext(AidlCompile.class));
-
-                                                              mtlTaskContextList.add(new MtlTaskContext(RenderscriptCompile.class));
-
-
-                                                              mtlTaskContextList.add(new MtlTaskContext(GenerateBuildConfig.class));
-
-                                                              mtlTaskContextList.add(new MtlTaskContext(ProcessApplicationManifest.class));
-
                                                               if (atlasExtension.isAppBundlesEnabled()) {
                                                                   mtlTaskContextList.add(new MtlTaskContext(LinkAndroidResForBundleTask.class));
-
-
                                                               }
+
+                                                              mtlTaskContextList.add(new MtlTaskContext(ProcessJavaResTask.class));
+
+                                                              mtlTaskContextList.add(new MtlTaskContext(AidlCompile.class));
 
 
                                                               //mtlTaskContextList.add(new MtlTaskContext(MergeResV4Dir.ConfigAction.class, null));
 
-                                                              mtlTaskContextList.add(new MtlTaskContext(ProcessAndroidResources.class));
+
+                                                              mtlTaskContextList.add(new MtlTaskContext("merge", "JniLibFolders"));
+
+                                                              mtlTaskContextList.add(new MtlTaskContext(JavaPreCompileTask.class));
+
+
+                                                              mtlTaskContextList.add(new MtlTaskContext(AndroidJavaCompile.class));
 
 
                                                               if (atlasExtension.isAppBundlesEnabled() || atlasExtension.isFlexaEnabled()) {
-                                                                  mtlTaskContextList.add(new MtlTaskContext(AndroidJavaCompile.class));
-                                                                  mtlTaskContextList.add(new MtlTaskContext(ProcessJavaResTask.class));
+
                                                                   mtlTaskContextList.add(new MtlTaskContext(FeaturesParallelTask.CreationBundleResourceAction.class, null));
                                                                   mtlTaskContextList.add(new MtlTaskContext(FeaturesParallelTask.CreationProcessResourceAction.class, null));
                                                                   mtlTaskContextList.add(new MtlTaskContext(FeaturesParallelTask.CreationFeatureCompileAction.class, null));
@@ -431,9 +442,9 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                                                               }
 
 
-                                                              if (atlasExtension.isFlexaEnabled() && atlasExtension.isFeaturesMergeInOneEnabled()){
+                                                              if (atlasExtension.isFlexaEnabled() && atlasExtension.isFeaturesMergeInOneEnabled()) {
                                                                   mtlTaskContextList.add(new MtlTaskContext(FeaturePackageApplication.StandardCreationAction.class, null));
-                                                              }else{
+                                                              } else {
                                                                   mtlTaskContextList.add(new MtlTaskContext(FeaturesParallelTask.CreationFeatureApplicationAction.class, null));
 
                                                               }
@@ -452,7 +463,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                                                               List<MtlTransformContext> mtlTransformContextList = new ArrayList<MtlTransformContext>();
 
 
-                                                              if ((atlasExtension.isAppBundlesEnabled()||atlasExtension.isFlexaEnabled()) && atlasExtension.getTBuildConfig().getDynamicFeatures().size() > 0 && variantScope.getVariantConfiguration().getBuildType().isMinifyEnabled()) {
+                                                              if ((atlasExtension.isAppBundlesEnabled() || atlasExtension.isFlexaEnabled()) && atlasExtension.getTBuildConfig().getDynamicFeatures().size() > 0 && variantScope.getVariantConfiguration().getBuildType().isMinifyEnabled()) {
 
                                                                   if (variantScope.getCodeShrinker() == CodeShrinker.R8) {
                                                                       mtlTransformContextList.add(
