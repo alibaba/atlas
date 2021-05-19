@@ -386,19 +386,19 @@ public class AtlasConfigurationHelper {
      */
     public void updateExtensionAfterEvaluate() {
 
-        if (atlasExtension.isAtlasEnabled() && !(project.getPlugins().hasPlugin(FeaturePlugin.class) || project.getPlugins().hasPlugin(AtlasFeaturePlugin.class))) {
-            TBuildConfig tBuildConfig = atlasExtension.getTBuildConfig();
-            tBuildConfig.setUseCustomAapt(true);
-            if (atlasExtension.getManifestOptions().isAddMultiDexMetaData()) {
-                atlasExtension.getManifestOptions().setAddMultiDexMetaData(true);
-            }
-
-            if (atlasExtension.getManifestOptions().isReplaceApplication()) {
-                atlasExtension.getManifestOptions().setReplaceApplication(true);
-            }
-        } else {
-            atlasExtension.getManifestOptions().setReplaceApplication(false);
-        }
+//        if (atlasExtension.isAtlasEnabled() && !(project.getPlugins().hasPlugin(FeaturePlugin.class) || project.getPlugins().hasPlugin(AtlasFeaturePlugin.class))) {
+//            TBuildConfig tBuildConfig = atlasExtension.getTBuildConfig();
+//            tBuildConfig.setUseCustomAapt(true);
+//            if (atlasExtension.getManifestOptions().isAddMultiDexMetaData()) {
+//                atlasExtension.getManifestOptions().setAddMultiDexMetaData(true);
+//            }
+//
+//            if (atlasExtension.getManifestOptions().isReplaceApplication()) {
+//                atlasExtension.getManifestOptions().setReplaceApplication(true);
+//            }
+//        } else {
+//            atlasExtension.getManifestOptions().setReplaceApplication(false);
+//        }
     }
 
     public void createBuilderAfterEvaluate() throws Exception {

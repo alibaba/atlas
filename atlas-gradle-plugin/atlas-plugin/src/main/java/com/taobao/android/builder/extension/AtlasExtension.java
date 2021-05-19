@@ -257,9 +257,6 @@ public class AtlasExtension<T extends TBuildType, Z extends TBuildConfig> {
     public NamedDomainObjectContainer<MultiDexConfig> multiDexConfigs;
 
 
-    //If the atlas switch is switched on, the default switch will be opened automatically
-    @Config(title = "Enable atlas", message = "Enable atlas , true/false", order = 0, group = "atlas")
-    private boolean atlasEnabled;
 
     protected Project project;
 
@@ -361,14 +358,6 @@ public class AtlasExtension<T extends TBuildType, Z extends TBuildConfig> {
 
     public TBuildConfig getTBuildConfig() {
         return tBuildConfig;
-    }
-
-    public boolean isAtlasEnabled() {
-        return atlasEnabled;
-    }
-
-    public void setAtlasEnabled(boolean atlasEnabled) {
-        this.atlasEnabled = atlasEnabled;
     }
 
     public Logger getLogger() {

@@ -230,8 +230,6 @@ public class AtlasExtensionOutput extends AtlasExtension {
 
     public AtlasExtensionOutput(AtlasExtension atlasExtension, String name) {
 
-        this.setAtlasEnabled(atlasExtension.isAtlasEnabled());
-
         this.manifestOptions = new ManifestOptions();
         this.tBuildConfig = new TBuildConfig();
         copyProps(this.manifestOptions, atlasExtension.getManifestOptions());
