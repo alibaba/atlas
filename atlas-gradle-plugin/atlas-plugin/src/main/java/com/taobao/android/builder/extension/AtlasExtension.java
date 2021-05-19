@@ -383,7 +383,6 @@ public class AtlasExtension<T extends TBuildType, Z extends TBuildConfig> {
         return tBuildConfig;
     }
 
-
     public Logger getLogger() {
         return logger;
     }

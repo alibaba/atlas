@@ -226,6 +226,10 @@ import java.lang.reflect.Method;
  */
 public class AppPluginHook {
 
+    public Project getProject() {
+        return project;
+    }
+
     private Project project;
 
     public BaseExtension getBaseExtension() {

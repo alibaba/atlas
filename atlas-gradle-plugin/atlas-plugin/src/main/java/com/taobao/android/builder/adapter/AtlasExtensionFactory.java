@@ -209,20 +209,24 @@
 
 package com.taobao.android.builder.adapter;
 
-import com.taobao.android.builder.extension.AtlasExtension;
-import com.taobao.android.builder.extension.DexConfig;
-import com.taobao.android.builder.extension.PatchConfig;
-import com.taobao.android.builder.extension.TBuildType;
+import com.android.build.gradle.AppExtension;
+import com.android.build.gradle.internal.dsl.BuildType;
+import com.taobao.android.builder.extension.*;
 import com.taobao.android.builder.extension.factory.DexConfigFactory;
 import com.taobao.android.builder.extension.factory.PatchConfigFactory;
 import com.taobao.android.builder.extension.factory.TBuildTypeFactory;
+import com.taobao.android.builder.hook.AppPluginHook;
 import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.Project;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.internal.reflect.Instantiator;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Consumer;
 /**
- * Created by wuzhong on 2017/3/29.
+ * @author zhayu.ll
+ * @date 2021/05/19
  */
 public class AtlasExtensionFactory {
 
@@ -255,4 +259,40 @@ public class AtlasExtensionFactory {
 
     }
 
+    public void configExtension(AppPluginHook appPluginHook, AtlasExtension atlasExtension) {
+        List<String> buildTypes = new ArrayList<>();
+
+        if (appPluginHook.getBaseExtension() == null){
+            return;
+        }
+        appPluginHook.getBaseExtension().getBuildTypes().forEach(buildType -> buildTypes.add(buildType.getName()));
+
+        if (!buildTypes.contains("debug")) {
+            buildTypes.add("debug");
+        }
+
+        if (!buildTypes.contains("release")) {
+            buildTypes.add("release");
+        }
+
+
+        for (String variantName : buildTypes) {
+
+            TBuildType atlasBuildType = (TBuildType) atlasExtension.getBuildTypes().maybeCreate(variantName);
+
+
+            if (null == atlasBuildType.getPatchConfig()) {
+                atlasBuildType.setPatchConfig((PatchConfig) atlasExtension.patchConfigs.maybeCreate(variantName));
+            }
+
+            if (null == atlasBuildType.getSigningConfig()) {
+                atlasBuildType.setSigningConfig(appPluginHook.getBaseExtension().getSigningConfigs().maybeCreate(variantName));
+            }
+
+            if (null == atlasBuildType.getMultiDexConfig()) {
+                atlasBuildType.setMultiDexConfig((MultiDexConfig) atlasExtension.multiDexConfigs.maybeCreate(variantName));
+            }
+        }
+
+    }
 }

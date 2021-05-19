@@ -325,49 +325,8 @@ public class AtlasConfigurationHelper {
 
     public void autoSetBuildTypes(AtlasExtension atlasExtension) {
 
-        List<String> buildTypes = new ArrayList<>();
 
-        if (project.getExtensions().findByType(AppExtension.class) == null){
-
-            return;
-        }
-        project.getExtensions().findByType(AppExtension.class).getBuildTypes().forEach(new Consumer<BuildType>() {
-            @Override
-            public void accept(BuildType buildType) {
-                buildTypes.add(buildType.getName());
-            }
-        });
-
-        if (!buildTypes.contains("debug")) {
-            buildTypes.add("debug");
-        }
-
-        if (!buildTypes.contains("release")) {
-            buildTypes.add("release");
-        }
-
-        if (!atlasExtension.getClass().getName().equals("com.taobao.android.builder.extension.AtlasExtension_Decorated")){
-            return;
-        }
-
-        for (String variantName : buildTypes) {
-
-            TBuildType atlasBuildType = (TBuildType) atlasExtension.getBuildTypes().maybeCreate(variantName);
-
-
-            if (null == atlasBuildType.getPatchConfig()) {
-                atlasBuildType.setPatchConfig((PatchConfig) atlasExtension.patchConfigs.maybeCreate(variantName));
-            }
-
-            if (null == atlasBuildType.getSigningConfig()) {
-                atlasBuildType.setSigningConfig(appPluginHook.getBaseExtension().getSigningConfigs().maybeCreate(variantName));
-            }
-
-            if (null == atlasBuildType.getMultiDexConfig()) {
-                atlasBuildType.setMultiDexConfig((MultiDexConfig) atlasExtension.multiDexConfigs.maybeCreate(variantName));
-            }
-        }
-
+        AtlasBuildContext.sBuilderAdapter.extensionFactory.configExtension(appPluginHook,atlasExtension);
 
     }
 
