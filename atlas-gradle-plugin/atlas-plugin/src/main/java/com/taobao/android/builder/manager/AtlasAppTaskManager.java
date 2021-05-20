@@ -356,7 +356,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
 
 
-                                                              if (!appVariantContext.getBuildType().getPatchConfig().isCreateIPatch()) {
+                                                              if (hasFeatures(appVariantContext.getVariantName()) && !appVariantContext.getBuildType().getPatchConfig().isCreateIPatch()) {
                                                                   mtlTaskContextList.add(new MtlTaskContext(PrepareBundleInfoTask.ConfigAction.class, null));
                                                                   mtlTaskContextList.add(new MtlTaskContext(GenerateBundleInfoSourceTask.ConfigAction.class, null));
                                                               }
@@ -661,6 +661,10 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                                                           }
                                                       }
         );
+    }
+
+    private boolean hasFeatures(String variantName) {
+        return AtlasBuildContext.androidDependencyTrees.get(variantName).getAwbBundles().size() > 0;
     }
 
 
