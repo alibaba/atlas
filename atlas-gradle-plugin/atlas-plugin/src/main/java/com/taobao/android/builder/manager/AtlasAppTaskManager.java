@@ -327,13 +327,18 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                                                               mtlTaskContextList.add(new MtlTaskContext(RenderscriptCompile.class));
 
+                                                              //merge assets的顺序应该在MergeShaders之后，放这里是为了安全图片的copy，万万不可动，暂时也没什么问题
+
 
                                                               mtlTaskContextList.add(new MtlTaskContext(MergeResources.class));
 
 
                                                               mtlTaskContextList.add(new MtlTaskContext("merge", "Shaders"));
 
+
                                                               mtlTaskContextList.add(new MtlTaskContext("merge", "Assets"));
+
+
 
                                                               if (atlasExtension.isAppBundlesEnabled() || atlasExtension.isFlexaEnabled()) {
                                                                   mtlTaskContextList.add(new MtlTaskContext(FeaturesParallelTask.CreationAssetsAction.class, null));
@@ -344,7 +349,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                                                               mtlTaskContextList.add(new MtlTaskContext(GenerateBuildConfig.class));
 
 
-                                                              if (!appVariantContext.getBuildType().getPatchConfig().isCreateIPatch()) {
+                                                              if ( hasFeatures(appVariantContext) && !appVariantContext.getBuildType().getPatchConfig().isCreateIPatch()) {
                                                                   mtlTaskContextList.add(new MtlTaskContext(PrepareBundleInfoTask.ConfigAction.class, null));
                                                                   mtlTaskContextList.add(new MtlTaskContext(GenerateBundleInfoSourceTask.ConfigAction.class, null));
                                                               }
@@ -431,9 +436,9 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                                                                   mtlTaskContextList.add(new MtlTaskContext(FinalizeBundleTask.class));
 
-                                                                  mtlTaskContextList.add(new MtlTaskContext(BundleToApkTask.class));
-
-                                                                  mtlTaskContextList.add(new MtlTaskContext(BundleToStandaloneApkTask.class));
+//                                                                  mtlTaskContextList.add(new MtlTaskContext(BundleToApkTask.class));
+//
+//                                                                  mtlTaskContextList.add(new MtlTaskContext(BundleToStandaloneApkTask.class));
 
 //                                                                  mtlTaskContextList.add(new MtlTaskContext(variantScope.getTaskContainer().getBundleTask().get().getClass()));
 
@@ -649,6 +654,11 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                                                           }
                                                       }
         );
+    }
+
+    private boolean hasFeatures(AppVariantContext appVariantContext) {
+
+        return AtlasBuildContext.androidDependencyTrees.get(appVariantContext.getVariantName()).getAwbBundles().size() > 0;
     }
 
 
