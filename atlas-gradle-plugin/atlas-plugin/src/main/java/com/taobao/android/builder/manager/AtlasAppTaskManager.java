@@ -569,7 +569,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                                                               for (final BaseVariantOutput vod : baseVariantOutputDataList) {
                                                                   transformReplacer.replaceMergeJavaResourcesTransform(appVariantContext, vod);
-                                                                  transformReplacer.replaceDexExternalLibMerge(vod);
+                                                                  transformReplacer.replaceDexExternalLibMerge(appVariantContext,vod);
                                                                   transformReplacer.replaceDexArchiveBuilderTransform(vod);
                                                                   transformReplacer.replaceDexMergeTransform(vod);
                                                                   transformReplacer.replaceMultidexTransform(vod);

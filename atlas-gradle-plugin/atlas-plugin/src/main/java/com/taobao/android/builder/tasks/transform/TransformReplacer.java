@@ -209,7 +209,12 @@ public class TransformReplacer {
     }
 
 
-    public void replaceDexExternalLibMerge(BaseVariantOutput vod) {
+    public void replaceDexExternalLibMerge(AppVariantContext appVariantContext,BaseVariantOutput vod) {
+        if (appVariantContext.getVariantConfiguration().getDexingType() != DexingType.LEGACY_MULTIDEX
+                && appVariantContext.getScope().getCodeShrinker() == null
+                && appVariantContext.getAppExtension().getTransforms().isEmpty()){
+            return;
+        }
         List<TransformTask> list = TransformManagerDelegate.findTransformTaskByTransformType(variantContext,
                 ExternalLibsMergerTransform.class);
         for (TransformTask transformTask : list) {
