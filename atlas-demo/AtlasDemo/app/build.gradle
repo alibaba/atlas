@@ -12,8 +12,8 @@ apply plugin: 'com.taobao.atlas'
 def appId = "com.taobao.demo"
 def minVersion = 14
 if (project.hasProperty("beta")) {
-	appId = "com.taobao.atlas.beta"
-	minVersion = 21
+    appId = "com.taobao.atlas.beta"
+    minVersion = 21
 }
 
 repositories {
@@ -51,155 +51,171 @@ android {
         }
     }
 
-        dataBinding {
-            enabled = true
-        }
-    bundle.abi.enableSplit=false
-    bundle.density.enableSplit=false
-    bundle.language.enableSplit=false
+
+    dataBinding {
+        enabled = true
+    }
+    bundle.abi.enableSplit = false
+    bundle.density.enableSplit = false
+    bundle.language.enableSplit = false
 
 
     compileOptions {
-            sourceCompatibility JavaVersion.VERSION_1_8
-            targetCompatibility JavaVersion.VERSION_1_8
-        }
-
-
-        buildTypes {
-            release {
-                minifyEnabled true
-		debuggable true
-                proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-                signingConfig signingConfigs.release
-
-            }
-            debug {
-                ndk {
-                    abiFilters "x86", "armeabi"
-                }
-
-            }
-
-
-        }
-
-}
-
-atlas {
-    instantAppEnabled false
-    atlasEnabled false
-    appBundlesEnabled false
-    tBuildConfig {
-//        preLaunch = 'com.taobao.demo.DemoPreLaunch'
-        aaptConstantId true
-	    title 'title_home'
-abortIfAddProvider false
-        featureConfigFile project.file('1.txt')
-        allBundlesToMdex  true
-        dynamicFeatures=['secondbundle']
-    }
-
-    multiDexConfigs{
-	debug{
-
-}
-
-
-}   
-
-    patchConfigs {
-        debug {
-//            createTPatch false
-        }
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
     }
 
 
     buildTypes {
+        release {
+            minifyEnabled true
+            debuggable true
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
+
+        }
         debug {
-            if (apVersion) {
-                baseApDependency "com.taobao.android.atlasdemo:AP-debug:${apVersion}@ap"
-                patchConfig patchConfigs.debug
+            ndk {
+                abiFilters "x86", "armeabi"
+            }
+
+        }
+
+        staging {
+            initWith debug
+
+        }
+
+    }
+    flavorDimensions "version"
+    productFlavors {
+        demo {
+            dimension "version"
+            applicationIdSuffix ".demo"
+            versionNameSuffix "-demo"
+        }
+        full {
+            dimension "version"
+            applicationIdSuffix ".full"
+            versionNameSuffix "-full"
+        }
+    }
+}
+
+    atlas {
+        instantAppEnabled false
+        appBundlesEnabled false
+        tBuildConfig {
+//        preLaunch = 'com.taobao.demo.DemoPreLaunch'
+            aaptConstantId true
+            title 'title_home'
+            abortIfAddProvider false
+            featureConfigFile project.file('1.txt')
+            allBundlesToMdex true
+            dynamicFeatures = ['secondbundle']
+        }
+
+        multiDexConfigs {
+            debug {
+
+            }
+
+
+        }
+
+        patchConfigs {
+            debug {
+//            createTPatch false
             }
         }
-    }
-}
 
 
-dependencies {
-
-    implementation fileTree(dir: 'libs', include: ['*.jar'])
-
-    implementation project(':middlewarelibrary')
-    implementation project(':splashscreen')
-    implementation project(':databindinglibrary')
-    api project(':firstbundle')
-    api project(':secondbundle')
-    api project(':remotebundle')
-    api project(':publicbundle')
-    api project(':databindbundle')
-    //noinspection GradleCompatible
-    implementation 'com.android.support:appcompat-v7:28.0.0'
-    implementation 'com.android.support:design:28.0.0'
-    implementation 'com.android.support:support-vector-drawable:28.0.0'
-    implementation 'com.android.support:support-v4:28.0.0'
-    api "com.google.android.play:core:1.5.0"
-    implementation 'com.alibaba:fastjson:1.1.45.android@jar'
-    implementation 'com.android.support.constraint:constraint-layout:1.0.2'
-    implementation 'com.android.support:recyclerview-v7:28.0.0'
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
-    
-}
-
-String getEnvValue(key, defValue) {
-    def val = System.getProperty(key);
-    if (null != val) {
-        return val;
-    }
-    val = System.getenv(key);
-    if (null != val) {
-        return val;
-    }
-    return defValue;
-}
-
-tasks.whenTaskAdded { task ->
-    if (task.name.contains("DebugAndroidTest")) {
-        task.setEnabled(false);
-    }
-    if (task.name.contains("assemble")) {
-        def files = null;
-        def file = new File(task.project.getBuildDir(), "outputs");
-        if (file.exists() && new File(file, "tpatch-debug").exists()) {
-            files = new File(file, "tpatch-debug").listFiles();
-        }
-        if (files != null) {
-            for (File file1 : files) {
-                if (file1.getName().endsWith(".json") || file1.getName().endsWith(".tpatch")) {
-
-                    if (!new File(task.project.getRootDir(), "hisTpatch").exists()) {
-                        new File(task.project.getRootDir(), "hisTpatch").mkdirs();
-                    }
-                    org.apache.commons.io.FileUtils.copyFileToDirectory(file1, new File(task.project.getRootDir(), "hisTpatch"));
+        buildTypes {
+            debug {
+                if (apVersion) {
+                    baseApDependency "com.taobao.android.atlasdemo:AP-debug:${apVersion}@ap"
+                    patchConfig patchConfigs.debug
                 }
             }
         }
     }
-}
 
-apply plugin: 'maven'
-apply plugin: 'maven-publish'
 
-publishing {
-    repositories {
-        mavenLocal()
+    dependencies {
+
+        implementation fileTree(dir: 'libs', include: ['*.jar'])
+
+        implementation project(':middlewarelibrary')
+        implementation project(':splashscreen')
+        implementation project(':databindinglibrary')
+        api project(':firstbundle')
+        api project(':secondbundle')
+        api project(':remotebundle')
+        api project(':publicbundle')
+        api project(':databindbundle')
+        //noinspection GradleCompatible
+        implementation 'com.android.support:appcompat-v7:28.0.0'
+        implementation 'com.android.support:design:28.0.0'
+        implementation 'com.android.support:support-vector-drawable:28.0.0'
+        implementation 'com.android.support:support-v4:28.0.0'
+        api "com.google.android.play:core:1.5.0"
+        implementation 'com.alibaba:fastjson:1.1.45.android@jar'
+        implementation 'com.android.support.constraint:constraint-layout:1.0.2'
+        implementation 'com.android.support:recyclerview-v7:28.0.0'
+        implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+
     }
-}
 
-publishing {
-    publications {
-        maven(MavenPublication) {
-            artifact "${project.buildDir}/outputs/apk/debug/${project.name}-debug.ap"
-            artifactId "AP-debug"
+    String getEnvValue(key, defValue) {
+        def val = System.getProperty(key);
+        if (null != val) {
+            return val;
+        }
+        val = System.getenv(key);
+        if (null != val) {
+            return val;
+        }
+        return defValue;
+    }
+
+    tasks.whenTaskAdded { task ->
+        if (task.name.contains("DebugAndroidTest")) {
+            task.setEnabled(false);
+        }
+        if (task.name.contains("assemble")) {
+            def files = null;
+            def file = new File(task.project.getBuildDir(), "outputs");
+            if (file.exists() && new File(file, "tpatch-debug").exists()) {
+                files = new File(file, "tpatch-debug").listFiles();
+            }
+            if (files != null) {
+                for (File file1 : files) {
+                    if (file1.getName().endsWith(".json") || file1.getName().endsWith(".tpatch")) {
+
+                        if (!new File(task.project.getRootDir(), "hisTpatch").exists()) {
+                            new File(task.project.getRootDir(), "hisTpatch").mkdirs();
+                        }
+                        org.apache.commons.io.FileUtils.copyFileToDirectory(file1, new File(task.project.getRootDir(), "hisTpatch"));
+                    }
+                }
+            }
         }
     }
-}
+
+    apply plugin: 'maven'
+    apply plugin: 'maven-publish'
+
+    publishing {
+        repositories {
+            mavenLocal()
+        }
+    }
+
+    publishing {
+        publications {
+            maven(MavenPublication) {
+                artifact "${project.buildDir}/outputs/apk/debug/${project.name}-debug.ap"
+                artifactId "AP-debug"
+            }
+        }
+    }
