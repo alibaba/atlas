@@ -339,7 +339,6 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                                                               mtlTaskContextList.add(new MtlTaskContext("merge", "Assets"));
 
 
-
                                                               if (atlasExtension.isAppBundlesEnabled() || atlasExtension.isFlexaEnabled()) {
                                                                   mtlTaskContextList.add(new MtlTaskContext(FeaturesParallelTask.CreationAssetsAction.class, null));
                                                                   mtlTaskContextList.add(new MtlTaskContext(FeaturesParallelTask.MergeResourceAction.class, null));
@@ -349,7 +348,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
                                                               mtlTaskContextList.add(new MtlTaskContext(GenerateBuildConfig.class));
 
 
-                                                              if ( hasFeatures(appVariantContext) && !appVariantContext.getBuildType().getPatchConfig().isCreateIPatch()) {
+                                                              if (hasFeatures(appVariantContext.getVariantName()) && !appVariantContext.getBuildType().getPatchConfig().isCreateIPatch()) {
                                                                   mtlTaskContextList.add(new MtlTaskContext(PrepareBundleInfoTask.ConfigAction.class, null));
                                                                   mtlTaskContextList.add(new MtlTaskContext(GenerateBundleInfoSourceTask.ConfigAction.class, null));
                                                               }
@@ -562,7 +561,7 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
 
                                                               for (final BaseVariantOutput vod : baseVariantOutputDataList) {
                                                                   transformReplacer.replaceMergeJavaResourcesTransform(appVariantContext, vod);
-                                                                  transformReplacer.replaceDexExternalLibMerge(vod);
+                                                                  transformReplacer.replaceDexExternalLibMerge(appVariantContext, vod);
                                                                   transformReplacer.replaceDexArchiveBuilderTransform(vod);
                                                                   transformReplacer.replaceDexMergeTransform(vod);
                                                                   transformReplacer.replaceMultidexTransform(vod);
@@ -656,9 +655,9 @@ public class AtlasAppTaskManager extends AtlasBaseTaskManager {
         );
     }
 
-    private boolean hasFeatures(AppVariantContext appVariantContext) {
 
-        return AtlasBuildContext.androidDependencyTrees.get(appVariantContext.getVariantName()).getAwbBundles().size() > 0;
+    private boolean hasFeatures(String variantName) {
+        return AtlasBuildContext.androidDependencyTrees.get(variantName).getAwbBundles().size() > 0;
     }
 
 

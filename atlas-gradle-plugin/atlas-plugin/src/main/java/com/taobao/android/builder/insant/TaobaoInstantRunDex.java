@@ -68,15 +68,22 @@ public class TaobaoInstantRunDex extends Transform {
     private FileCollection bootClasspath;
     private boolean enableDesugaring;
 
-    public PreloadJarHooker getPreloadJarHooker() {
-        return preloadJarHooker;
+
+    public void registerPreloadJarHooker(PreloadJarHooker preloadJarHooker) {
+        this.preloadJarHookers.add(preloadJarHooker);
     }
 
-    public void setPreloadJarHooker(PreloadJarHooker preloadJarHooker) {
-        this.preloadJarHooker = preloadJarHooker;
+
+    public void registerPreloadDexHooker(PreloadDexHooker preloadDexHooker) {
+        this.preloadDexHookers.add(preloadDexHooker);
     }
 
-    private PreloadJarHooker preloadJarHooker;
+
+    private List<PreloadJarHooker> preloadJarHookers = new ArrayList<PreloadJarHooker>();
+
+
+    private List<PreloadDexHooker> preloadDexHookers = new ArrayList<PreloadDexHooker>();
+
     @NonNull
     private final InstantRunVariantScope variantScope;
     private final int minSdkForDx;
@@ -103,7 +110,7 @@ public class TaobaoInstantRunDex extends Transform {
     public void transform(@NonNull TransformInvocation invocation)
             throws IOException, TransformException, InterruptedException {
 
-        if (!variantContext.getBuildType().getPatchConfig().isCreateIPatch()){
+        if (!variantContext.getBuildType().getPatchConfig().isCreateIPatch()) {
             return;
         }
         File outputFolder = variantScope.getReloadDexOutputFolder();
@@ -113,7 +120,7 @@ public class TaobaoInstantRunDex extends Transform {
 //                variantScope.getGlobalScope().isActive(OptionalCompilationStep.RESTART_ONLY);
 
 //        if (!changesAreCompatible || restartDexRequested) {
-            FileUtils.cleanOutputDir(outputFolder);
+        FileUtils.cleanOutputDir(outputFolder);
 //            return;
 //        }
 
@@ -161,8 +168,10 @@ public class TaobaoInstantRunDex extends Transform {
 //            return;
         }
 
-        if (preloadJarHooker != null && classesJar.exists()){
-           classesJar = preloadJarHooker.process(classesJar);
+        if (preloadJarHookers.size() > 0 && classesJar.exists()) {
+            for (PreloadJarHooker preloadJarHooker : preloadJarHookers) {
+                classesJar = preloadJarHooker.process(classesJar);
+            }
         }
 
 
@@ -175,10 +184,18 @@ public class TaobaoInstantRunDex extends Transform {
                 variantScope
                         .getInstantRunBuildContext()
                         .startRecording(InstantRunBuildContext.TaskType.INSTANT_RUN_DEX);
-                convertByteCode(classesJar, getClasspath(invocation),outputFolder);
+                convertByteCode(classesJar, getClasspath(invocation), outputFolder);
+
+                File finalFile = new File(outputFolder, "classes.dex");
+                if (preloadDexHookers.size() > 0 && finalFile.exists()) {
+                    for (PreloadDexHooker preloadDexHooker : preloadDexHookers) {
+                        finalFile = preloadDexHooker.process(finalFile);
+                    }
+                }
+
                 variantScope
                         .getInstantRunBuildContext()
-                        .addChangedFile(FileType.RELOAD_DEX, new File(outputFolder, "classes.dex"));
+                        .addChangedFile(FileType.RELOAD_DEX, finalFile);
             } catch (Exception e) {
                 throw new TransformException(e);
             } finally {
@@ -190,24 +207,23 @@ public class TaobaoInstantRunDex extends Transform {
         }
 
 
-
-            variantScope.getInstantRunBuildContext().close();
+        variantScope.getInstantRunBuildContext().close();
 
 
         if (variantContext.getScope().getInstantRunBuildContext().isInInstantRunMode()) {
-            List<File>patchFiles = new ArrayList<>();
+            List<File> patchFiles = new ArrayList<>();
             InstantRunBuildContext instantRunBuildContext = variantContext.getScope().getInstantRunBuildContext();
             InstantRunBuildContext.Artifact artifact = instantRunBuildContext.getLastBuild().getArtifactForType(FileType.RELOAD_DEX);
-            if (artifact!= null) {
+            if (artifact != null) {
                 File patchFile = artifact.getLocation();
-                if (patchFile!= null && patchFile.exists()) {
+                if (patchFile != null && patchFile.exists()) {
                     patchFiles.add(patchFile);
                 }
             }
             InstantRunBuildContext.Artifact resArtifact = instantRunBuildContext.getLastBuild().getArtifactForType(FileType.RESOURCES);
-            if (resArtifact!= null) {
+            if (resArtifact != null) {
                 File resFile = resArtifact.getLocation();
-                if (resFile!= null && resFile.exists()) {
+                if (resFile != null && resFile.exists()) {
                     patchFiles.add(resFile);
 
                 }
@@ -216,7 +232,7 @@ public class TaobaoInstantRunDex extends Transform {
             if (patchFiles.size() > 0) {
                 File finalFile = variantContext.getAppVariantOutputContext(ApkDataUtils.get(variantOutput)).getIPatchFile(baseVersion);
                 zipPatch(finalFile, patchFiles);
-            }else {
+            } else {
                 logger.warning("patchFiles is not exist or no classes is modified!");
             }
             return;
@@ -230,7 +246,6 @@ public class TaobaoInstantRunDex extends Transform {
 
         return bootClasspath.getFiles().stream().map(File::toPath).collect(Collectors.toList());
     }
-
 
 
     @VisibleForTesting
@@ -360,7 +375,7 @@ public class TaobaoInstantRunDex extends Transform {
     public static void zipPatch(File file, List<File> patchFiles) throws IOException {
         FileOutputStream fOutputStream = new FileOutputStream(file);
         ZipOutputStream zoutput = new ZipOutputStream(fOutputStream);
-        for (File patchFile:patchFiles) {
+        for (File patchFile : patchFiles) {
             BufferedInputStream inputStream = new BufferedInputStream(new FileInputStream(patchFile));
             byte[] BUFFER = new byte[4096];
 
@@ -379,9 +394,14 @@ public class TaobaoInstantRunDex extends Transform {
     }
 
 
-    public static interface PreloadJarHooker{
+    public static interface PreloadJarHooker {
 
         File process(File jarFile);
+    }
+
+    public static interface PreloadDexHooker {
+        File process(File jarFile);
+
     }
 }
 

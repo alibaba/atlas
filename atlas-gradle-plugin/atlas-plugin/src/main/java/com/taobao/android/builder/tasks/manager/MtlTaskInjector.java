@@ -212,6 +212,7 @@ package com.taobao.android.builder.tasks.manager;
 import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.api.VariantContext;
 import com.android.build.gradle.internal.tasks.AndroidBuilderTask;
+import com.android.build.gradle.internal.tasks.VariantAwareTask;
 import com.android.builder.core.AndroidBuilder;
 import org.apache.commons.lang.StringUtils;
 import org.gradle.api.Project;
@@ -335,17 +336,14 @@ public class MtlTaskInjector {
             if (task.getName().endsWith("TestJavaWithJavac")){
                 continue;
             }
-            if (variantName.contains("-")){
-                variantName = variantName.replace("-","");
-            }
             if (task instanceof AndroidBuilderTask) {
 
-                if (variantName.toLowerCase().equals(((AndroidBuilderTask)task).getVariantName().toLowerCase())) {
+                if (variantName.equalsIgnoreCase(((AndroidBuilderTask)task).getVariantName())) {
                     taskList.add(task);
                 }
-            } else {
-                String name = task.getName();
-                if (name.toLowerCase().contains(variantName.toLowerCase())) {
+            } else if (task instanceof VariantAwareTask){
+                String name = ((VariantAwareTask) task).getVariantName();
+                if (name.equalsIgnoreCase(variantName)) {
                     taskList.add(task);
                 }
             }

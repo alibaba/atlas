@@ -133,13 +133,16 @@ public class TransformReplacer {
                 DexingType dexingType = null;
                 FileCollection multidexFiles = null;
                 boolean isDebuggable = variantContext.getScope().getVariantConfiguration().getBuildType().isDebuggable();
+                if (variantContext.getScope().getInstantRunBuildContext().isInInstantRunMode()){
+                    isDebuggable = variantContext.getBuildType().isDebuggable();
+                }
+
                 if (variantContext.getScope().getInstantRunBuildContext().isInInstantRunMode()
                         && !variantContext.getProject().hasProperty("devMode")
                         && variantContext.getScope().getMinSdkVersion().getFeatureLevel() < 21) {
                     variantContext.getProject().getLogger().warn("LEGACY_MULTIDEX need maindexlist");
                     dexingType = DexingType.LEGACY_MULTIDEX;
                     instantRunMode = true;
-                    isDebuggable = variantContext.getBuildType().isDebuggable();
                     multidexFiles = variantContext.getProject().files(MainDexListProvider.getInstance().getMainDexList(variantContext));
                 } else {
                     variantContext.getProject().getLogger().warn("NATIVE_MULTIDEX no need maindexlist");
@@ -209,7 +212,12 @@ public class TransformReplacer {
     }
 
 
-    public void replaceDexExternalLibMerge(BaseVariantOutput vod) {
+    public void replaceDexExternalLibMerge(AppVariantContext appVariantContext,BaseVariantOutput vod) {
+        if (appVariantContext.getVariantConfiguration().getDexingType() != DexingType.LEGACY_MULTIDEX
+                && appVariantContext.getScope().getCodeShrinker() == null
+                && appVariantContext.getAppExtension().getTransforms().isEmpty()){
+            return;
+        }
         List<TransformTask> list = TransformManagerDelegate.findTransformTaskByTransformType(variantContext,
                 ExternalLibsMergerTransform.class);
         for (TransformTask transformTask : list) {
