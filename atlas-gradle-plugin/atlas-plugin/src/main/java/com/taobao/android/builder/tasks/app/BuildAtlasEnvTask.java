@@ -498,6 +498,12 @@ public class BuildAtlasEnvTask extends AndroidBuilderTask {
         ReflectUtils.updateField(processAndroidResources, "dependenciesFileCollection", getProject().files(filesNames));
 
 
+        if (appVariantContext.getAtlasExtension().getTBuildConfig().isFeatureApk()) {
+            ReflectUtils.updateField(processAndroidResources, "resOffsetSupplier", (Supplier<Integer>) () -> 0x7e);
+        }
+
+
+
         if (appVariantContext.getAtlasExtension().isAppBundlesEnabled() && appVariantContext.getAtlasExtension().getTBuildConfig().getDynamicFeatures().size() > 0 && appVariantContext.getVariantConfiguration().getBuildType().isMinifyEnabled()) {
             List<TransformTask> tasks = TransformManagerDelegate.findTransformTaskByTransformType(appVariantContext, DelegateMergeClassesTransform.class);
             if (tasks != null && tasks.size() > 0) {

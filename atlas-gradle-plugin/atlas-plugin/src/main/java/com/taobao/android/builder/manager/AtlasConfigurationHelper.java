@@ -488,6 +488,7 @@ public class AtlasConfigurationHelper {
         Usage apiUsage = project.getObjects().named(Usage.class, Usage.JAVA_API);
 
 
+
         dependencyHandler.registerTransform(
                 transform -> {
                     transform.getFrom().attribute(ARTIFACT_FORMAT, AtlasAndroidArtifacts.TYPE_AWB);
