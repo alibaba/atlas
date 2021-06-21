@@ -255,7 +255,6 @@ import java.util.List;
  */
 public class StandardizeLibManifestTask extends AndroidBuilderTask {
 
-    @InputFile
     File mainManifestFile;
 
 
@@ -283,6 +282,7 @@ public class StandardizeLibManifestTask extends AndroidBuilderTask {
         AtlasDependencyTree dependencyTree = AtlasBuildContext.androidDependencyTrees.get(appVariantContext.getVariantName());
         androidLibraries = dependencyTree.getAllAndroidLibrarys();
 
+        mainManifestFile = appVariantContext.getVariantConfiguration().getMainManifest();
 
         ExecutorServicesHelper executorServicesHelper = new ExecutorServicesHelper("StandardizeLibManifestTask",
                                                                                    getLogger(), 0);
@@ -405,7 +405,6 @@ public class StandardizeLibManifestTask extends AndroidBuilderTask {
             VariantScope variantScope = appVariantContext.getScope();
             final GradleVariantConfiguration config = variantScope.getVariantConfiguration();
 
-            task.mainManifestFile = config.getMainManifest();
             task.libraryManifests = variantScope.getArtifactCollection(AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH, AndroidArtifacts.ArtifactScope.ALL, AndroidArtifacts.ArtifactType.MANIFEST);
             task.appVariantContext = appVariantContext;
 
