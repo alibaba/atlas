@@ -287,6 +287,7 @@ public class AwbProguardConfiguration {
             if (awbTransform.getAwbBundle().dynamicFeature
                     && appVariantOutputContext.getVariantContext().getAtlasExtension().isFlexaEnabled()
                     && appVariantOutputContext.getVariantContext().getAtlasExtension().isFeaturesMergeInOneEnabled()) {
+
                 if (StringUtils.isEmpty(System.getProperty(DelegateProguardTransform.NEW_MAPPER_LIST))) {
                     System.getProperties().setProperty(DelegateProguardTransform.NEW_MAPPER_LIST, new Gson().toJson(awbTransform.getAwbBundle().getPackageNames()));
                 } else {
@@ -298,9 +299,8 @@ public class AwbProguardConfiguration {
                 }
             }
             if (awbTransform.getAwbBundle().dynamicFeature
-                    && (appVariantOutputContext.getVariantContext().getAtlasExtension().isAppBundlesEnabled()
-                    || (appVariantOutputContext.getVariantContext().getAtlasExtension().isFlexaEnabled()
-                    && appVariantOutputContext.getVariantContext().getAtlasExtension().isFeaturesMergeInOneEnabled()))) {
+                    && ((appVariantOutputContext.getVariantContext().getAtlasExtension().isAppBundlesEnabled()
+                    || (appVariantOutputContext.getVariantContext().getAtlasExtension().isFlexaEnabled())))) {
                 if (StringUtils.isEmpty(System.getProperty(DelegateProguardTransform.BLACK_LIST))) {
                     System.getProperties().setProperty(DelegateProguardTransform.BLACK_LIST, new Gson().toJson(awbTransform.getAwbBundle().getPackageNames()));
                 } else {
