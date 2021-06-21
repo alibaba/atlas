@@ -823,6 +823,17 @@ public class TBuildConfig {
     private boolean supportAddCallSuper = false;
 
 
+    public boolean isFeatureApk() {
+        return featureApk;
+    }
+
+    public void setFeatureApk(boolean featureApk) {
+        this.featureApk = featureApk;
+    }
+
+    private boolean featureApk = false;
+
+
 
     public boolean isSupportAddCallSuper() {
         return supportAddCallSuper;

@@ -460,7 +460,9 @@ public class BuildAtlasEnvTask extends AndroidBuilderTask {
         ReflectUtils.updateField(processAndroidResources, "dependenciesFileCollection", getProject().files(filesNames));
 
 
-        ReflectUtils.updateField(processAndroidResources, "resOffsetSupplier", (Supplier<Integer>) () -> 0x7e);
+        if (appVariantContext.getAtlasExtension().getTBuildConfig().isFeatureApk()) {
+            ReflectUtils.updateField(processAndroidResources, "resOffsetSupplier", (Supplier<Integer>) () -> 0x7e);
+        }
 
 
 
