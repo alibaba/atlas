@@ -244,12 +244,24 @@ public class PrepareAaptTask extends AndroidBuilderTask {
             aaptOptions.setAdditionalParameters(new ArrayList<String>());
         }
 
+
 //        processAndroidResources.setAndroidBuilder(getBuilder());
         ((LinkApplicationAndroidResourcesTask)processAndroidResources).setAaptOptions(aaptOptions);
 
         ApContext apContext = appVariantContext.apContext;
 
-        //default use aapt2
+
+        if (appVariantContext.getAtlasExtension().getTBuildConfig().isFeatureApk()) {
+            aaptOptions.getAdditionalParameters().add("--allow-reserved-package-id");
+
+            aaptOptions.getAdditionalParameters().add("--package-id");
+
+            aaptOptions.getAdditionalParameters().add("0x7e");
+
+        }
+
+
+            //default use aapt2
 //        if (((LinkApplicationAndroidResourcesTask)processAndroidResources).()) {
             aaptOptions.getAdditionalParameters().add("--emit-ids");
             aaptOptions.getAdditionalParameters().add(new File(getProject().getBuildDir(),

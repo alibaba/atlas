@@ -250,6 +250,8 @@ public class TransformReplacer {
     public void repalaceSomeInstantTransform(BaseVariantOutput vod) {
 
         variantContext.getProject().getTasks().withType(FastDeployRuntimeExtractorTask.class).forEach(fastDeployRuntimeExtractorTask -> fastDeployRuntimeExtractorTask.setEnabled(false));
+        variantContext.getProject().getTasks().withType(InstantRunSplitApkResourcesBuilder.class).forEach(instantRunSplitApkResourcesBuilder -> instantRunSplitApkResourcesBuilder.setEnabled(false));
+
         List<TransformTask> baseTransforms = TransformManagerDelegate.findTransformTaskByTransformType(
                 variantContext, InstantRunDependenciesApkBuilder.class);
         if (baseTransforms != null && baseTransforms.size() > 0) {
@@ -317,15 +319,6 @@ public class TransformReplacer {
             }
         }
 
-        List<TransformTask> transformTaskList1 = TransformManagerDelegate.findTransformTaskByTransformType(
-                variantContext, InstantRunSplitApkResourcesBuilder.class);
-        if (transformTaskList1 != null && transformTaskList1.size() > 0) {
-            for (TransformTask transformTask : transformTaskList1) {
-                transformTask.setEnabled(false);
-//                TaobaoInstantRunSlicer taobaoInstantRunSlicer = new TaobaoInstantRunSlicer(variantContext.getProject().getLogger(),variantContext.getScope());
-//                ReflectUtils.updateField(transformTask,"transform",taobaoInstantRunSlicer);
-            }
-        }
 
 
     }

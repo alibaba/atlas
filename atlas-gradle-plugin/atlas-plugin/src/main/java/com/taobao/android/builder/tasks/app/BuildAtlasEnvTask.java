@@ -25,12 +25,14 @@ import com.android.build.gradle.options.BooleanOption;
 import com.android.build.gradle.tasks.MergeResources;
 import com.android.build.gradle.tasks.MergeSourceSetFolders;
 import com.android.build.gradle.tasks.ProcessAndroidResources;
+import com.android.builder.core.VariantTypeImpl;
 import com.android.builder.dependency.level2.AndroidDependency;
 import com.android.builder.model.AndroidLibrary;
 import com.android.builder.model.JavaLibrary;
 import com.android.ide.common.symbols.SymbolIo;
 import com.google.common.collect.*;
 
+import com.google.wireless.android.sdk.stats.GradleBuildVariant;
 import com.taobao.android.builder.AtlasBuildContext;
 import com.taobao.android.builder.dependency.AtlasDependencyTree;
 import com.taobao.android.builder.dependency.model.AwbBundle;
@@ -498,23 +500,14 @@ public class BuildAtlasEnvTask extends AndroidBuilderTask {
         ReflectUtils.updateField(processAndroidResources, "dependenciesFileCollection", getProject().files(filesNames));
 
 
-        if (appVariantContext.getAtlasExtension().getTBuildConfig().isFeatureApk()) {
-            ReflectUtils.updateField(processAndroidResources, "resOffsetSupplier", (Supplier<Integer>) () -> 0x7e);
-        }
-
-
-
         if (appVariantContext.getAtlasExtension().isAppBundlesEnabled() && appVariantContext.getAtlasExtension().getTBuildConfig().getDynamicFeatures().size() > 0 && appVariantContext.getVariantConfiguration().getBuildType().isMinifyEnabled()) {
             List<TransformTask> tasks = TransformManagerDelegate.findTransformTaskByTransformType(appVariantContext, DelegateMergeClassesTransform.class);
             if (tasks != null && tasks.size() > 0) {
-                tasks.forEach(new Consumer<TransformTask>() {
-                    @Override
-                    public void accept(TransformTask transformTask) {
-                        File outputJar = appVariantContext.getScope().getMergedClassesJarFile();
-                        DelegateMergeClassesTransform delegateMergeClassesTransform = (DelegateMergeClassesTransform) transformTask.getTransform();
-                        delegateMergeClassesTransform.setOutputJarFile(outputJar);
-                        atlasDependencyTree.getMainBundle().setMergeJarFile(outputJar);
-                    }
+                tasks.forEach(transformTask -> {
+                    File outputJar = appVariantContext.getScope().getMergedClassesJarFile();
+                    DelegateMergeClassesTransform delegateMergeClassesTransform = (DelegateMergeClassesTransform) transformTask.getTransform();
+                    delegateMergeClassesTransform.setOutputJarFile(outputJar);
+                    atlasDependencyTree.getMainBundle().setMergeJarFile(outputJar);
                 });
             }
 
