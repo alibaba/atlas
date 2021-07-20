@@ -849,10 +849,13 @@ public class TaobaoInstantRunTransform extends Transform {
             File patchClassInfo = new File(variantContext.getProject().getBuildDir(), "outputs/patchClassInfo.json");
             org.apache.commons.io.FileUtils.writeStringToFile(patchClassInfo, JSON.toJSONString(modifyClasses));
             modifyClasses.entrySet().forEach(stringStringEntry -> LOGGER.warning(stringStringEntry.getKey() + ":" + stringStringEntry.getValue()));
-            writePatchFileContents(
-                    generatedClassNames,
-                    classes3Folder,
-                    transformScope.getInstantRunBuildContext().getBuildId());
+
+            if (modifyClasses.values().contains(ModifyClassFinder.PatchPolicy.MODIFY.name())) {
+                writePatchFileContents(
+                        generatedClassNames,
+                        classes3Folder,
+                        transformScope.getInstantRunBuildContext().getBuildId());
+            }
         }
     }
 
