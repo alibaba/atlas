@@ -96,9 +96,9 @@ public class TBIncrementalChangeVisitor extends TBIncrementalVisitor {
         super.visit(version, Opcodes.ACC_PUBLIC | Opcodes.ACC_SUPER,
                 name + OVERRIDE_SUFFIX, signature, "java/lang/Object",
                 new String[]{TBIncrementalSupportVisitor.ALI_CHANGE_TYPE.getInternalName()});
-        if (changes.size() > 0){
-            Asserts.check(classAndInterfaceNode.getClassNode().methods.size() == TaobaoInstantRunTransform.mappingReaderProcess.classMethods.get(name.replace("/",".")).get(),
-                    "there has method REMOVE/ADD in modify class:"+name);
+        if (changes.size() > 0) {
+            Asserts.check(classAndInterfaceNode.getClassNode().methods.size() == TaobaoInstantRunTransform.mappingReaderProcess.classMethods.get(name.replace("/", ".")).get(),
+                    "there has method REMOVE/ADD in modify class:" + name);
         }
         if (DEBUG) {
             System.out.println(">>>>>>>> Processing " + name + "<<<<<<<<<<<<<");
@@ -166,6 +166,10 @@ public class TBIncrementalChangeVisitor extends TBIncrementalVisitor {
         }
 
         boolean isStatic = (access & Opcodes.ACC_STATIC) != 0;
+        boolean isNative = (access & Opcodes.ACC_NATIVE) != 0;
+        boolean isAbstract = (access & Opcodes.ACC_ABSTRACT) != 0;
+
+
         String newDesc = computeOverrideMethodDesc(desc, isStatic);
 
         if (DEBUG) {
@@ -202,11 +206,89 @@ public class TBIncrementalChangeVisitor extends TBIncrementalVisitor {
             addedMethods.add(constructor.body);
             return null;
         } else {
+
             String newName = isStatic ? computeOverrideMethodName(name, desc) : name;
+
+            if (isNative) {
+                return createNativeMethodAdapter(access, name, newName, desc, newDesc, signature, exceptions,
+                        isStatic /* isConstructor */);
+            }
+
+            if (isAbstract) {
+                return createAbstractMethodAdapter(access, name, newName, desc, newDesc, signature, exceptions);
+            }
+
             return createMethodAdapter(access, newName, newDesc, newDesc, signature, exceptions,
                     isStatic, false /* isConstructor */);
         }
     }
+
+    private MethodVisitor createNativeMethodAdapter(int access, String name, String newName, String originalDesc, String newDesc, String signature, String[] exceptions, boolean isStatic) {
+        MethodVisitor mv = super.visitMethod(access, newName, newDesc, signature, exceptions);
+        if (mv != null) {
+            mv = new TBIncrementalChangeVisitor.NativeISVisitor(mv, access, newName, newDesc, isStatic, false);
+        }
+        mv.visitCode();
+        AccessRight accessRight = ((ISVisitor) mv).getMethodAccessRight(visitedClassName, name, originalDesc);
+        ((GeneratorAdapter) mv).loadArgs();
+        if (!isStatic) {
+            if (accessRight != AccessRight.PUBLIC) {
+                ((ISVisitor) mv).pushMethodRedirectArgumentsOnStack(name, originalDesc);
+                ((ISVisitor) mv).invokeStatic(ALI_RUNTIME_TYPE, Method.getMethod(
+                        "Object invokeProtectedMethod(Object, Object[], Class[], String)"));
+                ((ISVisitor) mv).handleReturnType(originalDesc);
+            } else {
+                ((GeneratorAdapter) mv).loadArgs();
+                ((GeneratorAdapter) mv).invokeVirtual(Type.getType("L" + visitedClassName + ";"), new Method(name, originalDesc));
+
+            }
+
+        } else {
+            if (accessRight != AccessRight.PUBLIC) {
+                ((ISVisitor) mv).pushMethodRedirectArgumentsOnStack(name, originalDesc);
+                ((ISVisitor) mv).visitLdcInsn(Type.getType("L" + visitedClassName + ";"));
+                ((ISVisitor) mv).invokeStatic(ALI_RUNTIME_TYPE, Method.getMethod(
+                        "Object invokeProtectedStaticMethod(Object[], Class[], String, Class)"));
+                ((ISVisitor) mv).handleReturnType(originalDesc);
+            } else {
+                ((GeneratorAdapter) mv).invokeStatic(Type.getType("L" + visitedClassName + ";"), new Method(name, originalDesc));
+            }
+        }
+        ((GeneratorAdapter) mv).returnValue();
+
+        ((GeneratorAdapter) mv).endMethod();
+
+        return new JSRInlinerAdapter(mv, access, newName, newDesc, signature, exceptions);
+
+    }
+
+
+    private MethodVisitor createAbstractMethodAdapter(int access, String name, String newName, String originalDesc, String newDesc, String signature, String[] exceptions) {
+        MethodVisitor mv = super.visitMethod(access, newName, newDesc, signature, exceptions);
+        if (mv != null) {
+            mv = new TBIncrementalChangeVisitor.AbstractISVisitor(mv, access, newName, newDesc, false, false);
+        }
+        mv.visitCode();
+        AccessRight accessRight = ((ISVisitor) mv).getMethodAccessRight(visitedClassName, name, originalDesc);
+        ((GeneratorAdapter) mv).loadArgs();
+        if (accessRight != AccessRight.PUBLIC) {
+            ((ISVisitor) mv).pushMethodRedirectArgumentsOnStack(name, originalDesc);
+            ((ISVisitor) mv).invokeStatic(ALI_RUNTIME_TYPE, Method.getMethod(
+                    "Object invokeProtectedMethod(Object, Object[], Class[], String)"));
+            ((ISVisitor) mv).handleReturnType(originalDesc);
+        } else {
+            ((GeneratorAdapter) mv).loadArgs();
+            ((GeneratorAdapter) mv).invokeVirtual(Type.getType("L" + visitedClassName + ";"), new Method(name, originalDesc));
+        }
+
+        ((GeneratorAdapter) mv).returnValue();
+
+        ((GeneratorAdapter) mv).endMethod();
+
+        return new JSRInlinerAdapter(mv, access, newName, newDesc, signature, exceptions);
+
+    }
+
 
     /**
      * Creates a method adapter that will instrument to original code in such a way that it can
@@ -260,6 +342,36 @@ public class TBIncrementalChangeVisitor extends TBIncrementalVisitor {
 
     }
 
+
+    public class NativeISVisitor extends ISVisitor {
+
+        public NativeISVisitor(MethodVisitor mv,
+                               int access,
+                               String name,
+                               String desc,
+                               boolean isStatic,
+                               boolean isConstructor) {
+            super(mv, access, name, desc, isStatic, isConstructor);
+        }
+
+
+    }
+
+
+    public class AbstractISVisitor extends ISVisitor {
+
+        public AbstractISVisitor(MethodVisitor mv,
+                                 int access,
+                                 String name,
+                                 String desc,
+                                 boolean isStatic,
+                                 boolean isConstructor) {
+            super(mv, access, name, desc, isStatic, isConstructor);
+        }
+
+
+    }
+
     public class ISVisitor extends GeneratorAdapter {
 
         private final boolean isStatic;
@@ -308,7 +420,7 @@ public class TBIncrementalChangeVisitor extends TBIncrementalVisitor {
                 accessRight = AccessRight.PUBLIC;
             } else {
                 // check the field access bits.
-                 accessRight = getFieldAccessRightByName(name);
+                accessRight = getFieldAccessRightByName(name);
                 if (accessRight == null) {
                     // If this is an inherited field, we might not have had access to the parent
                     // bytecode. In such a case, treat it as private.
@@ -826,7 +938,7 @@ public class TBIncrementalChangeVisitor extends TBIncrementalVisitor {
          * @param desc  the method signature
          * @return the {@link AccessRight} for that method.
          */
-        private AccessRight getMethodAccessRight(String owner, String name, String desc) {
+        public AccessRight getMethodAccessRight(String owner, String name, String desc) {
             AccessRight accessRight;
             if (owner.equals(visitedClassName)) {
                 accessRight = getMethodAccessRightByName(name, desc);
@@ -867,7 +979,7 @@ public class TBIncrementalChangeVisitor extends TBIncrementalVisitor {
          * @param name the original method name.
          * @param desc the original method signature.
          */
-        private void pushMethodRedirectArgumentsOnStack(String name, String desc) {
+        public void pushMethodRedirectArgumentsOnStack(String name, String desc) {
             Type[] parameterTypes = Type.getArgumentTypes(desc);
 
             // stack : <parameters values>
@@ -937,7 +1049,7 @@ public class TBIncrementalChangeVisitor extends TBIncrementalVisitor {
          *
          * @param desc the method signature
          */
-        private void handleReturnType(String desc) {
+        public void handleReturnType(String desc) {
             Type ret = Type.getReturnType(desc);
             if (ret.getSort() == Type.VOID) {
                 pop();
@@ -1144,5 +1256,10 @@ public class TBIncrementalChangeVisitor extends TBIncrementalVisitor {
             return METHOD_MANGLE_PREFIX + name;
         }
         return name;
+    }
+
+
+    public static boolean isAccessCompatibleWithInstantRun(int access) {
+        return (access & (Opcodes.ACC_BRIDGE)) == 0;
     }
 }
