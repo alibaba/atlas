@@ -262,6 +262,10 @@ public class BundleInfoUtils {
                 awbBundle.bundleInfo.getDependency().clear();
             }
         }
+
+        ManifestHelper.collectBundleInfo(appVariantContext, atlasDependencyTree.getMainBundle().bundleInfo, null,
+                atlasDependencyTree.getMainBundle().getAndroidLibraries());
+
     }
 
     /**
