@@ -254,7 +254,6 @@ dependencies {
     testCompile "junit:junit:4.11"
 }
 jar {
-    from zipTree("libs/libarsc.jar")
     from zipTree("libs/jxl.jar")
 
 }
