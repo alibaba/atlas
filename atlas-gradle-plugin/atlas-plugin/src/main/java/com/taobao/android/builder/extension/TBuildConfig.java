@@ -217,7 +217,6 @@ import java.util.Set;
 
 import com.google.common.collect.Sets;
 import com.taobao.android.builder.extension.annotation.Config;
-
 import javax.inject.Inject;
 
 /**
@@ -847,6 +846,11 @@ public class TBuildConfig {
     private boolean featureApk = false;
 
 
+    public void setStableIdsFile(File stableIdsFile) {
+        this.stableIdsFile = stableIdsFile;
+    }
+
+    private File stableIdsFile;
 
     public boolean isSupportAddCallSuper() {
         return supportAddCallSuper;
@@ -867,5 +871,9 @@ public class TBuildConfig {
 
     public String getPluginBundleVersion() {
         return pluginBundleVersion;
+    }
+
+    public File getStableIdsFile() {
+        return stableIdsFile;
     }
 }

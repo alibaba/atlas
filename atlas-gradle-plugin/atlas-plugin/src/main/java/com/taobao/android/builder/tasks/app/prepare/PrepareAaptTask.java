@@ -260,12 +260,15 @@ public class PrepareAaptTask extends AndroidBuilderTask {
 
         }
 
+        if (appVariantContext.getAtlasExtension().getTBuildConfig().getStableIdsFile().exists()){
+            aaptOptions.getAdditionalParameters().add("--stable-ids");
+            aaptOptions.getAdditionalParameters().add(appVariantContext.getAtlasExtension().getTBuildConfig().getStableIdsFile().getAbsolutePath());
 
-            //default use aapt2
-//        if (((LinkApplicationAndroidResourcesTask)processAndroidResources).()) {
+        } else{
             aaptOptions.getAdditionalParameters().add("--emit-ids");
             aaptOptions.getAdditionalParameters().add(new File(getProject().getBuildDir(),
-                "outputs/public.txt").getAbsolutePath());
+                    "outputs/public.txt").getAbsolutePath());
+        }
 //        }
         if (null != apContext && apContext.getBaseApk() != null && apContext.getBaseApk().exists()) {
             File baseApk = appVariantContext.apContext.getBaseApk();
