@@ -361,25 +361,24 @@ public class ManifestHelper {
     public static void collectBundleInfo(AppVariantContext appVariantContext, BundleInfo bundleInfo, File manifest,
                                          List<AndroidLibrary> androidLibraries)
         throws DocumentException {
-        if (manifest != null) {
-            SAXReader reader = new SAXReader();
-            Document document = reader.read(getModifyManifestFile(manifest, appVariantContext));// Read the XML file
-            Element root = document.getRootElement();// Get the root node
+        SAXReader reader = new SAXReader();
+        Document document = reader.read(getModifyManifestFile(manifest, appVariantContext));// Read the XML file
+        Element root = document.getRootElement();// Get the root node
 
-            List<? extends Node> metadataNodes = root.selectNodes("//meta-data");
-            for (Node node : metadataNodes) {
-                Element element = (Element) node;
-                Attribute attribute = element.attribute("name");
-                if (attribute.getValue().equals("label")) {
-                    Attribute labelAttribute = element.attribute("value");
-                    bundleInfo.setName(labelAttribute.getValue());
-                } else if (attribute.getValue().equals("description")) {
-                    Attribute descAttribute = element.attribute("value");
-                    bundleInfo.setDesc(descAttribute.getValue());
-                }
+        List<? extends Node> metadataNodes = root.selectNodes("//meta-data");
+        for (Node node : metadataNodes) {
+            Element element = (Element)node;
+            Attribute attribute = element.attribute("name");
+            if (attribute.getValue().equals("label")) {
+                Attribute labelAttribute = element.attribute("value");
+                bundleInfo.setName(labelAttribute.getValue());
+            } else if (attribute.getValue().equals("description")) {
+                Attribute descAttribute = element.attribute("value");
+                bundleInfo.setDesc(descAttribute.getValue());
             }
-            addComponents(bundleInfo, root);
         }
+
+        addComponents(bundleInfo, root);
 
         if (null != androidLibraries) {
             for (AndroidLibrary depLib : androidLibraries) {
