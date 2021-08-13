@@ -260,7 +260,7 @@ public class PrepareAaptTask extends AndroidBuilderTask {
 
         }
 
-        if (appVariantContext.getAtlasExtension().getTBuildConfig().getStableIdsFile().exists()){
+        if (appVariantContext.getAtlasExtension().getTBuildConfig().getStableIdsFile()!= null && appVariantContext.getAtlasExtension().getTBuildConfig().getStableIdsFile().exists()){
             aaptOptions.getAdditionalParameters().add("--stable-ids");
             aaptOptions.getAdditionalParameters().add(appVariantContext.getAtlasExtension().getTBuildConfig().getStableIdsFile().getAbsolutePath());
 
