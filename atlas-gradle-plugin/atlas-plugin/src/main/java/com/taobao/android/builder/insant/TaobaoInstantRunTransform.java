@@ -358,7 +358,8 @@ public class TaobaoInstantRunTransform extends Transform {
         bufferedWriter.close();
         // If our classes.2 transformations indicated that a cold swap was necessary,
         // clean up the classes.3 output folder as some new files may have been generated.
-        if (generatedClasses3Names.build().size() == 0) {
+        if (generatedClasses3Names.build().size() == 0 && modifyClasses.size() == 0) {
+
             FileUtils.cleanOutputDir(classesThreeOutput);
         }
 
@@ -845,7 +846,7 @@ public class TaobaoInstantRunTransform extends Transform {
 //        }
         // otherwise, generate the patch file and add it to the list of files to process next.
         ImmutableList<String> generatedClassNames = generatedClasses3Names.build();
-        if (!generatedClassNames.isEmpty()) {
+        if (!generatedClassNames.isEmpty() || (modifyClasses.size() > 0 && !modifyClasses.values().contains(ModifyClassFinder.PatchPolicy.MODIFY.name()))) {
             File patchClassInfo = new File(variantContext.getProject().getBuildDir(), "outputs/patchClassInfo.json");
             org.apache.commons.io.FileUtils.writeStringToFile(patchClassInfo, JSON.toJSONString(modifyClasses));
             modifyClasses.entrySet().forEach(stringStringEntry -> LOGGER.warning(stringStringEntry.getKey() + ":" + stringStringEntry.getValue()));
