@@ -470,6 +470,7 @@ public abstract class ClassReIClassDef extends AbIClassDef {
 
     @Override
     protected Annotation reAnnotation(Annotation annotation) {
+        Set<String> basicValueSet = new HashSet<>(basicValue);
         String type = annotation.getType();
         boolean isArray = false;
         if (type.startsWith("[")) {
@@ -491,7 +492,7 @@ public abstract class ClassReIClassDef extends AbIClassDef {
                         if (value.startsWith("[")) {
                             isArray1 = true;
                         }
-                        if (basicValue.contains(value)) {
+                        if (basicValueSet.contains(value)) {
                             newValue = value;
                         } else if (value.startsWith("Ljava/util/") || value.startsWith("Ljava/lang/") || !value.startsWith("L")) {
                             newValue = value;
@@ -512,7 +513,7 @@ public abstract class ClassReIClassDef extends AbIClassDef {
                         if (value.startsWith("[")) {
                             isArray2 = true;
                         }
-                        if (basicValue.contains(value)) {
+                        if (basicValueSet.contains(value)) {
                             newValueSub = value;
                         } else if (value.startsWith("Ljava/util/") || !value.endsWith(";")) {
                             newValueSub = value;
@@ -537,7 +538,7 @@ public abstract class ClassReIClassDef extends AbIClassDef {
                 if (value.startsWith("[")) {
                     isArray = true;
                 }
-                if (basicValue.contains(value)) {
+                if (basicValueSet.contains(value)) {
                     newValue = value;
                 } else if (value.startsWith("Ljava/util/") || value.startsWith("Ljava/lang/") || !value.startsWith("L")) {
                     newValue = value;
@@ -559,7 +560,7 @@ public abstract class ClassReIClassDef extends AbIClassDef {
                 if (value.startsWith("[")) {
                     isArray2 = true;
                 }
-                if (basicValue.contains(value)) {
+                if (basicValueSet.contains(value)) {
                     newValue = value;
                 } else if (value.startsWith("Ljava/util/") || !value.endsWith(";")) {
                     newValue = value;
@@ -665,6 +666,7 @@ public abstract class ClassReIClassDef extends AbIClassDef {
             String newType = DefineUtils.getDefineClassName(classProcessor.classProcess(DefineUtils.getDalvikClassName(type)).className, isArray);
             Set<? extends AnnotationElement> sets = annotation.getElements();
             Set<ImmutableAnnotationElement> newAnnotationElement = new HashSet<ImmutableAnnotationElement>();
+            Set<String> basicValueSet = new HashSet<>(basicValue);
             for (AnnotationElement annotationElement : sets) {
                 String name = annotationElement.getName();
                 EncodedValue encodedValue = annotationElement.getValue();
@@ -678,7 +680,7 @@ public abstract class ClassReIClassDef extends AbIClassDef {
                             if (value.startsWith("[")) {
                                 isArray1 = true;
                             }
-                            if (basicValue.contains(value)) {
+                            if (basicValueSet.contains(value)) {
                                 newValue = value;
                             } else if (value.startsWith("Ljava/util/") || !value.endsWith(";") || value.startsWith("Ljava/lang/")||!value.startsWith("L")) {
                                 newValue = value;
@@ -694,7 +696,7 @@ public abstract class ClassReIClassDef extends AbIClassDef {
                             if (value.startsWith("[")) {
                                 isArray2 = true;
                             }
-                            if (basicValue.contains(value)) {
+                            if (basicValueSet.contains(value)) {
                                 newValueSub = value;
                             } else if (value.startsWith("Ljava/util/") || value.startsWith("Ljava/lang/") || !value.endsWith(";")) {
                                 newValueSub = value;
@@ -719,7 +721,7 @@ public abstract class ClassReIClassDef extends AbIClassDef {
                         isArray3 = true;
                     }
                     String newValue = null;
-                    if (basicValue.contains(value)) {
+                    if (basicValueSet.contains(value)) {
                         newValue = value;
                     } else if (value.startsWith("Ljava/util/") || value.startsWith("Ljava/lang/") || !value.endsWith(";")) {
                         newValue = value;
@@ -774,7 +776,7 @@ public abstract class ClassReIClassDef extends AbIClassDef {
                     if (value.startsWith("[")) {
                         isArray2 = true;
                     }
-                    if (basicValue.contains(value)) {
+                    if (basicValueSet.contains(value)) {
                         newValueSub = value;
                     } else if (value.startsWith("Ljava/util/") || value.startsWith("Ljava/lang/") || !value.endsWith(";")) {
                         newValueSub = value;
