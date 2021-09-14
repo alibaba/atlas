@@ -190,7 +190,7 @@ public class AtlasVirtualFile {
             int transactionStartIndex = 0;
             int fileStartIndex = 0;
             String currentPrefix = null;
-            Map<String, Integer> newPackageAssignments = new LinkedHashMap();
+            Map<String, Integer> newPackageAssignments = new HashMap();
             AtlasVirtualFile current = this.cycler.next();
             List<DexProgramClass> nonPackageClasses = new ArrayList();
 
