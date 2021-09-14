@@ -232,7 +232,7 @@ public final class DexTransform {
         return this;
     }
 
-    public DexTransform markClassDef(Dex baseDex,List<String>classNames) {
+    public DexTransform markClassDef(Dex baseDex,Set<String>classNames) {
         for (ClassDef classDef:dex.classDefs()) {
             int typeId = classDef.getTypeIndex();
             String value = dex.typeNames().get(typeId);
