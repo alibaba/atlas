@@ -375,24 +375,26 @@ public class AtlasProguardHelper {
     private static void addChildDependency(BundleItem bundleItem, Input input,
                                            Map<BundleInfo, AwbTransform> bundleInfoAwbTransformMap) throws IOException {
 
-        List<String>pkgNames = new ArrayList<>();
+        List<String>pkgNames = new LinkedList<>();
 
         input.getAwbBundles().forEach(awbTransform -> pkgNames.add(awbTransform.getAwbBundle().getPackageName()));
 
         sLogger.info("combine to proguard bundles:"+pkgNames.toString());
 
-        List<AwbTransform> childTransforms = new ArrayList<>();
+        List<AwbTransform> childTransforms = new LinkedList<>();
 
         sLogger.info("combine to proguard bundles:"+pkgNames.toString());
+        
+        Set<String> pkgNameSet = new HashSet<>(pkgNames);
 
         for (BundleItem child : bundleItem.children) {
-            if (!pkgNames.contains(child.bundleInfo.getPkgName())) {
+            if (!pkgNameSet.contains(child.bundleInfo.getPkgName())) {
                 childTransforms.add(bundleInfoAwbTransformMap.get(child.bundleInfo));
             }else {
                 sLogger.error(child.bundleInfo.getPkgName() +" in proguard bundles so discard from "+ bundleItem.bundleInfo.getPkgName()+"libraries...");
             }
             for (BundleInfo sub : child.circles) {
-                if (!pkgNames.contains(sub.getPkgName())) {
+                if (!pkgNameSet.contains(sub.getPkgName())) {
                     childTransforms.add(bundleInfoAwbTransformMap.get(sub));
                 }else {
                     sLogger.error(sub.getPkgName() +" in proguard bundles so discard from "+ bundleItem.bundleInfo.getPkgName()+" libraries...");
