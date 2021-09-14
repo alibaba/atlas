@@ -37,9 +37,9 @@ public class AtlasMainDexHelper {
 
     private Map<String, Boolean> mainManifestMap = new HashMap<>();
 
-    private Map<String, Boolean> mainNativeSoMap = new LinkedHashMap<>();
+    private Map<String, Boolean> mainNativeSoMap = new HashMap<>();
 
-    private Map<String, Boolean> mainRes = new LinkedHashMap<>();
+    private Map<String, Boolean> mainRes = new HashMap<>();
 
     public File getMainJavaRes() {
         return mainJavaRes;

@@ -15,7 +15,7 @@ public class MatcherCreator {
 
     static Set<ImplementsMatcher> matchers = new HashSet<>();
 
-    static Map<String, Imatcher> sMatchers = new LinkedHashMap<>();
+    static Map<String, Imatcher> sMatchers = new HashMap<>();
 
     public static Imatcher create(String rule) {
         if (sMatchers.containsKey(rule)) {
