@@ -502,7 +502,7 @@ public class InstructionMethodItem<T extends Instruction> extends MethodItem {
                 writer.write("Float.POSITIVE_INFINITY");
             else if (fval == Float.NEGATIVE_INFINITY)
                 writer.write("Float.NEGATIVE_INFINITY");
-            else if (fval == Float.NaN)
+            else if (Float.isNaN(fval))
                 writer.write("Float.NaN");
             else if (fval == Float.MAX_VALUE)
                 writer.write("Float.MAX_VALUE");
@@ -529,7 +529,7 @@ public class InstructionMethodItem<T extends Instruction> extends MethodItem {
                 writer.write("Double.POSITIVE_INFINITY");
             else if (dval == Double.NEGATIVE_INFINITY)
                 writer.write("Double.NEGATIVE_INFINITY");
-            else if (dval == Double.NaN)
+            else if (Double.isNaN(dval))
                 writer.write("Double.NaN");
             else if (dval == Double.MAX_VALUE)
                 writer.write("Double.MAX_VALUE");
