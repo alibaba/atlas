@@ -36,10 +36,18 @@ public class ZipUtils {
                 dirName = dirName.substring(0, dirName.length() - 1);
                 File f = new File(outFile.getPath() + File.separator + dirName);
                 f.mkdirs();
+                if (!f.getCanonicalPath().startsWith(outputDirectory)) {
+                    System.out.println("Zip Slip exploit detected. Skipping entry " + dirName);
+                    continue;
+                }
             } else {
                 String strFilePath = outFile.getPath() + File.separator
                         + zipEntry.getName();
                 File f = new File(strFilePath);
+                if (!f.getCanonicalPath().startsWith(outputDirectory)) {
+                    System.out.println("Zip Slip exploit detected. Skipping entry " + zipEntry.getName());
+                    continue;
+                }
 
                 // 判断文件不存在的话，就创建该文件所在文件夹的目录
                 if (!f.exists()) {
